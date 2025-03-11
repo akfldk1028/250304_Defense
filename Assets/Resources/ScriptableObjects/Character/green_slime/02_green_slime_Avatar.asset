@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 575803e20705f534ebf25314f7933fc9, type: 3}
+  m_Name: 02_green_slime_Avatar
+  m_EditorClassIdentifier: 
+  m_Guid: 0c0d5f2196237147930173811cf7310f
+  guidString: 215f0d0c-2396-4771-9301-73811cf7310f
+  dataId: 202001
+  animatorControllerPath: green_slime
+  spritePath: green_slime/Green_attack_1-sheet.png.png.sprite
+  prefabPath: green_slime.prefab
+  creaturePrefab: {fileID: 8751546606364355619, guid: b6e03a8d4f12db54fb0e52cc2eb60c59, type: 3}
+  creatureSprite: {fileID: 0}
+  animatorController: {fileID: 9100000, guid: 447668c6a441e354384d984bfc81eda9, type: 2}
+  creatureSounds: []
+  spawnEffectPrefab: {fileID: 0}
+  deathEffectPrefab: {fileID: 0}
+  monsterData: {fileID: 11400000, guid: d3d17a9c4accc624d9e379bf405e00f6, type: 2}
+  attackEffectPrefab: {fileID: 0}
+  hitEffectPrefab: {fileID: 0}
