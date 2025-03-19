@@ -18,7 +18,7 @@ namespace Unity.Assets.Scripts.Module.ApplicationLifecycle.Installers
     /// </summary>
     public class SceneInstaller : IModuleInstaller
     {
-
+        [Inject] private DebugClassFacade _debugClassFacade;
         /// <summary>
         /// 이 인스톨러가 담당하는 모듈 타입
         /// </summary>
@@ -30,7 +30,7 @@ namespace Unity.Assets.Scripts.Module.ApplicationLifecycle.Installers
         /// <param name="builder">컨테이너 빌더</param>
         public void Install(IContainerBuilder builder)
         {
-            UnityEngine.Debug.Log("[SceneInstaller] 리소스 모듈 설치 시작");
+            _debugClassFacade?.LogInfo(GetType().Name, "씬 모듈 설치 시작");
 
             builder.Register<SceneManagerEx>(Lifetime.Singleton);
             
@@ -38,8 +38,7 @@ namespace Unity.Assets.Scripts.Module.ApplicationLifecycle.Installers
             // 1. 컴포넌트 찾기 방식으로 등록
             builder.RegisterComponentInHierarchy<StartUpScene>();
 
- 
-            UnityEngine.Debug.Log("[SceneInstaller] 리소스 모듈 설치 완료");
+            _debugClassFacade?.LogInfo(GetType().Name, "씬 모듈 설치 완료");
         }
     }
 } 

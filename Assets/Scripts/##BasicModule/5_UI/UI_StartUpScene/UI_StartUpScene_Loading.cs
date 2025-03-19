@@ -27,8 +27,11 @@ namespace Unity.Assets.Scripts.UI
             
             // 3. 네트워크 연결 단계
             // yield return StartCoroutine(ProcessConnectionLoadStep());
+            
+            // 4. 인증 단계
+            yield return StartCoroutine(ProcessAuthStep());
 
-            // 4. 완료 단계
+            // 5. 완료 단계
             yield return StartCoroutine(ProcessCompleteStep());
             
             _isLoading = false;
@@ -44,16 +47,25 @@ namespace Unity.Assets.Scripts.UI
             UpdateProgress(INIT_PROGRESS_START, "초기화 중...");
             
             // 초기화 단계에서 진행률 서서히 증가
-            for (float t = 0; t < 1.0f; t += 0.1f)
+            float elapsed = 0f;
+            float duration = 1.0f;
+            
+            while (elapsed < duration)
             {
-                float initProgress = Mathf.Lerp(INIT_PROGRESS_START, INIT_PROGRESS_END, t);
-                UpdateProgress(initProgress, "초기화 중...");
+                float t = elapsed / duration;
+                float progress = Mathf.Lerp(INIT_PROGRESS_START, INIT_PROGRESS_END, t);
+                UpdateProgress(progress, "초기화 중...");
+                
                 yield return new WaitForSeconds(0.05f);
+                elapsed += 0.05f;
             }
+            
+            // 마지막에 정확한 종료 진행률로 설정
+            UpdateProgress(INIT_PROGRESS_END, "초기화 중...");
         }
         
         /// <summary>
-        /// 리소스 로드 단계 처리 (30% ~ 90%)
+        /// 리소스 로드 단계 처리 (30% ~ 70%)
         /// </summary>
         private IEnumerator ProcessResourceLoadStep()
         {
@@ -101,7 +113,7 @@ namespace Unity.Assets.Scripts.UI
                     totalResourceCount = totalCount;
                     loadedResourceCount = count;
                     
-                    // 진행률 계산 및 업데이트 (30% ~ 90% 범위로 조정)
+                    // 진행률 계산 및 업데이트 (30% ~ 70% 범위로 조정)
                     float loadProgress = (float)count / totalCount;
                     float adjustedProgress = RESOURCE_PROGRESS_START + (loadProgress * (RESOURCE_PROGRESS_END - RESOURCE_PROGRESS_START));
                     
@@ -125,18 +137,6 @@ namespace Unity.Assets.Scripts.UI
                 UpdateDebugInfo($"Error: {e.Message}");
             }
             
-            // 리소스 로드가 완료될 때까지 대기
-            // while (!_isResourceLoaded)
-            // {
-            //     // 로딩 중 상태 업데이트
-            //     if (totalResourceCount > 0)
-            //     {
-            //         UpdateDebugInfo($"Resource Load: {loadedResourceCount}/{totalResourceCount} ({(float)loadedResourceCount/totalResourceCount:P0})");
-            //     }
-            //     yield return null;
-            // }
-            
-            // 리소스 로드 완료 시 진행률 90%로 설정
             UpdateProgress(RESOURCE_PROGRESS_END, "Resource Load Complete");
             LogDebug("[UI_StartUpScene] 리소스 로드 단계 완료");
         }
@@ -150,7 +150,116 @@ namespace Unity.Assets.Scripts.UI
             LogDebug($"[UI_StartUpScene] 네트워크 연결 시작");
             UpdateDebugInfo($"Network Connection...");
         }
-
+        
+        /// <summary>
+        /// 인증 단계 처리 (70% ~ 90%)
+        /// </summary>
+        private IEnumerator ProcessAuthStep()
+        {
+            _currentStep = LoadingStep.AuthLoad;
+            UpdateProgress(AUTH_PROGRESS_START, "인증 준비 중...");
+            
+            LogDebug("[UI_StartUpScene] 인증 단계 시작");
+            
+            // 1. AuthManager 확인
+            if (_authManager == null)
+            {
+                LogError("[UI_StartUpScene] AuthManager가 null입니다");
+                UpdateProgress(AUTH_PROGRESS_END, "인증 실패 (오프라인 모드)");
+                yield break;
+            }
+            
+            // 2. 진행률 표시 애니메이션
+            float elapsed = 0f;
+            float animDuration = 0.5f;
+            while (elapsed < animDuration)
+            {
+                float t = elapsed / animDuration;
+                float progress = Mathf.Lerp(AUTH_PROGRESS_START, AUTH_PROGRESS_START + 0.1f, t);
+                UpdateProgress(progress, "인증 서비스 초기화 중...");
+                
+                yield return new WaitForSeconds(0.05f);
+                elapsed += 0.05f;
+            }
+            
+            // 3. Unity 서비스 초기화
+            UpdateProgress(AUTH_PROGRESS_START + 0.1f, "Unity 서비스 초기화 중...");
+            
+            // Unity 서비스 초기화 작업 시작
+            var initTask = Unity.Services.Core.UnityServices.InitializeAsync();
+            
+            // 작업 완료 대기
+            while (!initTask.IsCompleted)
+            {
+                yield return null;
+            }
+            
+            LogDebug("[UI_StartUpScene] Unity 서비스 초기화 완료");
+            
+            // 4. 인증 수행
+            bool success = false;
+            bool isAlreadyAuthenticated = false;
+            
+            // 이미 인증되어 있는지 확인
+            try
+            {
+                isAlreadyAuthenticated = _authManager.IsAuthenticated;
+                if (isAlreadyAuthenticated)
+                {
+                    LogDebug($"[UI_StartUpScene] 이미 인증됨: 플레이어 ID = {_authManager.PlayerId}");
+                    success = true;
+                }
+            }
+            catch (System.Exception e)
+            {
+                LogError($"[UI_StartUpScene] 인증 상태 확인 중 오류: {e.Message}");
+                isAlreadyAuthenticated = false;
+            }
+            
+            // 인증이 필요한 경우
+            if (!isAlreadyAuthenticated)
+            {
+                // 인증 시도
+                UpdateProgress(AUTH_PROGRESS_START + 0.3f, "인증 중...");
+                
+                // 인증 작업 시작
+                var authTask = _authManager.InitializeAndAuthenticateAsync();
+                
+                // 인증 작업 완료 대기
+                while (!authTask.IsCompleted)
+                {
+                    yield return null;
+                }
+                
+                // 결과 확인
+                try
+                {
+                    success = authTask.Result;
+                }
+                catch (System.Exception e)
+                {
+                    LogError($"[UI_StartUpScene] 인증 중 오류: {e.Message}");
+                    UpdateDebugInfo($"인증 오류: {e.Message}");
+                    success = false;
+                }
+            }
+            
+            // 5. 결과 처리
+            if (success)
+            {
+                _isAuthenticated = true;
+                LogDebug($"[UI_StartUpScene] 인증 성공: 플레이어 ID = {_authManager.PlayerId}");
+                UpdateProgress(AUTH_PROGRESS_END, $"인증 완료: {_authManager.PlayerId}");
+            }
+            else
+            {
+                LogError("[UI_StartUpScene] 인증 실패");
+                UpdateProgress(AUTH_PROGRESS_END, "인증 실패 (오프라인 모드)");
+            }
+            
+            LogDebug("[UI_StartUpScene] 인증 단계 완료");
+        }
+        
         /// <summary>
         /// 완료 단계 처리 (90% ~ 100%)
         /// </summary>
@@ -159,15 +268,23 @@ namespace Unity.Assets.Scripts.UI
             _currentStep = LoadingStep.Complete;
             
             // 완료 단계에서 진행률 서서히 증가
-            for (float t = 0; t < 1.0f; t += 0.1f)
+            float elapsed = 0f;
+            float duration = 1.0f;
+            
+            while (elapsed < duration)
             {
-                float completeProgress = Mathf.Lerp(COMPLETE_PROGRESS_START, COMPLETE_PROGRESS_END, t);
-                UpdateProgress(completeProgress, "Finish");
+                float t = elapsed / duration;
+                float progress = Mathf.Lerp(COMPLETE_PROGRESS_START, COMPLETE_PROGRESS_END, t);
+                UpdateProgress(progress, "Finish");
+                
                 yield return new WaitForSeconds(0.05f);
+                elapsed += 0.05f;
             }
+            
+            // 마지막에 정확한 종료 진행률로 설정
+            UpdateProgress(COMPLETE_PROGRESS_END, "Finish");
         }
         
-
         /// <summary>
         /// ResourceManager 이벤트 핸들러 - 로드 완료
         /// </summary>

@@ -21,7 +21,13 @@ namespace Unity.Assets.Scripts.UI
             try
             {
                 _isResourceLoaded = true;
-                UpdateDebugInfo("Loading Complete");
+                
+                // 인증 상태 확인 및 표시
+                string authStatus = _isAuthenticated 
+                    ? $"인증 완료: {_authManager?.PlayerId ?? "Unknown"}" 
+                    : "오프라인 모드";
+                
+                UpdateDebugInfo($"Loading Complete\n{authStatus}");
                 
                 // 잠시 후 다음 씬으로 전환
                 StartCoroutine(LoadNextSceneAfterDelay());
@@ -41,7 +47,12 @@ namespace Unity.Assets.Scripts.UI
             
             for (float t = 0; t < NEXT_SCENE_DELAY; t += 0.1f)
             {
-                UpdateDebugInfo($"Load Finish! {NEXT_SCENE_DELAY - t:F1}Seconds Later");
+                // 인증 상태 표시
+                string authStatus = _isAuthenticated 
+                    ? $"인증: {_authManager?.PlayerId ?? "Unknown"}" 
+                    : "오프라인 모드";
+                
+                UpdateDebugInfo($"Load Finish! {NEXT_SCENE_DELAY - t:F1}초 후 이동\n{authStatus}");
                 yield return new WaitForSeconds(0.1f);
             }
             
@@ -49,8 +60,7 @@ namespace Unity.Assets.Scripts.UI
             
             try
             {
-                // 다음 씬으로 전환 (MainMenu 씬으로 이동)
-                _sceneManager.LoadScene(EScene.MainMenu);
+                _startUpScene.LoadMainMenuScene();
             }
             catch (System.Exception e)
             {

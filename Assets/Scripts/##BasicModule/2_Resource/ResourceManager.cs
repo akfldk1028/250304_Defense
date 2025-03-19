@@ -6,13 +6,16 @@ using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using Object = UnityEngine.Object;
 using System.Linq;
-
+using VContainer;
 namespace Unity.Assets.Scripts.Resource
 {
 
 
     public class ResourceManager
     {
+        [Inject] private DebugClassFacade _debugClassFacade;
+
+        [Inject] private PoolManager _poolManager;
         // 리소스 로딩 진행 상황을 알려주는 이벤트 (진행률 0.0f ~ 1.0f, 현재 로드된 항목, 총 항목 수)
         public event Action<float, string, int, int> OnLoadingProgressChanged;
         
@@ -27,29 +30,32 @@ namespace Unity.Assets.Scripts.Resource
 
         #region Load Resource
         // 타입에 따른 키 접미사를 반환하는 메서드
-        private string GetTypeSuffix(Type type)
+
+
+        public T LoadJson<T>(string key) where T : Object
         {
-            if (type == typeof(GameObject)) return "prefab";
-            if (type == typeof(RuntimeAnimatorController)) return "controller";
-            if (type == typeof(AnimationClip)) return "anim";
-            if (type == typeof(Sprite)) return "sprite";
-            if (type == typeof(Texture)) return "texture";
-            if (type == typeof(Material)) return "material";
-            if (type == typeof(AudioClip)) return "audio";
-            return type.Name.ToLower();
+            if (_resources.TryGetValue(key, out Object resource))
+                return resource as T;
+            if (typeof(T) == typeof(Sprite) && key.Contains(".sprite") == false)
+            {
+                if (_resources.TryGetValue($"{key}.sprite", out resource))
+                    return resource as T;
+            }
+
+            return null;
         }
 
-        // 타입 정보를 포함한 키 생성
-        private string GetTypeKey(string key, Type type)
-        {
-            return $"{key}.{GetTypeSuffix(type)}";
-        }
 
         public T Load<T>(string key) where T : Object
         {
+            Debug.Log($"<color=yellow>[ResourceManager] Load<{typeof(T).Name}> 호출: 키 '{key}'</color>");
+            
             // 1. 원래 키로 먼저 시도
             if (_resources.TryGetValue(key, out Object resource))
             {
+                #if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.Log($"[ResourceManager] 원래 키로 리소스 찾음: '{key}'");
+                #endif
                 return resource as T;
             }
             
@@ -57,6 +63,9 @@ namespace Unity.Assets.Scripts.Resource
             string typeKey = GetTypeKey(key, typeof(T));
             if (_resources.TryGetValue(typeKey, out resource))
             {
+                #if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.Log($"[ResourceManager] 타입 키로 리소스 찾음: '{typeKey}'");
+                #endif
                 return resource as T;
             }
             
@@ -64,41 +73,31 @@ namespace Unity.Assets.Scripts.Resource
             if (typeof(T) == typeof(Sprite) && !key.Contains(".sprite"))
             {
                 if (_resources.TryGetValue($"{key}.sprite", out resource))
+                {
+                    #if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    Debug.Log($"[ResourceManager] 스프라이트 특수 처리로 리소스 찾음: '{key}.sprite'");
+                    #endif
                     return resource as T;
+                }
             }
             
-            // 4. 로드 실패 시 디버그 정보 출력 (개발 모드에서만)
-            #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogWarning($"[ResourceManager] 리소스 로드 실패: 키 '{key}' 또는 타입 키 '{typeKey}'");
-            
-            // 5. 비슷한 키 제안 (최대 3개)
-            var similarKeys = _resources.Keys
-                .Where(k => k.Contains(key) || (key.Length > 3 && k.Contains(key.Substring(0, key.Length / 2))))
-                .Take(3)
-                .ToList();
-            
-            if (similarKeys.Count > 0)
-            {
-                Debug.Log($"[ResourceManager] 비슷한 키: {string.Join(", ", similarKeys)}");
-            }
-            #endif
             
             return null;
         }
 
-        public GameObject Instantiate(string key, Transform parent = null, bool pooling = false)
+        public GameObject Instantiate(string key, Transform parent = null, bool pooling = false, Vector3 position = default, Quaternion rotation = default)
         {
             GameObject prefab = Load<GameObject>(key);
             if (prefab == null)
             {
-                Debug.LogError($"Failed to load prefab : {key}");
+                _debugClassFacade.LogError(GetType().Name, $"Failed to load prefab : {key}");
                 return null;
             }
 
-            // if (pooling)
-            // 	return Managers.Pool.Pop(prefab);
+            if (pooling)
+            	return _poolManager.Pop(prefab, position, rotation);
 
-            GameObject go = Object.Instantiate(prefab, parent);
+            GameObject go = Object.Instantiate(prefab, position, rotation, parent);
             go.name = prefab.name;
 
             return go;
@@ -109,20 +108,21 @@ namespace Unity.Assets.Scripts.Resource
             if (go == null)
                 return;
 
-            // if (Managers.Pool.Push(go))
-            // 	return;
+            if (_poolManager.Push(go))
+            	return;
 
             Object.Destroy(go);
         }
         #endregion
 
         #region Addressable
-        private void LoadAsync<T>(string key, Action<T> callback = null) where T : UnityEngine.Object
+        public void LoadAsync<T>(string key, Action<T> callback = null) where T : UnityEngine.Object
         {
             // Cache
             if (_resources.TryGetValue(key, out Object resource))
             {
-                Debug.Log($"[ResourceManager] 캐시에서 에셋 로드: {key}, 타입: {typeof(T).Name}");
+                _debugClassFacade.LogInfo(GetType().Name, $"캐시에서 에셋 로드: {key}, 타입: {typeof(T).Name}");
+                //[ResourceManager] 에셋 로드: green_slime (AnimatorController) - 키: green_slime, 타입 키: green_slime.animatorcontroller
                 callback?.Invoke(resource as T);
                 return;
             }
@@ -131,20 +131,20 @@ namespace Unity.Assets.Scripts.Resource
             if (key.Contains(".sprite"))
                 loadKey = $"{key}[{key.Replace(".sprite", "")}]";
 
-            Debug.Log($"[ResourceManager] Addressable에서 에셋 로드 시도: {loadKey}, 타입: {typeof(T).Name}");
+            _debugClassFacade.LogInfo(GetType().Name, $"Addressable에서 에셋 로드 시도: {loadKey}, 타입: {typeof(T).Name}");
             var asyncOperation = Addressables.LoadAssetAsync<T>(loadKey);
             asyncOperation.Completed += (op) =>
             {
                 if (op.Status == UnityEngine.ResourceManagement.AsyncOperations.AsyncOperationStatus.Succeeded)
                 {
-                    Debug.Log($"[ResourceManager] 에셋 로드 성공: {key}, 타입: {typeof(T).Name}");
+                    _debugClassFacade.LogInfo(GetType().Name, $"에셋 로드 성공: {key}, 타입: {typeof(T).Name}");
                     _resources.Add(key, op.Result);
                     _handles.Add(key, asyncOperation);
                     callback?.Invoke(op.Result);
                 }
                 else
                 {
-                    Debug.LogError($"[ResourceManager] 에셋 로드 실패: {key}, 타입: {typeof(T).Name}, 오류: {op.OperationException?.Message}");
+                    _debugClassFacade.LogError(GetType().Name, $"에셋 로드 실패: {key}, 타입: {typeof(T).Name}, 오류: {op.OperationException?.Message}");
                     callback?.Invoke(null);
                 }
             };
@@ -152,7 +152,7 @@ namespace Unity.Assets.Scripts.Resource
 
         public void LoadAllAsync<T>(string label, Action<string, int, int> callback) where T : UnityEngine.Object
         {
-            Debug.Log($"[ResourceManager] 라벨 '{label}' 로드 시작");
+            _debugClassFacade.LogInfo(GetType().Name, $"라벨 '{label}' 로드 시작");
             var operation = Addressables.LoadResourceLocationsAsync(label, typeof(T));
             operation.Completed += op =>
             {
@@ -160,12 +160,12 @@ namespace Unity.Assets.Scripts.Resource
                 {
                     if (op.Result.Count == 0)
                     {
-                        Debug.LogWarning($"[ResourceManager] 라벨 '{label}'에 해당하는 에셋이 없습니다.");
+                        _debugClassFacade.LogWarning(GetType().Name, $"라벨 '{label}'에 해당하는 에셋이 없습니다.");
                         OnLoadingCompleted?.Invoke();
                         return;
                     }
                     
-                    Debug.Log($"[ResourceManager] 라벨 '{label}' 로드 성공: {op.Result.Count}개 에셋 발견");
+                    _debugClassFacade.LogInfo(GetType().Name, $"라벨 '{label}' 로드 성공: {op.Result.Count}개 에셋 발견");
                     
                     var loadOperations = new List<AsyncOperationHandle>();
                     int totalCount = op.Result.Count;
@@ -188,15 +188,7 @@ namespace Unity.Assets.Scripts.Resource
                                 string typeName = obj.Result.GetType().Name;
                                 string assetName = obj.Result.name;
                                 Debug.Log($"[ResourceManager] 에셋 로드: {assetName} ({typeName}) - 키: {key}, 타입 키: {typeKey}");
-                                #endif
-                                
-                                // GameObject인 경우 추가 정보
-                                #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                                if (obj.Result is GameObject)
-                                {
-                                    GameObject go = obj.Result as GameObject;
-                                    Debug.Log($"[ResourceManager] - GameObject(프리팹) 발견: {assetName}");
-                                }
+                                //[ResourceManager] 에셋 로드: green_slime (AnimatorController) - 키: green_slime, 타입 키: green_slime.animatorcontroller
                                 #endif
                                 
                                 // 원래 키와 타입 키 모두 저장
@@ -249,21 +241,94 @@ namespace Unity.Assets.Scripts.Resource
                 }
                 else
                 {
-                    Debug.LogError($"[ResourceManager] 라벨 로드 실패: {label}, 오류: {op.OperationException?.Message}");
                     OnLoadingCompleted?.Invoke();
                 }
             };
         }
         
+
+                // 타입 정보를 포함한 키 생성
+        private string GetTypeKey(string key, Type type)
+        {
+            return $"{key}.{GetTypeSuffix(type)}";
+        }
+
+        private string GetTypeSuffix(Type type)
+        {
+            if (type == typeof(GameObject)) return "prefab";
+            if (type == typeof(RuntimeAnimatorController)) return "controller";
+            if (type == typeof(AnimationClip)) return "anim";
+            if (type == typeof(Sprite)) return "sprite";
+            if (type == typeof(Texture)) return "texture";
+            if (type == typeof(Material)) return "material";
+            if (type == typeof(AudioClip)) return "audio";
+            return type.Name.ToLower();
+        }
+
+
         // 디버그용 메서드: 로드된 모든 에셋 출력
         public void Clear()
         {
+            Debug.Log($"[ResourceManager] Clear 시작: {_resources.Count}개 리소스, {_handles.Count}개 핸들");
+            
+            // ScriptableObject 초기화
+            ResetAllScriptableObjects();
+            
+            // 핸들 해제
+            int releasedCount = 0;
+            int errorCount = 0;
+            
+            foreach (var handleEntry in _handles)
+            {
+                try
+                {
+                    string key = handleEntry.Key;
+                    AsyncOperationHandle handle = handleEntry.Value;
+                    
+                    // 유효한 핸들인지 확인
+                    if (handle.IsValid())
+                    {
+                        Addressables.Release(handle);
+                        releasedCount++;
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"[ResourceManager] 유효하지 않은 핸들 무시: {key}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogWarning($"[ResourceManager] 핸들 해제 중 오류 발생: {ex.Message}");
+                    errorCount++;
+                }
+            }
+            
+            Debug.Log($"[ResourceManager] 핸들 해제 완료: 성공 {releasedCount}개, 오류 {errorCount}개");
+            
+            // 컬렉션 초기화
             _resources.Clear();
-
-            foreach (var handle in _handles)
-                Addressables.Release(handle);
-
             _handles.Clear();
+            
+            Debug.Log("[ResourceManager] Clear 완료");
+        }
+        
+        // ScriptableObject 초기화 메서드
+        private void ResetAllScriptableObjects()
+        {
+            // 로드된 모든 ScriptableObject 찾기
+            var scriptableObjects = _resources.Values
+                .OfType<ScriptableObject>()
+                .ToList();
+            
+            foreach (var so in scriptableObjects)
+            {
+                // IResettable 인터페이스를 구현한 경우 Reset 호출
+                if (so is IResettable resettable)
+                {
+                    resettable.Reset();
+                    Debug.Log($"[ResourceManager] Reset {so.name} ({so.GetType().Name})");
+                }
+            }
         }
 
         // 간단한 디버그용 메서드: 리소스 딕셔너리의 키와 값만 출력

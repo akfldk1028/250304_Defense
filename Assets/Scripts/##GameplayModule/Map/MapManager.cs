@@ -6,13 +6,17 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 // using static Define;
-
-
+using Unity.Netcode;
+using VContainer;
+using Unity.Assets.Scripts.Objects;
+/// <summary>
+/// 맵 관련 기능을 관리하는 클래스입니다.
+/// </summary>
 public class MapManager
 {
-	public GameObject Map { get; private set; }
-	public string MapName { get; private set; }
-	public Grid CellGrid { get; private set; }
+	public GameObject Map { get; set; }
+	public string MapName { get; set; }
+	public Grid CellGrid { get; set; }
 
 	// (CellPos, BaseObject)
 	Dictionary<Vector3Int, BaseObject> _cells = new Dictionary<Vector3Int, BaseObject>();
@@ -22,11 +26,24 @@ public class MapManager
 	private int MinY;
 	private int MaxY;
 
+	// ObjectManagerFacade 참조
+
+	/// <summary>
+	/// 월드 좌표를 셀 좌표로 변환합니다.
+	/// </summary>
 	public Vector3Int World2Cell(Vector3 worldPos) { return CellGrid.WorldToCell(worldPos); }
+	
+	/// <summary>
+	/// 셀 좌표를 월드 좌표로 변환합니다.
+	/// </summary>
 	public Vector3 Cell2World(Vector3Int cellPos) { return CellGrid.CellToWorld(cellPos); }
 
-	// ECellCollisionType[,] _collision;
-
+	/// <summary>
+	/// 맵 인스턴스의 그리드 시스템을 초기화합니다.
+	/// </summary>
+	/// <summary>
+	/// 맵을 로드합니다.
+	/// </summary>
 	public void LoadMap(string mapName)
 	{
 		DestroyMap();
@@ -43,7 +60,31 @@ public class MapManager
 
 		// SpawnObjectsByData(map, mapName);
 	}
+	
+	/// <summary>
+	/// MapFacade에서 호출할 초기화 메서드
+	/// </summary>
+	public void InitializeMap(GameObject mapInstance, string mapName)
+	{
+		// 기존 맵 정리
+		DestroyMap();
+		
+		// 맵 정보 설정 (이미 MapFacade에서 설정했지만 여기서도 확인)
+		Map = mapInstance;
+		MapName = mapName;
+		
+		// 충돌 데이터 파싱
+		// ParseCollisionData(mapInstance, mapName);
+		
+		// 오브젝트 스폰
+		// SpawnObjectsByData(mapInstance, mapName);
+		
+		Debug.Log($"[MapManager] 맵 '{mapName}' 초기화 완료");
+	}
 
+	/// <summary>
+	/// 맵을 제거합니다.
+	/// </summary>
 	public void DestroyMap()
 	{
 		ClearObjects();
@@ -52,6 +93,9 @@ public class MapManager
 			// Managers.Resource.Destroy(Map);
 	}
 
+	/// <summary>
+	/// 충돌 데이터를 파싱합니다.
+	/// </summary>
 	void ParseCollisionData(GameObject map, string mapName, string tilemap = "Tilemap_Collision")
 	{
 		GameObject collision = Util.FindChild(map, tilemap, true);
@@ -62,7 +106,7 @@ public class MapManager
 		// TextAsset txt = Managers.Resource.Load<TextAsset>($"{mapName}Collision");
 		// StringReader reader = new StringReader(txt.text);
 
-		// MinX = int.Parse(reader.ReadLine());
+		// MinX = int.Parse(reader.ReadLine());  
 		// MaxX = int.Parse(reader.ReadLine());
 		// MinY = int.Parse(reader.ReadLine());
 		// MaxY = int.Parse(reader.ReadLine());
@@ -92,6 +136,9 @@ public class MapManager
 		// }
 	}
 
+	/// <summary>
+	/// 맵 데이터에 따라 오브젝트를 스폰합니다.
+	/// </summary>
 	void SpawnObjectsByData(GameObject map, string mapName, string tilemap = "Tilemap_Object")
 	{
 		Tilemap tm = Util.FindChild<Tilemap>(map, tilemap, true);
@@ -155,6 +202,9 @@ public class MapManager
 	// }
 
 	#region Helpers
+	/// <summary>
+	/// 지정된 위치 주변의 오브젝트를 수집합니다.
+	/// </summary>
 	public List<T> GatherObjects<T>(Vector3 pos, float rangeX, float rangeY) where T : BaseObject
 	{
 		HashSet<T> objects = new HashSet<T>();
@@ -186,6 +236,9 @@ public class MapManager
 		return objects.ToList();
 	}
 
+	/// <summary>
+	/// 셀 위치에 있는 오브젝트를 반환합니다.
+	/// </summary>
 	public BaseObject GetObject(Vector3Int cellPos)
 	{
 		// 없으면 null
@@ -193,12 +246,18 @@ public class MapManager
 		return value;
 	}
 
+	/// <summary>
+	/// 월드 위치에 있는 오브젝트를 반환합니다.
+	/// </summary>
 	public BaseObject GetObject(Vector3 worldPos)
 	{
 		Vector3Int cellPos = World2Cell(worldPos);
 		return GetObject(cellPos);
 	}
 
+	/// <summary>
+	/// 오브젝트를 셀에서 제거합니다.
+	/// </summary>
 	void RemoveObject(BaseObject obj)
 	{
 		// 기존의 좌표 제거
@@ -221,6 +280,9 @@ public class MapManager
 		}
 	}
 
+	/// <summary>
+	/// 오브젝트를 셀에 추가합니다.
+	/// </summary>
 	void AddObject(BaseObject obj, Vector3Int cellPos)
 	{
 		int extraCells = 0;
@@ -242,11 +304,17 @@ public class MapManager
 		}
 	}
 
+	/// <summary>
+	/// 오브젝트가 지정된 월드 위치로 이동할 수 있는지 확인합니다.
+	/// </summary>
 	public bool CanGo(BaseObject self, Vector3 worldPos, bool ignoreObjects = false, bool ignoreSemiWall = false)
 	{
 		return CanGo(self, World2Cell(worldPos), ignoreObjects, ignoreSemiWall);
 	}
 
+	/// <summary>
+	/// 오브젝트가 지정된 셀 위치로 이동할 수 있는지 확인합니다.
+	/// </summary>
 	public bool CanGo(BaseObject self, Vector3Int cellPos, bool ignoreObjects = false, bool ignoreSemiWall = false)
 	{
 		int extraCells = 0;
@@ -267,6 +335,9 @@ public class MapManager
 		return true;
 	}
 
+	/// <summary>
+	/// 내부적으로 이동 가능 여부를 확인합니다.
+	/// </summary>
 	bool CanGo_Internal(BaseObject self, Vector3Int cellPos, bool ignoreObjects = false, bool ignoreSemiWall = false)
 	{
 		if (cellPos.x < MinX || cellPos.x > MaxX)
@@ -293,6 +364,9 @@ public class MapManager
 		return false;
 	}
 
+	/// <summary>
+	/// 모든 오브젝트를 제거합니다.
+	/// </summary>
 	public void ClearObjects()
 	{
 		_cells.Clear();
@@ -327,6 +401,9 @@ public class MapManager
 		new Vector3Int(-1, 1, 0), // LU
 	};
 
+	/// <summary>
+	/// A* 알고리즘을 사용하여 경로를 찾습니다.
+	/// </summary>
 	public List<Vector3Int> FindPath(BaseObject self, Vector3Int startCellPos, Vector3Int destCellPos, int maxDepth = 10)
 	{
 		// 지금까지 제일 좋은 후보 기록.
@@ -406,6 +483,9 @@ public class MapManager
 		return CalcCellPathFromParent(parent, dest);
 	}
 
+	/// <summary>
+	/// 부모 정보를 기반으로 경로를 계산합니다.
+	/// </summary>
 	List<Vector3Int> CalcCellPathFromParent(Dictionary<Vector3Int, Vector3Int> parent, Vector3Int dest)
 	{
 		List<Vector3Int> cells = new List<Vector3Int>();

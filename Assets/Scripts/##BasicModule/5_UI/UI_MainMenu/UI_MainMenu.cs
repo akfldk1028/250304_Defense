@@ -37,16 +37,15 @@ namespace Unity.Assets.Scripts.UI
             Matching,
             Main
         }
-        
 
         #endregion
 
 
 
-        #region Injected Dependencies
+        #region Injected Dependencies and Action
         
-        [Inject] private MainMenuScene _MainMenuScene;
-        [Inject] private SceneManagerEx _sceneManager;
+        // [Inject] private MainMenuScene _MainMenuScene;
+        public static event Action OnRandomMatchRequested;
 
         #endregion
 
@@ -54,16 +53,14 @@ namespace Unity.Assets.Scripts.UI
 
         #region Properties
         
-        // 바인딩 대신 직접 gameObject 사용
-        private Lobby currentLobby;
 
-
-        private GameObject MatchingObject => transform.Find("Matching")?.gameObject;
-        private GameObject MainObject => transform.Find("Main")?.gameObject;
+        private GameObject MatchingObject => GetObject((int)GameObjects.Matching);
+        private GameObject MainObject => GetObject((int)GameObjects.Main);
         #endregion
 
         #region Events
         
+        // UI 이벤트 정의 - 다른 클래스에서 구독할 수 있는 정적 이벤트
         
         #endregion
 
@@ -71,26 +68,15 @@ namespace Unity.Assets.Scripts.UI
         
         private void Start()
         {
-            Debug.Log("[UI_MainMenu] Start 메서드 호출됨");
-            
-            // MainMenuScene이 주입되지 않은 경우 직접 찾기
-            if (_MainMenuScene == null)
-            {
-                _MainMenuScene = FindObjectOfType<MainMenuScene>();
-                Debug.Log(_MainMenuScene != null 
-                    ? "[UI_MainMenu] MainMenuScene을 직접 찾았습니다." 
-                    : "[UI_MainMenu] MainMenuScene을 찾을 수 없습니다!");
-            }
-            
-            // UI 객체들 초기화 - 메서드로 추출
-            InitUIObject("Matching", MatchingObject);
-            InitUIObject("Main", MainObject);
         }
         
-        private void OnDestroy()
+        protected override void OnDestroy()
         {
             Debug.Log("[UI_MainMenu] OnDestroy 메서드 호출됨");
             UnsubscribeEvents();
+            
+            // 부모 클래스의 OnDestroy 호출
+            base.OnDestroy();
         }
         
         #endregion
@@ -99,6 +85,8 @@ namespace Unity.Assets.Scripts.UI
         
         public override bool Init()
         {
+            BindUI();
+
             if (base.Init() == false)
                 return false;
 
@@ -106,8 +94,6 @@ namespace Unity.Assets.Scripts.UI
             
             try
             {
-                BindUI();
-                SubscribeEvents();
                 
                 // 바인딩 상태 확인
                 bool matchingBound = MatchingObject != null;
@@ -115,7 +101,7 @@ namespace Unity.Assets.Scripts.UI
 
                 if (matchingBound && mainBound)
                 {
-                    Debug.Log($"<color=green>[UI_MainMenu] Init 완료: 모든 객체 바인딩 성공 (Matching: {MatchingObject.transform.childCount}개, Main: {MainObject.transform.childCount}개)</color>");
+                    Debug.Log($"<color=green>[UI_MainMenu] Init 완료: 객체 바인딩 성공 (Matching: {MatchingObject.transform.childCount}개, Main: {MainObject.transform.childCount}개)</color>");
                 }
                 else
                 {
@@ -125,7 +111,6 @@ namespace Unity.Assets.Scripts.UI
                     errorMsg += "</color>";
                     Debug.LogError(errorMsg);
                 }
-                
                 return true;
             }
             catch (System.Exception e)
@@ -137,53 +122,78 @@ namespace Unity.Assets.Scripts.UI
         
         private void BindUI()
         {
-            // Text와 Image만 바인딩
+            // UI 요소 바인딩
             BindTexts(typeof(Texts));
             BindImages(typeof(Images));
             BindObjects(typeof(GameObjects));
-            // GameObject는 바인딩하지 않고 직접 gameObject 사용
-            Debug.Log($"<color=green>[UI_MainMenu] Matching 객체: \"{gameObject.name}\"</color>");
-            
+
+
             // 계층 구조 출력
-            UIDebugLogger.LogHierarchy(gameObject, "[UI_MainMenu]");
+            DebugComponents.LogHierarchy(gameObject, "[UI_MainMenu]");
         }
         
-        private void SubscribeEvents()
+        /// <summary>
+        /// 모든 UI 이벤트를 구독합니다.
+        /// </summary>
+        protected override void SubscribeEvents()
         {
-
-            
-            if (_sceneManager == null)
+            // null 체크 추가
+            if (uiManager == null)
             {
-                // LogError("[UI_MainMenu] SceneManagerEx가 주입되지 않았습니다!");
+                Debug.LogWarning($"<color=yellow>[{GetType().Name}] uiManager가 null입니다. DI가 제대로 설정되지 않았을 수 있습니다.</color>");
+                return;
             }
-        }
-        
-        private void UnsubscribeEvents()
-        {
-            // 이벤트 구독 해제
-        }
-        public void LogChildren()
-        {
-            UIDebugLogger.LogHierarchy(MatchingObject, "[UI_MainMenu]");
-        }
-        
-        #endregion
-
-        // 메서드 추가
-        private void InitUIObject(string name, GameObject obj)
-        {
-            if (obj != null)
+            
+            // 부모 클래스의 SubscribeEvents 호출 - UIManager 이벤트 구독
+            base.SubscribeEvents();
+            
+            // 이미 바인딩된 MainObject 사용
+            if (MainObject != null)
             {
-                Debug.Log($"[UI_MainMenu] {name} 객체가 성공적으로 바인딩되었습니다.");
+                // MainObject 안에서 RandomMatch 객체 찾기
+                GameObject randomMatchButton = Util.FindChildDeep(MainObject, "RandomMatch");
+                
+                if (randomMatchButton != null)
+                {
+                    // RandomMatch 객체에 클릭 이벤트 바인딩
+                    randomMatchButton.BindEvent((evt) =>
+                    {
+                        // 이벤트 발생
+                        OnRandomMatchRequested?.Invoke();
+                        Debug.Log($"<color=green>[{GetType().Name}] 랜덤 매치 요청</color>");
+                    }, Define.EUIEvent.Click);
+                    
+                    Debug.Log($"<color=green>[{GetType().Name}] RandomMatch 버튼에 이벤트 등록 완료</color>");
+                }
+                else
+                {
+                    Debug.LogError($"<color=red>[{GetType().Name}] MainObject 안에서 RandomMatch 객체를 찾을 수 없습니다!</color>");
+                }
             }
             else
             {
-                Debug.LogError($"[UI_MainMenu] {name} 객체를 찾을 수 없습니다!");
+                Debug.LogError($"<color=red>[{GetType().Name}] MainObject가 바인딩되지 않았습니다!</color>");
             }
         }
+        
+        /// <summary>
+        /// 모든 UI 이벤트 구독을 해제합니다.
+        /// </summary>
+            protected override void UnsubscribeEvents()
+        {
+            base.UnsubscribeEvents(); // 부모 클래스의 구현 호출
+            
+            // 이벤트 구독 해제는 필요 없음 (정적 이벤트이므로)
+            // 단, 다른 인스턴스 이벤트가 있다면 여기서 구독 해제
+        }
 
+        
+        #endregion
 
-
+        #region Event Handlers
+        
+        
+        #endregion
 
         #region Editor Methods
         
@@ -191,12 +201,12 @@ namespace Unity.Assets.Scripts.UI
         [ContextMenu("로그: Matching 하위 객체 출력")]
         private void LogMatchingChildrenMenu()
         {
-            LogChildren();
+            DebugComponents.LogHierarchy(MatchingObject, "[UI_MainMenu]");
         }
         
         // Inspector에서 버튼으로 표시되는 메서드
         [CustomEditor(typeof(UI_MainMenu))]
-        public class UI_MainMenuEditor : UIDebugLogger.UIDebugEditorBase
+        public class UI_MainMenuEditor : DebugComponents.UIDebugEditorBase
         {
             public override void OnInspectorGUI()
             {

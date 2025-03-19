@@ -17,11 +17,15 @@ namespace Unity.Assets.Scripts.Module.ApplicationLifecycle.Installers
         Lobby,
         UI,
         Authentication,
+        Resource,  // Resource를 GameData보다 먼저 배치
         GameData,
-        Resource,
         Scene,
         Pool,
         Map,
+        Debug,
+        Object,
+
+        Game
         // 추가 모듈은 여기에 정의
         // 예: Analytics,
         // 예: Monetization,

@@ -6,6 +6,7 @@ using UnityEngine.UI;
 using VContainer;
 using Unity.Assets.Scripts.Resource;
 using Unity.Assets.Scripts.Scene;
+using Unity.Assets.Scripts.Auth;
 using Object = UnityEngine.Object;
 
 namespace Unity.Assets.Scripts.UI
@@ -42,6 +43,7 @@ namespace Unity.Assets.Scripts.UI
             Initialize,      // 초기화
             ResourceLoad,    // 리소스 로드
             ConnectionLoad,  // 네트워크 연결 로드
+            AuthLoad,        // 인증 로드
             Complete         // 완료
         }
         
@@ -56,7 +58,9 @@ namespace Unity.Assets.Scripts.UI
         private const float INIT_PROGRESS_START = 0.0f;
         private const float INIT_PROGRESS_END = 0.3f;
         private const float RESOURCE_PROGRESS_START = 0.3f;
-        private const float RESOURCE_PROGRESS_END = 0.9f;
+        private const float RESOURCE_PROGRESS_END = 0.7f;
+        private const float AUTH_PROGRESS_START = 0.7f;
+        private const float AUTH_PROGRESS_END = 0.9f;
         private const float COMPLETE_PROGRESS_START = 0.9f;
         private const float COMPLETE_PROGRESS_END = 1.0f;
         
@@ -65,7 +69,7 @@ namespace Unity.Assets.Scripts.UI
         #region Injected Dependencies
         
         [Inject] private StartUpScene _startUpScene;
-        [Inject] private SceneManagerEx _sceneManager;
+        [Inject] private AuthManager _authManager;
 
         #endregion
 
@@ -74,6 +78,7 @@ namespace Unity.Assets.Scripts.UI
         private bool _isResourceLoaded = false;
         private bool _isProgressBarInitialized = false;
         private bool _isLoading = false;
+        private bool _isAuthenticated = false;
         
         private float _progress = 0f;
         private string _status = "";
@@ -172,11 +177,6 @@ namespace Unity.Assets.Scripts.UI
             // 프로그레스 이벤트 구독
             OnProgressChanged += UpdateProgressUI;
             OnProgressComplete += OnLoadingComplete;
-            
-            if (_sceneManager == null)
-            {
-                LogError("[UI_StartUpScene] SceneManagerEx가 주입되지 않았습니다!");
-            }
         }
         
         private void UnsubscribeEvents()
@@ -186,11 +186,11 @@ namespace Unity.Assets.Scripts.UI
             OnProgressComplete -= OnLoadingComplete;
             
             // StartUpScene 이벤트 구독 해제
-            StartUpScene startUpScene = _sceneManager?.CurrentScene as StartUpScene;
-            if (startUpScene != null)
-            {
-                startUpScene.OnResourceLoadComplete -= OnResourceLoadingComplete;
-            }
+            // StartUpScene startUpScene = _sceneManager?.CurrentScene as StartUpScene;
+            // if (startUpScene != null)
+            // {
+            //     startUpScene.OnResourceLoadComplete -= OnResourceLoadingComplete;
+            // }
         }
         
         #endregion

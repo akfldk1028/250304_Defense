@@ -6,6 +6,7 @@ using UnityEngine;
 using VContainer;
 using VContainer.Unity;
 using Unity.Assets.Scripts.Module.ApplicationLifecycle.Installers;
+using Unity.Assets.Scripts.Resource;
 //using Unity.Assets.Scripts.UnityServices.Lobbies;
 //using Unity.Assets.Scripts.Infrastructure;
 // using Unity.Assets.Scripts.Gameplay.GameplayObjects.RuntimeDataContainers;
@@ -68,19 +69,30 @@ namespace Unity.Assets.Scripts.Module.ApplicationLifecycle
         /// </summary>
         private void InitializeInstallerFactories()
         {
+            m_InstallerFactories[ModuleType.Debug] = () => 
+            {
+                return new DebugInstaller();
+            };
+            m_InstallerFactories[ModuleType.Scene] = () => 
+            {
+                return new SceneInstaller();
+            };
+                        // GameData 모듈 인스톨러 팩토리
+            m_InstallerFactories[ModuleType.Resource] = () => 
+            {
+                return new ResourceInstaller();
+            };
             // Network 모듈 인스톨러 팩토리
             m_InstallerFactories[ModuleType.Network] = () => 
             {
-                //return new NetworkInstaller(m_NetworkManager, m_ConnectionManager, m_UpdateRunner);
-                UnityEngine.Debug.Log("[ModularApplicationController] Network 인스톨러 생성 (주석 처리됨)");
-                return null;
+                return new NetworkInstaller(m_NetworkManager, m_ConnectionManager, m_UpdateRunner);
+                // return null;
             };
             
             // Message 모듈 인스톨러 팩토리
             m_InstallerFactories[ModuleType.Message] = () => 
             {
                 //return new MessageInstaller();
-                UnityEngine.Debug.Log("[ModularApplicationController] Message 인스톨러 생성 (주석 처리됨)");
                 return null;
             };
             
@@ -88,53 +100,44 @@ namespace Unity.Assets.Scripts.Module.ApplicationLifecycle
             m_InstallerFactories[ModuleType.Lobby] = () => 
             {
                 return new LobbyInstaller();
-                UnityEngine.Debug.Log("[ModularApplicationController] Lobby 인스톨러 생성 (주석 처리됨)");
-                return null;
             };
-            
+            m_InstallerFactories[ModuleType.GameData] = () => 
+            {
+                return new DataInstaller();
+            };
             // UI 모듈 인스톨러 팩토리
             m_InstallerFactories[ModuleType.UI] = () => 
             {
                 return new UIInstaller();
-                UnityEngine.Debug.Log("[ModularApplicationController] UI 인스톨러 생성 (주석 처리됨)");
-                return null;
             };
             
             // Authentication 모듈 인스톨러 팩토리
             m_InstallerFactories[ModuleType.Authentication] = () => 
             {
-                //return new AuthenticationInstaller();
-                UnityEngine.Debug.Log("[ModularApplicationController] Authentication 인스톨러 생성 (주석 처리됨)");
-                return null;
+                return new AuthenticationInstaller();
             };
             
-            // GameData 모듈 인스톨러 팩토리
-            m_InstallerFactories[ModuleType.Resource] = () => 
-            {
-                return new ResourceInstaller();
-                UnityEngine.Debug.Log("[ModularApplicationController] GameData 인스톨러 생성 (주석 처리됨)");
-                return null;
-            };
 
-            m_InstallerFactories[ModuleType.GameData] = () => 
-            {
-                return new DataInstaller();
-                UnityEngine.Debug.Log("[ModularApplicationController] GameData 인스톨러 생성 (주석 처리됨)");
-                return null;
-            };
 
-            m_InstallerFactories[ModuleType.Scene] = () => 
+    
+
+            m_InstallerFactories[ModuleType.Object] = () => 
             {
-                return new SceneInstaller();
-                UnityEngine.Debug.Log("[ModularApplicationController] Scene 인스톨러 생성 (주석 처리됨)");
-                return null;
+                return new ObjectInstaller();
             };
 
             m_InstallerFactories[ModuleType.Pool] = () => 
             {
                 return new PoolInstaller();
-                UnityEngine.Debug.Log("[ModularApplicationController] Pool 인스톨러 생성 (주석 처리됨)");
-                return null;
+            };
+            m_InstallerFactories[ModuleType.Map] = () => 
+            {
+                return new MapInstaller();
+            };
+
+            m_InstallerFactories[ModuleType.Game] = () => 
+            {
+                return new GameInstaller();
             };
         }
 
@@ -149,8 +152,6 @@ namespace Unity.Assets.Scripts.Module.ApplicationLifecycle
             {
                 return factory();
             }
-            
-            UnityEngine.Debug.LogWarning($"[ModularApplicationController] 알 수 없는 모듈 타입: {moduleType}");
             return null;
         }
 
@@ -175,11 +176,10 @@ namespace Unity.Assets.Scripts.Module.ApplicationLifecycle
                         // 인스톨러의 ModuleType 속성 확인 (디버깅용)
                         if (installer.ModuleType != moduleType)
                         {
-                            UnityEngine.Debug.LogWarning($"[ModularApplicationController] 인스톨러의 ModuleType({installer.ModuleType})이 요청한 ModuleType({moduleType})과 다릅니다.");
+                            // UnityEngine.Debug.LogWarning($"[ModularApplicationController] 인스톨러의 ModuleType({installer.ModuleType})이 요청한 ModuleType({moduleType})과 다릅니다.");
                         }
                         
                         m_Installers.Add(installer);
-                        UnityEngine.Debug.Log($"[ModularApplicationController] '{moduleType}' 모듈 인스톨러 추가됨");
                     }
                 }
                 else
@@ -259,6 +259,22 @@ namespace Unity.Assets.Scripts.Module.ApplicationLifecycle
         private bool OnWantToQuit()
         {
             UnityEngine.Debug.Log("[ModularApplicationController] 애플리케이션 종료 시도");
+            
+            // 리소스 정리
+            try
+            {
+                var resourceManager = Container.Resolve<ResourceManager>();
+                if (resourceManager != null)
+                {
+                    UnityEngine.Debug.Log("[ModularApplicationController] ResourceManager.Clear() 호출 - 모든 리소스 초기화");
+                    resourceManager.Clear();
+                }
+            }
+            catch (Exception ex)
+            {
+                UnityEngine.Debug.LogError($"[ModularApplicationController] 리소스 정리 중 오류 발생: {ex.Message}");
+            }
+            
             Application.wantsToQuit -= OnWantToQuit;
             return true;
         }

@@ -15,11 +15,11 @@ MonoBehaviour:
   m_Guid: 0c0d5f2196237147930173811cf7310f
   guidString: 215f0d0c-2396-4771-9301-73811cf7310f
   dataId: 202001
-  animatorControllerPath: green_slime
-  spritePath: green_slime/Green_attack_1-sheet.png.png.sprite
+  animatorControllerPath: green_slime.animatorcontroller
+  spritePath: green_slime.sprite
   prefabPath: green_slime.prefab
   creaturePrefab: {fileID: 8751546606364355619, guid: b6e03a8d4f12db54fb0e52cc2eb60c59, type: 3}
-  creatureSprite: {fileID: 0}
+  creatureSprite: {fileID: 21300000, guid: 2513efc07254db24dba97bc6cd2cbe4d, type: 2}
   animatorController: {fileID: 9100000, guid: 447668c6a441e354384d984bfc81eda9, type: 2}
   creatureSounds: []
   spawnEffectPrefab: {fileID: 0}

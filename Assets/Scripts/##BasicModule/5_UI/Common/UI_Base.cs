@@ -10,10 +10,6 @@ public class UI_Base : InitBase
 {
 	protected Dictionary<Type, UnityEngine.Object[]> _objects = new Dictionary<Type, UnityEngine.Object[]>();
 
-	private void Awake()
-	{
-		Init();
-	}
 
 	protected void Bind<T>(Type type) where T : UnityEngine.Object
 	{
@@ -57,28 +53,32 @@ public class UI_Base : InitBase
 	protected Toggle GetToggle(int idx) { return Get<Toggle>(idx); }
 	protected Slider GetSlider(int idx) { return Get<Slider>(idx); }
 
-	// public static void BindEvent(GameObject go, Action<PointerEventData> action = null, Define.EUIEvent type = Define.EUIEvent.Click)
-	// {
-	// 	UI_EventHandler evt = Util.GetOrAddComponent<UI_EventHandler>(go);
 
-	// 	switch (type)
-	// 	{
-	// 		case Define.EUIEvent.Click:
-	// 			evt.OnClickHandler -= action;
-	// 			evt.OnClickHandler += action;
-	// 			break;
-	// 		case Define.EUIEvent.PointerDown:
-	// 			evt.OnPointerDownHandler -= action;
-	// 			evt.OnPointerDownHandler += action;
-	// 			break;
-	// 		case Define.EUIEvent.PointerUp:
-	// 			evt.OnPointerUpHandler -= action;
-	// 			evt.OnPointerUpHandler += action;
-	// 			break;
-	// 		case Define.EUIEvent.Drag:
-	// 			evt.OnDragHandler -= action;
-	// 			evt.OnDragHandler += action;
-	// 			break;
-	// 	}
-	// }
+
+
+
+	public static void BindEvent(GameObject go, Action<PointerEventData> action = null, Define.EUIEvent type = Define.EUIEvent.Click)
+	{
+		UI_EventHandler evt = Util.GetOrAddComponent<UI_EventHandler>(go);
+
+		switch (type)
+		{
+			case Define.EUIEvent.Click:
+				evt.OnClickHandler -= action;
+				evt.OnClickHandler += action;
+				break;
+			case Define.EUIEvent.PointerDown:
+				evt.OnPointerDownHandler -= action;
+				evt.OnPointerDownHandler += action;
+				break;
+			case Define.EUIEvent.PointerUp:
+				evt.OnPointerUpHandler -= action;
+				evt.OnPointerUpHandler += action;
+				break;
+			case Define.EUIEvent.Drag:
+				evt.OnDragHandler -= action;
+				evt.OnDragHandler += action;
+				break;
+		}
+	}
 }

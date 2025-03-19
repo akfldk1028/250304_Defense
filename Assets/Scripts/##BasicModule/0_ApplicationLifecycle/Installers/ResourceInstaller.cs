@@ -17,7 +17,7 @@ namespace Unity.Assets.Scripts.Module.ApplicationLifecycle.Installers
     /// </summary>
     public class ResourceInstaller : IModuleInstaller
     {
-
+        [Inject] private DebugClassFacade _debugClassFacade;
         /// <summary>
         /// 이 인스톨러가 담당하는 모듈 타입
         /// </summary>
@@ -29,7 +29,7 @@ namespace Unity.Assets.Scripts.Module.ApplicationLifecycle.Installers
         /// <param name="builder">컨테이너 빌더</param>
         public void Install(IContainerBuilder builder)
         {
-            UnityEngine.Debug.Log("[ResourceInstaller] 리소스 모듈 설치 시작");
+            _debugClassFacade?.LogInfo(GetType().Name, "리소스 모듈 설치 시작");
 
             // 자기 자신을 컨테이너에 등록 (중요!)
             builder.RegisterInstance(this).AsSelf();
@@ -37,7 +37,7 @@ namespace Unity.Assets.Scripts.Module.ApplicationLifecycle.Installers
             // 기타 리소스 관련 서비스 등록
             // builder.Register<ResourceService>(Lifetime.Singleton);
 
-            UnityEngine.Debug.Log("[ResourceInstaller] 리소스 모듈 설치 완료");
+            _debugClassFacade?.LogInfo(GetType().Name, "리소스 모듈 설치 완료");
         }
     }
 } 

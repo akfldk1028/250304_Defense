@@ -3,14 +3,27 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
+using VContainer;
+using Unity.Assets.Scripts.Resource;
 
 public static class Extension
 {
 
-	// public static void BindEvent(this GameObject go, Action<PointerEventData> action = null, Define.EUIEvent type = Define.EUIEvent.Click)
-	// {
-	// 	UI_Base.BindEvent(go, action, type);
-	// }
+    private static string LoadPrefab(string mapName)
+    {
+        Debug.Log($"[MapSpawnerFacade] 맵 로드 시도: '{mapName}'");
+        
+        // 맵 프리팹 로드 (확장자 처리)
+        string resourceKey = mapName.EndsWith(".prefab") ? mapName.Replace(".prefab", "") : mapName;
+        return resourceKey;
+    }
+
+
+	public static void BindEvent(this GameObject go, Action<PointerEventData> action = null, Define.EUIEvent type = Define.EUIEvent.Click)
+	{
+		UI_Base.BindEvent(go, action, type);
+	}
 
 	// public static bool IsValid(this GameObject go)
 	// {

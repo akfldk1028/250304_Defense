@@ -10,30 +10,33 @@ namespace Unity.Assets.Scripts.Module.ApplicationLifecycle.Installers
 {
     public class NetworkInstaller : IModuleInstaller
     {
+        [Inject] private DebugClassFacade _debugClassFacade;
+
         public ModuleType ModuleType => ModuleType.Network;
 
-        // private readonly NetworkManager m_NetworkManager;
-        // private readonly ConnectionManager m_ConnectionManager;
-        // private readonly UpdateRunner m_UpdateRunner;
+        private readonly NetworkManager m_NetworkManager;
+        private readonly ConnectionManager m_ConnectionManager;
+        private readonly UpdateRunner m_UpdateRunner;
 
         public NetworkInstaller(NetworkManager networkManager, 
                               ConnectionManager connectionManager,
                               UpdateRunner updateRunner)
         {
-            // m_NetworkManager = networkManager;
-            // m_ConnectionManager = connectionManager;
-            // m_UpdateRunner = updateRunner;
+            m_NetworkManager = networkManager;
+            m_ConnectionManager = connectionManager;
+            m_UpdateRunner = updateRunner;
         }
 
         public void Install(IContainerBuilder builder)
         {
-            UnityEngine.Debug.Log("[NetworkInstaller] 네트워크 모듈 설치 시작");
+            _debugClassFacade?.LogInfo(GetType().Name, "네트워크 모듈 설치 시작");
             
             // builder.RegisterComponent(m_UpdateRunner);
             // builder.RegisterComponent(m_ConnectionManager);
-            // builder.RegisterComponent(m_NetworkManager);
-            
-            UnityEngine.Debug.Log("[NetworkInstaller] 네트워크 모듈 설치 완료");
+            builder.RegisterComponent(m_NetworkManager);
+
+            builder.Register<NetUtils>(Lifetime.Singleton);
+            _debugClassFacade?.LogInfo(GetType().Name, "네트워크 모듈 설치 완료");
         }
     }
 } 

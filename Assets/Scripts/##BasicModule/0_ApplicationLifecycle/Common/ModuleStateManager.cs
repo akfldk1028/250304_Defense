@@ -88,7 +88,7 @@ namespace Unity.Assets.Scripts.Module.ApplicationLifecycle
             }
             
             // 초기 상태 로그 출력 (디버깅용)
-            LogCurrentState();
+            // LogCurrentState();
         }
 
 
@@ -201,10 +201,9 @@ namespace Unity.Assets.Scripts.Module.ApplicationLifecycle
                 SetModuleState(moduleType, ModuleState.Enabled);
             }
             
-            Debug.Log($"[ModuleStateManager] 지정된 모듈만 활성화되었습니다: {string.Join(", ", enabledModules)}");
-            
+            // Debug.Log($"[ModuleStateManager] 지정된 모듈만 활성화되었습니다: {string.Join(", ", enabledModules)}");
             // 현재 상태 로그 출력 (디버깅용)
-            LogCurrentState();
+            // LogCurrentState();
         }
 
 

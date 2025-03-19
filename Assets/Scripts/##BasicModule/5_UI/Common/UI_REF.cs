@@ -143,7 +143,7 @@ namespace Unity.Assets.Scripts.UI
             Debug.Log($"<color=green>[UI_MainMenu] Matching 객체: \"{gameObject.name}\"</color>");
             
             // 계층 구조 출력
-            UIDebugLogger.LogHierarchy(gameObject, "[UI_MainMenu]");
+            DebugComponents.LogHierarchy(gameObject, "[UI_MainMenu]");
         }
         
         private void SubscribeEvents()
@@ -162,7 +162,7 @@ namespace Unity.Assets.Scripts.UI
         }
         public void LogChildren()
         {
-            UIDebugLogger.LogHierarchy(MatchingObject, "[UI_MainMenu]");
+            DebugComponents.LogHierarchy(MatchingObject, "[UI_MainMenu]");
         }
         
         #endregion
@@ -194,7 +194,7 @@ namespace Unity.Assets.Scripts.UI
         
         // Inspector에서 버튼으로 표시되는 메서드
         [CustomEditor(typeof(UI_MainMenu))]
-        public class UI_MainMenuEditor : UIDebugLogger.UIDebugEditorBase
+        public class UI_MainMenuEditor : DebugComponents.UIDebugEditorBase
         {
             public override void OnInspectorGUI()
             {
