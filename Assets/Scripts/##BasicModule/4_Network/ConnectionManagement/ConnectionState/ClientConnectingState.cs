@@ -1,87 +1,118 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 using Unity.Netcode;
+using VContainer;
 // using Unity.Assets.Scripts.ConnectionManagement;
-
 
 namespace Unity.Assets.Scripts.Network
 {
-class ClientConnectingState : OnlineState
-{
-    protected ConnectionMethodBase m_ConnectionMethod;
-
-    public ClientConnectingState Configure(ConnectionMethodBase baseConnectionMethod)
+    /// <summary>
+    /// 클라이언트 연결 상태 클래스
+    /// 
+    /// 클라이언트 연결 시도 상태를 관리하며, 서버 연결 및 승인을 처리합니다.
+    /// </summary>
+    public class ClientConnectingState : ConnectionState
     {
-        m_ConnectionMethod = baseConnectionMethod;
-        return this;
-    }
+        private bool m_IsConnecting = false;
+        private float m_ConnectionStartTime;
+        private const float k_ConnectionTimeout = 30f;
 
-    public override void Enter()
-    {
-#pragma warning disable 4014
-        ConnectClientAsync();
-#pragma warning restore 4014
-    }
+        // [Inject]
+        // protected ConnectionManager m_ConnectionManager;
 
-    public override void Exit()
-    {
-        Debug.Log("[ClientConnectingState] Exit 호출");
-    }
-
-    public override void OnClientConnected(ulong clientId)
-    {
-        // m_ConnectStatusPublisher.Publish(ConnectStatus.Success);
-         Debug.Log("[ClientConnectingState] 로컬 클라이언트 연결 성공 - Connected 상태로 전환");
-        m_ConnectionManager.ChangeState(m_ConnectionManager.m_ClientConnected);
-    }
-
-    public override void OnClientDisconnect(ulong clientId)
-    {
-        // client ID is for sure ours here
-        StartingClientFailed();
-    }
+        // [Inject]
+        // protected IPublisher<ConnectStatus> m_ConnectStatusPublisher;
 
 
-    void StartingClientFailed()
-    {
-        var disconnectReason = m_ConnectionManager.NetworkManager.DisconnectReason;
-        if (string.IsNullOrEmpty(disconnectReason))
+
+        // [Inject]
+        // protected NetworkManager m_NetworkManager;
+
+        // [Inject]
+        // protected IPublisher<ConnectionEventMessage> m_ConnectionEventPublisher;
+        //  [Inject] protected DebugClassFacade m_DebugClassFacade;
+
+        public override void Enter()
         {
-            // m_ConnectStatusPublisher.Publish(ConnectStatus.StartClientFailed);
+            m_DebugClassFacade?.LogInfo(GetType().Name, "[ClientConnectingState] 클라이언트 연결 시작");
+            m_IsConnecting = true;
+            m_ConnectionStartTime = Time.time;
+            PublishConnectStatus(ConnectStatus.Connecting);
+            ConnectClientAsync();
         }
-        else
+
+        public override void Exit()
         {
-            var connectStatus = JsonUtility.FromJson<ConnectStatus>(disconnectReason);
-            // m_ConnectStatusPublisher.Publish(connectStatus);
+            m_DebugClassFacade?.LogInfo(GetType().Name, "[ClientConnectingState] 클라이언트 연결 종료");
+            m_IsConnecting = false;
         }
-        m_ConnectionManager.ChangeState(m_ConnectionManager.m_Offline);
-    }
 
 
-    internal async Task ConnectClientAsync()
-    {
-        try
+        private async void ConnectClientAsync()
         {
-            // Setup NGO with current connection method
-            // await m_ConnectionMethod.SetupClientConnectionAsync();
-
-            // NGO's StartClient launches everything
-            if (!m_ConnectionManager.NetworkManager.StartClient())
+            try
             {
-                throw new Exception("NetworkManager StartClient failed");
+                if (!m_NetworkManager.StartClient())
+                {
+                    m_DebugClassFacade?.LogError(GetType().Name, "[ClientConnectingState] 클라이언트 연결 실패");
+                    OnConnectionFailed();
+                    return;
+                }
+
+                m_DebugClassFacade?.LogInfo(GetType().Name, "[ClientConnectingState] 클라이언트 연결 성공");
+            }
+            catch (Exception e)
+            {
+                m_DebugClassFacade?.LogError(GetType().Name, $"[ClientConnectingState] 클라이언트 연결 중 오류: {e.Message}");
+                OnConnectionFailed();
             }
         }
-        catch (Exception e)
+
+        public override void OnClientConnected(ulong clientId)
         {
-            Debug.LogError("Error connecting client, see following exception");
-            Debug.LogException(e);
-            StartingClientFailed();
-            throw;
+            if (!m_IsConnecting) return;
+
+            m_DebugClassFacade?.LogInfo(GetType().Name, $"[ClientConnectingState] 클라이언트 연결됨: {clientId}");
+            m_ConnectionEventPublisher?.Publish(new ConnectionEventMessage { ClientId = clientId, ConnectStatus = ConnectStatus.Connected });
+            m_ConnectionManager.ChangeState(m_ConnectionManager.m_ClientConnected);
+        }
+
+        public override void OnClientDisconnect(ulong clientId)
+        {
+            if (!m_IsConnecting) return;
+
+            m_DebugClassFacade?.LogInfo(GetType().Name, $"[ClientConnectingState] 클라이언트 연결 해제: {clientId}");
+            m_ConnectionEventPublisher?.Publish(new ConnectionEventMessage { ClientId = clientId, ConnectStatus = ConnectStatus.Disconnected });
+            OnConnectionFailed();
+        }
+
+        public override void OnTransportFailure(ulong clientId)
+        {
+            if (!m_IsConnecting) return;
+
+            m_DebugClassFacade?.LogError(GetType().Name, "[ClientConnectingState] 네트워크 오류");
+            m_ConnectionEventPublisher?.Publish(new ConnectionEventMessage { ClientId = clientId, ConnectStatus = ConnectStatus.Failed });
+            OnConnectionFailed();
+        }
+
+        private void OnConnectionFailed()
+        {
+            if (!m_IsConnecting) return;
+
+            m_IsConnecting = false;
+            m_NetworkManager.Shutdown();
+            m_ConnectionManager.ChangeState(m_ConnectionManager.m_Offline);
+        }
+
+        public void CancelConnection()
+        {
+            if (!m_IsConnecting) return;
+
+            m_DebugClassFacade?.LogInfo(GetType().Name, "[ClientConnectingState] 연결 취소");
+            m_IsConnecting = false;
+            m_NetworkManager.Shutdown();
+            m_ConnectionManager.ChangeState(m_ConnectionManager.m_Offline);
         }
     }
-}
 }

@@ -21,8 +21,6 @@ namespace Unity.Assets.Scripts.Module.ApplicationLifecycle.Installers
 
         public void Install(IContainerBuilder builder)
         {
-            // ResourceManager는 이미 ResourceInstaller에서 등록되었으므로 여기서는 등록하지 않습니다.
-            // builder.Register<Unity.Assets.Scripts.Resource.ResourceManager>(Lifetime.Singleton);
 
             builder.Register<DataLoader>(Lifetime.Singleton).AsSelf().AsImplementedInterfaces();
             
@@ -46,7 +44,6 @@ namespace Unity.Assets.Scripts.Module.ApplicationLifecycle.Installers
             builder.Register<CurrencyManager>(Lifetime.Singleton); 
             builder.Register<GameDataManager>(Lifetime.Singleton);
             
-            // 빌드 콜백은 필요 없음 - MonsterDataSOManager가 Awake에서 자동으로 JSON 데이터 적용
         }
     
 

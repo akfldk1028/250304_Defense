@@ -5,9 +5,13 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using VContainer;
 
 public class UI_Base : InitBase
-{
+{    
+	
+	[Inject] protected UIManager uiManager;
+
 	protected Dictionary<Type, UnityEngine.Object[]> _objects = new Dictionary<Type, UnityEngine.Object[]>();
 
 
@@ -54,9 +58,26 @@ public class UI_Base : InitBase
 	protected Slider GetSlider(int idx) { return Get<Slider>(idx); }
 
 
+    protected virtual void SubscribeEvents()
+    {
+        uiManager.SubscribeEvents();
 
+    }
+    
+    /// <summary>
+    /// 모든 UI 이벤트 구독을 해제합니다.
+    /// </summary>
+    protected virtual void UnsubscribeEvents()
+    {
+        uiManager.UnsubscribeEvents();
 
+    }
 
+    protected virtual void OnDestroy()
+    {
+        // 이벤트 구독 해제 호출
+        UnsubscribeEvents();
+    }
 	public static void BindEvent(GameObject go, Action<PointerEventData> action = null, Define.EUIEvent type = Define.EUIEvent.Click)
 	{
 		UI_EventHandler evt = Util.GetOrAddComponent<UI_EventHandler>(go);

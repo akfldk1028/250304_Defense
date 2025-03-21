@@ -14,7 +14,7 @@ namespace Unity.Assets.Scripts.UI
         /// </summary>
         private void UpdateDebugInfo(string info)
         {
-            DebugManager.Instance.UpdateDebugInfo(info);
+            // DebugManager.Instance.UpdateDebugInfo(info);
         }
         
         /// <summary>
@@ -22,7 +22,9 @@ namespace Unity.Assets.Scripts.UI
         /// </summary>
         private void LogDebug(string message)
         {
-            DebugManager.Instance.Log(message);
+            // _debugClassFacade?.LogInfo(GetType().Name, message);
+            
+            // DebugManager.Instance.Log(message);
         }
         
         /// <summary>
@@ -30,7 +32,7 @@ namespace Unity.Assets.Scripts.UI
         /// </summary>
         private void LogWarning(string message)
         {
-            DebugManager.Instance.Log(message, LogType.Warning);
+            // DebugManager.Instance.Log(message, LogType.Warning);
         }
         
         /// <summary>
@@ -38,7 +40,7 @@ namespace Unity.Assets.Scripts.UI
         /// </summary>
         private void LogError(string message)
         {
-            DebugManager.Instance.Log(message, LogType.Error);
+            // DebugManager.Instance.Log(message, LogType.Error);
         }
         
         #endregion

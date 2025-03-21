@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using Unity.Netcode;
 using UnityEngine;
 using VContainer;
+using Unity.Assets.Scripts.Auth;
+
 
 namespace Unity.Assets.Scripts.Network
 {
@@ -19,31 +21,49 @@ namespace Unity.Assets.Scripts.Network
     /// 각 상태 클래스는 이 클래스를 상속하여 특정 연결 상태에서의 동작을 구현합니다.
     /// 상태 전환은 ConnectionManager.ChangeState() 메서드를 통해 이루어집니다.
     /// </summary>
-    abstract class ConnectionState
+    public abstract class ConnectionState
     {
-        [Inject]
-        protected ConnectionManager m_ConnectionManager;
 
-        // [Inject]
-        // protected IPublisher<ConnectStatus> m_ConnectStatusPublisher;
+   protected DebugClassFacade m_DebugClassFacade;
+    protected ConnectionManager m_ConnectionManager;
+    protected NetworkManager m_NetworkManager;
+    protected IPublisher<ConnectStatus> m_ConnectStatusPublisher;
+    protected IPublisher<ConnectionEventMessage> m_ConnectionEventPublisher;
 
+    // 초기화 메서드 추가
+    [Inject]
+    public void Initialize(
+        DebugClassFacade debugClassFacade,
+        ConnectionManager connectionManager,
+        NetworkManager networkManager,
+        IPublisher<ConnectStatus> connectStatusPublisher,
+        IPublisher<ConnectionEventMessage> connectionEventPublisher)
+    {
+        m_DebugClassFacade = debugClassFacade;
+        m_ConnectionManager = connectionManager;
+        m_NetworkManager = networkManager;
+        m_ConnectStatusPublisher = connectStatusPublisher;
+        m_ConnectionEventPublisher = connectionEventPublisher;
+    }
         /// <summary>
         /// 상태 진입 시 호출되는 메서드
         /// 각 상태 클래스는 이 메서드를 구현하여 상태 진입 시 필요한 작업을 수행합니다.
         /// </summary>
-        public abstract void Enter();
+        public virtual void Enter() { }
 
         /// <summary>
         /// 상태 종료 시 호출되는 메서드
         /// 각 상태 클래스는 이 메서드를 구현하여 상태 종료 시 필요한 정리 작업을 수행합니다.
         /// </summary>
-        public abstract void Exit();
+        public virtual void Exit() { }
 
         /// <summary>
         /// 클라이언트 연결 시 호출되는 메서드
         /// </summary>
         public virtual void OnClientConnected(ulong clientId) { }
         
+        public virtual void OnHostDisconnected(ulong clientId) { }
+
         /// <summary>
         /// 클라이언트 연결 해제 시 호출되는 메서드
         /// </summary>
@@ -62,7 +82,7 @@ namespace Unity.Assets.Scripts.Network
         /// <summary>
         /// 로비를 통한 클라이언트 연결 시작 메서드
         /// </summary>
-        public virtual void StartClientLobby(string playerName) { }
+        public virtual void StartClientLobby() { }
 
         /// <summary>
         /// IP 주소를 통한 호스트 시작 메서드
@@ -72,7 +92,7 @@ namespace Unity.Assets.Scripts.Network
         /// <summary>
         /// 로비를 통한 호스트 시작 메서드
         /// </summary>
-        public virtual void StartHostLobby(string playerName) { }
+        public virtual void StartHostLobby() { }
 
         /// <summary>
         /// 사용자가 종료 요청 시 호출되는 메서드
@@ -87,17 +107,31 @@ namespace Unity.Assets.Scripts.Network
         /// <summary>
         /// 전송 실패 시 호출되는 메서드
         /// </summary>
-        public virtual void OnTransportFailure() { }
+        public virtual void OnTransportFailure(ulong clientId) { }
 
         /// <summary>
         /// 서버 중지 시 호출되는 메서드
         /// </summary>
-        public virtual void OnServerStopped() { }
+        public virtual void OnServerStopped(bool indicator) { }
 
         /// <summary>
         /// 릴레이 연결 시작 메서드
         /// </summary>
         public virtual void StartRelayConnection() { }
+
+        /// <summary>
+        /// 플레이어가 게임에 참여할 때 호출되는 메서드
+        /// </summary>
+        public virtual void OnPlayerJoined(ulong clientId) { }
+
+        /// <summary>
+        /// 상태 업데이트 메서드
+        /// </summary>
+
+        protected  virtual void PublishConnectStatus(ConnectStatus status)
+        {
+            // m_ConnectStatusPublisher?.Publish(status);
+        }
 
 
     }

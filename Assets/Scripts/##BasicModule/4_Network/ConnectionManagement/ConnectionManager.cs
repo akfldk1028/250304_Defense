@@ -1,12 +1,72 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Threading.Tasks;
 using Unity.Netcode;
 using UnityEditor.VersionControl;
 using UnityEngine;
 using UnityEngine.Rendering;
 using VContainer;
 
+    /// <summary>
+    /// 앱의 연결 모드를 정의하는 열거형
+    /// </summary>
+    public enum ConnectionMode
+    {
+        OfflineOnly,    // 오프라인 전용
+        OnlineRequired, // 온라인 필수
+        Hybrid          // 혼합 모드
+    }
+    /// <summary>
+    /// 네트워크 연결 상태를 나타내는 열거형
+    /// 클라이언트와 호스트의 다양한 연결 상태를 정의
+    /// </summary>
+    public enum ConnectStatus
+    {
+        Undefined,               // 초기 상태
+        Success,                // 연결 성공
+        ServerFull,            // 서버가 가득 참
+        LoggedInAgain,         // 다른 곳에서 로그인됨
+        UserRequestedDisconnect, // 사용자가 연결 종료 요청
+        GenericDisconnect,     // 일반적인 연결 종료
+        Reconnecting,          // 재연결 시도 중
+        IncompatibleBuildType, // 빌드 타입 불일치
+        HostEndedSession,      // 호스트가 세션 종료
+        StartHostFailed,       // 호스트 시작 실패
+        StartClientFailed,      // 클라이언트 시작 실패
+          Disconnected,
+        Connecting,
+        Connected,
+        Failed,
+ 
+    }
+
+    /// <summary>
+    /// 재연결 시도 정보를 담는 구조체
+    /// 현재 시도 횟수와 최대 시도 횟수를 포함
+    /// </summary>
+    public struct ReconnectMessage
+    {
+        public int CurrentAttempt;  // 현재 재연결 시도 횟수
+        public int MaxAttempt;      // 최대 재연결 시도 횟수
+
+        public ReconnectMessage(int currentAttempt, int maxAttempt)
+        {
+            CurrentAttempt = currentAttempt;
+            MaxAttempt = maxAttempt;
+        }
+    }
+
+    /// <summary>
+    /// 연결 이벤트 메시지 구조체
+    /// 네트워크로 직렬화 가능한 연결 상태 정보
+    /// </summary>
+    public struct ConnectionEventMessage : INetworkSerializeByMemcpy
+    {
+        public ulong ClientId { get; set; }
+
+        public ConnectStatus ConnectStatus;  // 현재 연결 상태
+    }
 
 /// <summary>
 /// 네트워크 연결 시 전달되는 페이로드 클래스
@@ -38,25 +98,29 @@ public class ConnectionPayload
 
 namespace Unity.Assets.Scripts.Network
 {
-    public class ConnectionManager : NetworkBehaviour
+    public class ConnectionManager : MonoBehaviour
     {
-        
+        // 연결 상태 변경 이벤트
+        public event System.Action<ConnectStatus> OnConnectionStatusChanged;
+
         [SerializeField]
-        private ConnectionMode m_ConnectionMode = ConnectionMode.Hybrid;  // 기본값은 혼합 모드
+        private ConnectionMode m_ConnectionMode = ConnectionMode.OnlineRequired;  // 기본값은 혼합 모드
 
         // 현재 연결 상태를 관리하는 상태 객체
         ConnectionState m_CurrentState;
+        [Inject] private DebugClassFacade m_DebugClassFacade;
 
-        [Inject]
-        NetworkManager m_NetworkManager;          // Unity NGO의 네트워크 매니저
+        [Inject] private NetworkManager m_NetworkManager;          // Unity NGO의 네트워크 매니저
+        [Inject] IObjectResolver m_Resolver;               // VContainer의 의존성 해결사
+        [Inject] private IPublisher<ConnectionEventMessage> m_ConnectionEventPublisher;
+        [Inject] protected IPublisher<ConnectStatus> m_ConnectStatusPublisher;
         public NetworkManager NetworkManager => m_NetworkManager;
 
         [SerializeField]
         int m_NbReconnectAttempts = 2;           // 최대 재연결 시도 횟수
         public int NbReconnectAttempts => m_NbReconnectAttempts;
 
-        [Inject]
-        IObjectResolver m_Resolver;               // VContainer의 의존성 해결사
+        
 
         // 최대 동시 접속 플레이어 수
         public int MaxConnectedPlayers = 8;
@@ -75,9 +139,7 @@ namespace Unity.Assets.Scripts.Network
         /// </summary>
         void Awake()
         {
-            Debug.Log("[ConnectionManager] 시작: Awake");
             DontDestroyOnLoad(gameObject);
-            Debug.Log("[ConnectionManager] 종료: Awake");
         }
 
         /// <summary>
@@ -85,15 +147,12 @@ namespace Unity.Assets.Scripts.Network
         /// </summary>
         void Start()
         {
-            Debug.Log("[ConnectionManager] 시작: Start");
             if (NetworkManager == null)
             {
-                // Debug.LogError("[ConnectionManager] NetworkManager가 할당되지 않았습니다!");
-                // PassIdentifier
                 return;
             }
 
-            Debug.Log("[ConnectionManager] 상태 객체 초기화 시작");
+            m_DebugClassFacade?.LogInfo(GetType().Name, "네트워크 매니저 초기화 시작");
             List<ConnectionState> states = new()
             {
                 m_Offline,
@@ -105,23 +164,24 @@ namespace Unity.Assets.Scripts.Network
                 m_LobbyConnecting
             };
 
-            foreach (var connectionState in states)
-            {
-                Debug.Log($"[ConnectionManager] 상태 주입: {connectionState.GetType().Name}");
-                m_Resolver.Inject(connectionState);
-            }
-
-            Debug.Log("[ConnectionManager] 초기 상태 설정: Offline");
+            m_DebugClassFacade?.LogInfo(GetType().Name, "초기 상태 설정: Offline");
             m_CurrentState = m_Offline;
 
-            Debug.Log("[ConnectionManager] 네트워크 이벤트 핸들러 등록");
+            m_DebugClassFacade?.LogInfo(GetType().Name, "네트워크 이벤트 핸들러 등록");
             NetworkManager.OnClientConnectedCallback += OnClientConnectedCallback;
             NetworkManager.OnClientDisconnectCallback += OnClientDisconnectCallback;
             NetworkManager.OnServerStarted += OnServerStarted;
             NetworkManager.ConnectionApprovalCallback += ApprovalCheck;
             NetworkManager.OnTransportFailure += OnTransportFailure;
             NetworkManager.OnServerStopped += OnServerStopped;
-            Debug.Log("[ConnectionManager] 종료: Start");
+            
+            // ConnectionState 상태 객체들에 종속성 주입
+            foreach (var connectionState in states)
+            {
+                m_Resolver.Inject(connectionState);
+            }
+            
+            m_DebugClassFacade?.LogInfo(GetType().Name, "종료: Start");
         }
 
         /// <summary>
@@ -138,88 +198,134 @@ namespace Unity.Assets.Scripts.Network
     internal void ChangeState(ConnectionState nextState)
     {
         if (m_ConnectionMode == ConnectionMode.OnlineRequired)
+        {
+            if (nextState is OfflineState)
             {
-                if (nextState is OfflineState)
-                {
-                    Debug.LogError("[ConnectionManager] 온라인 전용 모드에서는 오프라인 상태로 전환할 수 없습니다. 재연결을 시도합니다.");
-                    // 대신 재연결 시도
-                    m_CurrentState = m_ClientReconnecting;
-                    m_CurrentState.Enter();
-                    return;
-                }
+                m_DebugClassFacade?.LogError(GetType().Name, "온라인 전용 모드에서는 오프라인 상태로 전환할 수 없습니다. 재연결을 시도합니다.");
+                // 대신 재연결 시도
+                m_CurrentState = m_ClientReconnecting;
+                m_CurrentState.Enter();
+                return;
             }
+        }
 
-
-
-        Debug.Log($"[ConnectionManager] 상태 변경: {m_CurrentState.GetType().Name} -> {nextState.GetType().Name}");
+        m_DebugClassFacade?.LogInfo(GetType().Name, $"[ConnectionManager] 상태 변경: {m_CurrentState.GetType().Name} -> {nextState.GetType().Name}");
         
         if (m_CurrentState != null)
         {
-            Debug.Log($"[ConnectionManager] 이전 상태 종료: {m_CurrentState.GetType().Name}");
+            m_DebugClassFacade?.LogInfo(GetType().Name, $"[ConnectionManager] 이전 상태 종료: {m_CurrentState.GetType().Name}");
             m_CurrentState.Exit();
         }
         m_CurrentState = nextState;
-        Debug.Log($"[ConnectionManager] 새로운 상태 시작: {nextState.GetType().Name}");
+        m_DebugClassFacade?.LogInfo(GetType().Name, $"[ConnectionManager] 새로운 상태 시작: {nextState.GetType().Name}");
         m_CurrentState.Enter();
+
+        // 연결 상태 변경 이벤트 발생
+        if (nextState is ClientConnectedState)
+        {
+            OnConnectionStatusChanged?.Invoke(ConnectStatus.Connected);
+        }
+        else if (nextState is OfflineState)
+        {
+            OnConnectionStatusChanged?.Invoke(ConnectStatus.Disconnected);
+        }
+        else if (nextState is ClientConnectingState)
+        {
+            OnConnectionStatusChanged?.Invoke(ConnectStatus.Connecting);
+        }
     }
 
     // NGO 이벤트 핸들러들
     void OnClientDisconnectCallback(ulong clientId)
     {
-        Debug.Log($"[ConnectionManager] 클라이언트 연결 해제: ClientID={clientId}");
+        m_DebugClassFacade?.LogInfo(GetType().Name, $"[ConnectionManager] 클라이언트 연결 해제: ClientID={clientId}");
         m_CurrentState.OnClientDisconnect(clientId);
     }
 
     void OnClientConnectedCallback(ulong clientId)
     {
-        Debug.Log($"[ConnectionManager] 클라이언트 연결됨: ClientID={clientId}");
+        m_DebugClassFacade?.LogInfo(GetType().Name, $"[ConnectionManager] 클라이언트 연결됨: ClientID={clientId}");
         m_CurrentState.OnClientConnected(clientId);
     }
 
     void OnServerStarted()
     {
-        Debug.Log("[ConnectionManager] 서버 시작됨");
+        m_DebugClassFacade?.LogInfo(GetType().Name, "[ConnectionManager] 서버 시작됨");
         m_CurrentState.OnServerStarted();
     }
-
+      void ApprovalCheck(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
+      {
+          m_CurrentState.ApprovalCheck(request, response);
+      }
     void OnTransportFailure()
     {
-        Debug.LogError("[ConnectionManager] 전송 실패 발생");
-        m_CurrentState.OnTransportFailure();
+        m_DebugClassFacade?.LogError(GetType().Name, "[ConnectionManager] 전송 실패 발생");
+        m_CurrentState.OnTransportFailure(0);
     }
 
     void OnServerStopped(bool _)
     {
-        Debug.Log("[ConnectionManager] 서버 중지됨");
-        m_CurrentState.OnServerStopped();
+        m_DebugClassFacade?.LogInfo(GetType().Name, "[ConnectionManager] 서버 중지됨");
+        m_CurrentState.OnServerStopped(true);
     }
 
     /// <summary>
-    /// 클라이언트 연결 승인 검사
+    /// 네트워크 상태를 비동기적으로 확인하는 메서드
     /// </summary>
-    void ApprovalCheck(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
+    /// <returns>네트워크가 준비되었는지 여부를 나타내는 Task</returns>
+    public async Task<bool> CheckNetworkStatusAsync()
     {
-        Debug.Log($"[ConnectionManager] 연결 승인 검사: ClientID={request.ClientNetworkId}");
-        m_CurrentState.ApprovalCheck(request, response);
+        try
+        {
+            // 1. 인터넷 연결 상태 확인
+            bool isOnline = Application.internetReachability != NetworkReachability.NotReachable;
+            if (!isOnline)
+            {
+                m_DebugClassFacade?.LogWarning(GetType().Name, "인터넷 연결이 없습니다.");
+                return false;
+            }
+
+            // 2. 현재 연결 상태 확인
+            if (m_CurrentState is OfflineState)
+            {
+                // 오프라인 상태인 경우, 로비 연결 상태로 전환
+                m_DebugClassFacade?.LogInfo(GetType().Name, "오프라인 상태에서 로비 연결 상태로 전환");
+                ChangeState(m_LobbyConnecting);
+                await System.Threading.Tasks.Task.Delay(1000); // 상태 전환 대기
+                return m_CurrentState is not OfflineState;
+            }
+
+            // 3. 현재 상태가 오프라인이 아닌 경우
+            return true;
+        }
+        catch (System.Exception e)
+        {
+            m_DebugClassFacade?.LogError(GetType().Name, $"네트워크 상태 확인 중 오류 발생: {e.Message}");
+            return false;
+        }
     }
 
     /// <summary>
     /// 로비를 통한 클라이언트 연결 시작
     /// </summary>
-    public void StartClientLobby(string playerName)
+    public void StartClientLobby()
     {
-        Debug.Log($"[ConnectionManager] 로비 클라이언트 시작: PlayerName={playerName}");
-        m_CurrentState.StartClientLobby(playerName);
+        m_DebugClassFacade?.LogInfo(GetType().Name, $"[ConnectionManager] 로비 클라이언트 시작: ");
+        m_CurrentState.StartClientLobby();
     }
 
-    /// <summary>
-    /// IP 주소를 통한 직접 연결 시작
-    /// </summary>
-    public void StartClientIp(string playerName, string ipaddress, int port)
+
+
+    public void StartHostLobby()
     {
-        Debug.Log($"[ConnectionManager] IP 클라이언트 시작: PlayerName={playerName}, IP={ipaddress}, Port={port}");
-        m_CurrentState.StartClientIP(playerName, ipaddress, port);
+            m_CurrentState.StartHostLobby();
     }
+
+
+    public void RequestShutdown()
+        {
+            m_CurrentState.OnUserRequestedShutdown();
+        }
     }
 }
 

@@ -9,7 +9,6 @@ using UnityEngine.Events;
 public class UI_Scene : UI_Base
 {
     // 필드 이름을 변경하여 중복 주입 방지
-    [Inject] protected UIManager uiManager;
 
     public override bool Init()
     {
@@ -32,29 +31,8 @@ public class UI_Scene : UI_Base
         return true;
     }
     
-    protected virtual void OnDestroy()
-    {
-        // 이벤트 구독 해제 호출
-        UnsubscribeEvents();
-    }
-    
-    /// <summary>
-    /// 모든 UI 이벤트를 구독합니다.
-    /// </summary>
-    protected virtual void SubscribeEvents()
-    {
-        uiManager.SubscribeEvents();
 
-    }
-    
-    /// <summary>
-    /// 모든 UI 이벤트 구독을 해제합니다.
-    /// </summary>
-    protected virtual void UnsubscribeEvents()
-    {
-        uiManager.UnsubscribeEvents();
 
-    }
     
 
 

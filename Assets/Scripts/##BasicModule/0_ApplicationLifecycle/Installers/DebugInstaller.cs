@@ -17,9 +17,8 @@ namespace Unity.Assets.Scripts.Module.ApplicationLifecycle.Installers
             // DebugManager를 싱글톤으로 등록
             builder.Register<DebugManager>(Lifetime.Singleton);
             
-            // DebugClassFacade를 싱글톤으로 등록
+            // DebugClassFacade를 싱글톤으로 등록하고 AsSelf()를 추가하여 명시적으로 타입을 지정
             builder.Register<DebugClassFacade>(Lifetime.Singleton);
-            
         }
         
     }

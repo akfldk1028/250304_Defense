@@ -225,7 +225,7 @@ public class ObjectManager
 		Debug.Log($"[ObjectManager] Spawn<T> 호출: {prefabName}");
 		Debug.Log($"[ObjectManager] Spawn<T> 호출: {position}");
 
-
+		prefabName = typeof(T).Name;
 
 		// 풀링 시스템을 통해 오브젝트 생성 (NetworkObject 스폰은 풀링 시스템에서 처리)
 		GameObject go = _resourceManager.Instantiate(prefabName, pooling: true, position: position);
@@ -335,8 +335,8 @@ public class ObjectManager
 					// Heroes.Remove(hero);
 					break;
 				case CharacterTypeEnum.Monster:
-					// Monster monster = creature as Monster;
-					// Monsters.Remove(monster);
+					ServerMonster monster = creature as ServerMonster;
+					Monsters.Remove(monster);
 					break;
 			}
 		}

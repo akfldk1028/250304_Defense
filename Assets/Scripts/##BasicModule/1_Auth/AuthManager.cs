@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 
 namespace Unity.Assets.Scripts.Auth
 {
-
     /// <summary>
     /// Unity 인증 서비스를 관리하는 클래스
     /// </summary>
@@ -32,6 +31,8 @@ namespace Unity.Assets.Scripts.Auth
                 string lastLoginId = PlayerPrefs.GetString(PLAYER_PREFS_LAST_LOGIN_ID, "없음");
                 Debug.Log($"<color=yellow> {DEBUG_TAG} 마지막 로그인 ID: {lastLoginId}</color>");
                 Debug.Log($"<color=yellow> {DEBUG_TAG} 디바이스 ID: {SystemInfo.deviceUniqueIdentifier}</color>");
+                Debug.Log($"<color=yellow> {DEBUG_TAG} PlayerId: {PlayerId}</color>");
+                Debug.Log($"<color=yellow> {DEBUG_TAG} IsAuthenticated: {IsAuthenticated}</color>");
 
                 // 인증 시도
                 if (!IsAuthenticated)
@@ -43,7 +44,7 @@ namespace Unity.Assets.Scripts.Auth
                         try
                         {
                             await Unity.Services.Authentication.AuthenticationService.Instance.SignInAnonymouslyAsync();
-                            Debug.Log($"{DEBUG_TAG} 기존 계정으로 로그인 시도: {savedLoginId}");
+                            Debug.Log($"<color=yellow> {DEBUG_TAG} 기존 계정으로 로그인 시도: {savedLoginId}</color>");
                         }
                         catch
                         {
@@ -58,13 +59,15 @@ namespace Unity.Assets.Scripts.Auth
 
                     string playerId = PlayerId;
                     Debug.Log($"<color=yellow>{DEBUG_TAG} 로그인 완료: {playerId}</color>");
-                    
+                    Debug.Log($"<color=yellow>{DEBUG_TAG} IsAuthenticated@@@@: {IsAuthenticated}</color>");
+
                     // 로그인 ID 저장
                     PlayerPrefs.SetString(PLAYER_PREFS_LAST_LOGIN_ID, playerId);
                     PlayerPrefs.Save();
                 }
                 else
                 {
+                    Debug.Log($"<color=yellow>{DEBUG_TAG} IsAuthenticated: {IsAuthenticated}</color>");
                     Debug.Log($"<color=yellow>{DEBUG_TAG} 기존 계정으로 로그인: {PlayerId}</color>");
                 }
 

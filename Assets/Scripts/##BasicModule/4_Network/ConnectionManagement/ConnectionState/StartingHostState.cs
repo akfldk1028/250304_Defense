@@ -1,115 +1,112 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using Unity.Netcode;
-using UnityEditor.VersionControl;
 using UnityEngine;
+using Unity.Netcode;
 using VContainer;
-// using Unity.Assets.Scripts.ConnectionManagement;
-
 
 namespace Unity.Assets.Scripts.Network
 {
     /// <summary>
-    /// 호스트 시작 중인 상태를 나타내는 클래스
+    /// 호스트 시작 상태 클래스
     /// 
-    /// 이 상태에서는 로컬 플레이어가 호스트 모드로 게임을 시작하는 과정을 관리합니다.
-    /// 호스트 시작 성공 시 HostingState로 전환하고, 실패 시 OfflineState로 전환합니다.
+    /// 네트워크 호스트 시작 상태를 관리하며, 호스트 초기화 및 연결 승인을 처리합니다.
     /// </summary>
-class StartingHostState : OnlineState
-{
-
-    ConnectionMethodBase m_ConnectionMethod;
-    public StartingHostState Configure(ConnectionMethodBase baseConnectionMethod)
+    public class StartingHostState : ConnectionState
     {
-        Debug.Log("[StartingHostState] Configure 호출");
-        m_ConnectionMethod = baseConnectionMethod;
-        return this;
-    }
 
-    public override void Enter()
-    {
-        Debug.Log("[StartingHostState] 시작: Enter");
-        StartHost();
-        Debug.Log("[StartingHostState] 종료: Enter");
-    }
+        //  [Inject] protected DebugClassFacade m_DebugClassFacade;
 
-    public override void Exit() 
-    { 
-        Debug.Log("[StartingHostState] Exit 호출");
-    }
+        // [Inject] protected ConnectionManager m_ConnectionManager;
+        // [Inject] protected NetworkManager m_NetworkManager;
+        // [Inject] protected IPublisher<ConnectStatus> m_ConnectStatusPublisher;
+        // [Inject] protected IPublisher<ConnectionEventMessage> m_ConnectionEventPublisher;
 
-    public override void OnServerStarted()
-    {
-        Debug.Log("[StartingHostState] 서버 시작됨");
-        // m_ConnectStatusPublisher.Publish(ConnectStatus.Success);
-        Debug.Log("[StartingHostState] 연결 상태 발행: Success");
-        //m_ConnectionManager.ChangeState(m_ConnectionManager.m_Hosting);
-    }
+        private bool m_IsStarting = false;
+        private float m_StartTime;
+        private const float k_HostStartTimeout = 10f;
 
-    public override void ApprovalCheck(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
-    {
-        var connectionData = request.Payload;
-        var clientId = request.ClientNetworkId;
-        Debug.Log($"[StartingHostState] 연결 승인 검사: ClientID={clientId}");
-        
-        // This happens when starting as a host, before the end of the StartHost call. In that case, we simply approve ourselves.
-        if (clientId == m_ConnectionManager.NetworkManager.LocalClientId)
+    
+        public override void Enter()
         {
-            Debug.Log("[StartingHostState] 로컬 호스트 자체 승인");
-            var payload = System.Text.Encoding.UTF8.GetString(connectionData);
-            var connectionPayload = JsonUtility.FromJson<ConnectionPayload>(payload);
-            Debug.Log($"[StartingHostState] 연결 페이로드: PlayerName={connectionPayload.playerName}");
-
-            response.Approved = true;
-            response.CreatePlayerObject = true;
-            Debug.Log("[StartingHostState] 연결 승인 완료");
+            m_DebugClassFacade?.LogInfo(GetType().Name, "[StartingHostState] 호스트 시작");
+            m_IsStarting = true;
+            m_StartTime = Time.time;
+            PublishConnectStatus(ConnectStatus.Connecting);
+            StartHostAsync();
         }
-    }
 
-    public override void OnServerStopped()
-    {
-        Debug.Log("[StartingHostState] 서버 중지됨");
-        StartHostFailed();
-    }
-
-    async void StartHost()
-    {
-        Debug.Log("[StartingHostState] 호스트 시작 시도");
-        try
+        public override void Exit()
         {
-            //await m_ConnectionMethod.SetupHostConnectionAsync();
+            m_DebugClassFacade?.LogInfo(GetType().Name, "[StartingHostState] 호스트 시작 종료");
+            m_IsStarting = false;
+        }
 
-            // NGO's StartHost launches everything
-            if (!m_ConnectionManager.NetworkManager.StartHost())
+    
+
+        private async void StartHostAsync()
+        {
+            try
             {
-                Debug.LogError("[StartingHostState] 호스트 시작 실패");
-                StartHostFailed();
+                if (!m_NetworkManager.StartHost())
+                {
+                    m_DebugClassFacade?.LogError(GetType().Name, "[StartingHostState] 호스트 시작 실패");
+                    OnHostStartFailed();
+                    return;
+                }
+
+                m_DebugClassFacade?.LogInfo(GetType().Name, "[StartingHostState] 호스트 시작 성공");
+                m_ConnectionManager.ChangeState(m_ConnectionManager.m_Hosting);
             }
-            else
+            catch (Exception e)
             {
-                Debug.Log("[StartingHostState] 호스트 시작 성공");
+                m_DebugClassFacade?.LogError(GetType().Name, $"[StartingHostState] 호스트 시작 중 오류: {e.Message}");
+                OnHostStartFailed();
             }
         }
-        catch (Exception e)
+
+        public override void OnClientConnected(ulong clientId)
         {
-            Debug.LogError($"[StartingHostState] 호스트 시작 중 예외 발생: {e.Message}");
-            StartHostFailed();
-            throw;
+            if (!m_IsStarting) return;
+
+            m_DebugClassFacade?.LogInfo(GetType().Name, $"[StartingHostState] 클라이언트 연결됨: {clientId}");
+            m_ConnectionEventPublisher?.Publish(new ConnectionEventMessage { ClientId = clientId, ConnectStatus = ConnectStatus.Connected });
+        }
+
+        public override void OnClientDisconnect(ulong clientId)
+        {
+            if (!m_IsStarting) return;
+
+            m_DebugClassFacade?.LogInfo(GetType().Name, $"[StartingHostState] 클라이언트 연결 해제: {clientId}");
+            m_ConnectionEventPublisher?.Publish(new ConnectionEventMessage { ClientId = clientId, ConnectStatus = ConnectStatus.Disconnected });
+        }
+
+        public override void OnTransportFailure(ulong clientId)
+        {
+            if (!m_IsStarting) return;
+
+            m_DebugClassFacade?.LogError(GetType().Name, "[StartingHostState] 네트워크 오류");
+            m_ConnectionEventPublisher?.Publish(new ConnectionEventMessage { ConnectStatus = ConnectStatus.Failed });
+            OnHostStartFailed();
+        }
+
+        private void OnHostStartFailed()
+        {
+            if (!m_IsStarting) return;
+
+            m_IsStarting = false;
+            m_NetworkManager.Shutdown();
+            m_ConnectionManager.ChangeState(m_ConnectionManager.m_Offline);
+        }
+
+        public void CancelHostStart()
+        {
+            if (!m_IsStarting) return;
+
+            m_DebugClassFacade?.LogInfo(GetType().Name, "[StartingHostState] 호스트 시작 취소");
+            m_IsStarting = false;
+            m_NetworkManager.Shutdown();
+            m_ConnectionManager.ChangeState(m_ConnectionManager.m_Offline);
         }
     }
-
-    void StartHostFailed()
-    {
-        Debug.LogError("[StartingHostState] 호스트 시작 실패 처리");
-        // m_ConnectStatusPublisher.Publish(ConnectStatus.StartHostFailed);
-        Debug.Log("[StartingHostState] 연결 상태 발행: StartHostFailed");
-        m_ConnectionManager.ChangeState(m_ConnectionManager.m_Offline);
-        Debug.Log("[StartingHostState] 상태 변경: Offline");
-    }
-
-}
 }
 

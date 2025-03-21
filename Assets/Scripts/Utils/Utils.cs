@@ -276,32 +276,6 @@ public static class Util
 		return result;
 	}
 
-	/// <summary>
-	/// 이름 패턴으로 자식 객체들을 찾습니다.
-	/// </summary>
-	/// <param name="parent">부모 GameObject</param>
-	/// <param name="namePattern">이름 패턴 (예: "Button")</param>
-	/// <returns>찾은 게임오브젝트 리스트</returns>
-	public static List<GameObject> FindChildrenByNamePattern(GameObject parent, string namePattern)
-	{
-		List<GameObject> result = new List<GameObject>();
-		if (parent == null || string.IsNullOrEmpty(namePattern))
-		{
-			Debug.LogWarning($"[Util] FindChildrenByNamePattern: 부모 객체가 null이거나 이름 패턴이 비어있습니다.");
-			return result;
-		}
-
-		Transform[] children = parent.GetComponentsInChildren<Transform>(true);
-		foreach (Transform child in children)
-		{
-			if (child.gameObject != parent && child.name.Contains(namePattern))
-			{
-				result.Add(child.gameObject);
-			}
-		}
-
-		return result;
-	}
 
 	/// <summary>
 	/// 깊이에 상관없이 특정 이름의 하위 객체를 찾습니다.
@@ -367,60 +341,10 @@ public static class Util
 		return null;
 	}
 
-	/// <summary>
-	/// 깊이에 상관없이 특정 타입의 모든 컴포넌트를 찾습니다.
-	/// </summary>
-	/// <typeparam name="T">찾을 컴포넌트 타입</typeparam>
-	/// <param name="parent">부모 GameObject</param>
-	/// <param name="includeInactive">비활성화된 객체도 포함할지 여부</param>
-	/// <returns>찾은 컴포넌트 배열</returns>
-	public static T[] FindComponentsDeep<T>(GameObject parent, bool includeInactive = true) where T : Component
-	{
-		if (parent == null)
-		{
-			Debug.LogWarning($"[Util] FindComponentsDeep: 부모 객체가 null입니다.");
-			return new T[0];
-		}
 
-		return parent.GetComponentsInChildren<T>(includeInactive);
-	}
 	#endregion
 
-	#region UI 이벤트 관리
-	/// <summary>
-	/// 버튼에 클릭 이벤트를 추가합니다.
-	/// </summary>
-	/// <param name="button">대상 버튼</param>
-	/// <param name="action">클릭 시 실행할 액션</param>
-	/// <param name="buttonName">버튼 이름 (로그용, null이면 버튼 오브젝트 이름 사용)</param>
-	public static void AddButtonClickEvent(Button button, UnityAction action, string buttonName = null)
-	{
-		if (button != null)
-		{
-			button.onClick.AddListener(action);
-			Debug.Log($"<color=green>[Util] {buttonName ?? button.name} 버튼 이벤트 등록 완료</color>");
-		}
-		else
-		{
-			Debug.LogError($"<color=red>[Util] {buttonName ?? "지정된"} 버튼을 찾을 수 없습니다!</color>");
-		}
-	}
 
-	/// <summary>
-	/// 버튼에서 클릭 이벤트를 제거합니다.
-	/// </summary>
-	/// <param name="button">대상 버튼</param>
-	/// <param name="action">제거할 액션</param>
-	/// <param name="buttonName">버튼 이름 (로그용, null이면 버튼 오브젝트 이름 사용)</param>
-	public static void RemoveButtonClickEvent(Button button, UnityAction action, string buttonName = null)
-	{
-		if (button != null)
-		{
-			button.onClick.RemoveListener(action);
-			Debug.Log($"<color=cyan>[Util] {buttonName ?? button.name} 버튼 이벤트 해제 완료</color>");
-		}
-	}
-	#endregion
 
 	#region 기타 유틸리티
 	/// <summary>
@@ -444,32 +368,7 @@ public static class Util
 		return parsedColor;
 	}
 
-	/// <summary>
-	/// 자식 객체들의 계층 구조를 로그로 출력합니다.
-	/// </summary>
-	/// <param name="parent">부모 GameObject</param>
-	public static void LogChildren(GameObject parent)
-	{
-		if (parent == null)
-		{
-			Debug.LogWarning("[Util] LogChildren: 부모 객체가 null입니다.");
-			return;
-		}
 
-		Debug.Log($"<color=yellow>[Util] '{parent.name}' 자식 계층 구조:</color>");
-		LogChildrenRecursive(parent.transform, 0);
-	}
-
-	private static void LogChildrenRecursive(Transform parent, int depth)
-	{
-		string indent = new string(' ', depth * 2);
-		for (int i = 0; i < parent.childCount; i++)
-		{
-			Transform child = parent.GetChild(i);
-			Debug.Log($"<color=yellow>{indent}├─ {child.name} {(child.gameObject.activeSelf ? "(활성)" : "(비활성)")}</color>");
-			LogChildrenRecursive(child, depth + 1);
-		}
-	}
 	#endregion
 
 	// 주석 처리된 기존 코드는 필요에 따라 복원

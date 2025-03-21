@@ -16,7 +16,7 @@ namespace Unity.Assets.Scripts.UI
         /// <param name="parent">로그를 출력할 부모 게임 오브젝트</param>
         /// <param name="logPrefix">로그 메시지 앞에 붙일 접두사 (예: "[UI_MainMenu]")</param>
         /// <param name="maxDepth">출력할 최대 깊이 (기본값: 2)</param>
-        public static void LogHierarchy(GameObject parent, string logPrefix = "", int maxDepth = 2)
+        public static void LogHierarchy(GameObject parent, string logPrefix = "", int maxDepth = 10)
         {
             if (parent == null)
             {
@@ -80,17 +80,28 @@ namespace Unity.Assets.Scripts.UI
         /// </summary>
         private static void LogComponents(Transform obj, string logPrefix, string depthPrefix)
         {
+            if (obj == null)
+            {
+                Debug.LogWarning($"{logPrefix} Transform 객체가 null입니다.");
+                return;
+            }
+
             Component[] components = obj.GetComponents<Component>();
             if (components.Length > 0)
             {
                 Debug.Log($"{logPrefix} {depthPrefix} <color=cyan>{obj.name}</color>의 컴포넌트 목록 ({components.Length}개):");
                 foreach (Component component in components)
                 {
+                    if (component == null)
+                    {
+                        Debug.LogWarning($"{logPrefix} {depthPrefix}   null 컴포넌트 발견");
+                        continue;
+                    }
                     Debug.Log($"{logPrefix} {depthPrefix}   컴포넌트: <color=magenta>{component.GetType().Name}</color>");
                 }
             }
         }
-        
+                
         // /// <summary>
         // /// 게임 오브젝트의 특정 하위 요소를 가져옵니다.
         // /// </summary>

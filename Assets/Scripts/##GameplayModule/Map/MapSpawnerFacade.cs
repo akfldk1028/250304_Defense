@@ -43,50 +43,27 @@ public class MapSpawnerFacade : NetworkBehaviour
     /// <param name="mapName">로드할 맵 이름</param>
     public void LoadMap(string mapName)
     {
-        try
-        {
-            // 기존 맵이 있으면 제거
-            if (_mapInstance != null)
-            {
-                Destroy(_mapInstance);
-                _mapInstance = null;
-            }
-            // 맵 프리팹 로드
-            GameObject mapPrefab = LoadMapPrefab(mapName);
+        GameObject mapPrefab = LoadMapPrefab(mapName);
+        InitializeNetworkObject();
+        InstantiateMap(mapPrefab, mapName);
 
-            if (mapPrefab != null)
-            {
-
-                InstantiateMap(mapPrefab, mapName);
-            }
-            else
-            {
-                Debug.LogError($"[MapSpawnerFacade] 맵 '{mapName}' 프리팹을 로드할 수 없습니다.");
-            }
-        }
-        catch (Exception e)
-        {
-            Debug.LogError($"[MapSpawnerFacade] LoadMap 메서드 실행 중 예외 발생: {e.Message}\n{e.StackTrace}");
-        }
     }
-    
-    /// <summary>
-    /// 맵 프리팹을 로드합니다.
-    /// </summary>
+
     private GameObject LoadMapPrefab(string mapName)
     {
-        Debug.Log($"[MapSpawnerFacade] 맵 로드 시도: '{mapName}'");
-        
-        // 맵 프리팹 로드 (확장자 처리)
         string resourceKey = mapName.EndsWith(".prefab") ? mapName.Replace(".prefab", "") : mapName;
-        
-        // 동기 로드 시도
         return _resourceManager.Load<GameObject>(resourceKey);
     }
     
-    /// <summary>
-    /// 맵을 인스턴스화하고 초기화합니다.
-    /// </summary>
+    private void InitializeNetworkObject()
+    {
+        var netObj = GetComponent<NetworkObject>() ?? gameObject.AddComponent<NetworkObject>();
+        if (!netObj.IsSpawned)
+        {
+            netObj.Spawn();
+            Debug.Log("[ObjectManagerFacade] 네트워크 오브젝트 스폰 완료");
+        }
+    }
     private void InstantiateMap(GameObject mapPrefab, string mapName)
     {
         Debug.Log($"[MapSpawnerFacade] 프리팹 로드 성공: {mapPrefab.name}, 인스턴스화 시도");
@@ -94,25 +71,8 @@ public class MapSpawnerFacade : NetworkBehaviour
         try
         {
             _mapInstance = Instantiate(mapPrefab);
-            
-            // ObjectManagerFacade를 추가하지 않음 - 이미 주입된 것을 사용
-            // _mapInstance.AddComponent<ObjectManagerFacade>().InitializeMap(_mapInstance, mapName);
-            // NetworkObject 확인 및 스폰
-            NetworkObject networkObject = _mapInstance.GetComponent<NetworkObject>();
-            if (networkObject != null)
-            {
-                networkObject.Spawn();
-                Debug.Log("[MapSpawnerFacade] NetworkObject 스폰 완료");
-            }
-            
-            // 맵 설정
             ConfigureMapInstance(mapName);
             InitializeGridSystem(_mapInstance);
-            // 맵 초기화 - 주입된 인스턴스 사용
-            // InitializeMap(_mapInstance, mapName);
-            
-            Debug.Log($"[MapSpawnerFacade] 맵 '{mapName}' 로드 성공");
-
             GridSpawned?.Invoke();
         }
         catch (Exception e)
@@ -122,17 +82,6 @@ public class MapSpawnerFacade : NetworkBehaviour
     }
 
 
-    public void InitializeMap(GameObject mapInstance, string mapName)
-    {
-        if (mapInstance == null)
-        {
-            Debug.LogError("[ObjectManagerFacade] 맵 인스턴스가 null입니다.");
-            return;
-        }
-        // 그리드 설정
-        InitializeGridSystem(mapInstance);
-
-    }
         #region 그리드 시스템
 
     private void InitializeGridSystem(GameObject mapInstance)
@@ -150,7 +99,6 @@ public class MapSpawnerFacade : NetworkBehaviour
         Transform enemyGridParent = mapInstance.transform.Find("Spawner_Client");
 
 
-
         if (playerGridParent == null || enemyGridParent == null)
         {
             Debug.LogWarning("[ObjectManagerFacade] 스폰 그리드 부모를 찾을 수 없습니다.");
@@ -158,7 +106,6 @@ public class MapSpawnerFacade : NetworkBehaviour
         }
         
         Debug.Log($"<color=yellow>[ObjectManagerFacade] 그리드 설정 시작: {playerGridParent.name}, {enemyGridParent.name}</color>");
-        
         // 그리드 초기화
         CreateSpawnGrid(playerGridParent, true);
         CreateSpawnGrid(enemyGridParent, false);
@@ -285,8 +232,7 @@ public class MapSpawnerFacade : NetworkBehaviour
     {
         _mapInstance.transform.localPosition = Vector3.zero;
         _mapInstance.transform.localScale = new Vector3(1, 1, _mapInstance.transform.localScale.z);
-        _mapInstance.name = $"BasicGame_Map{mapName}";
-        
+        _mapInstance.name = $"BasicGame_{mapName}";
         Debug.Log($"[MapSpawnerFacade] 인스턴스화 성공: {_mapInstance.name}");
     }
   

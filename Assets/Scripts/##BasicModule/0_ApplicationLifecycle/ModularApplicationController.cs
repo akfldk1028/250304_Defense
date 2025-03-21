@@ -82,6 +82,12 @@ namespace Unity.Assets.Scripts.Module.ApplicationLifecycle
             {
                 return new ResourceInstaller();
             };
+                        // Authentication 모듈 인스톨러 팩토리
+            m_InstallerFactories[ModuleType.Authentication] = () => 
+            {
+                return new AuthenticationInstaller();
+            };
+            
             // Network 모듈 인스톨러 팩토리
             m_InstallerFactories[ModuleType.Network] = () => 
             {
@@ -111,12 +117,7 @@ namespace Unity.Assets.Scripts.Module.ApplicationLifecycle
                 return new UIInstaller();
             };
             
-            // Authentication 모듈 인스톨러 팩토리
-            m_InstallerFactories[ModuleType.Authentication] = () => 
-            {
-                return new AuthenticationInstaller();
-            };
-            
+
 
 
     
@@ -229,7 +230,9 @@ namespace Unity.Assets.Scripts.Module.ApplicationLifecycle
             
             //m_LocalLobby = Container.Resolve<LocalLobby>();
             //m_LobbyServiceFacade = Container.Resolve<LobbyServiceFacade>();
-
+    // 메모리 로그 비활성화 코드 추가
+            Application.SetStackTraceLogType(LogType.Log, StackTraceLogType.None);
+            Application.SetStackTraceLogType(LogType.Warning, StackTraceLogType.None);
             Application.wantsToQuit += OnWantToQuit;
             
             DontDestroyOnLoad(gameObject);

@@ -187,7 +187,7 @@ namespace Unity.Assets.Scripts.Resource
                                 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                                 string typeName = obj.Result.GetType().Name;
                                 string assetName = obj.Result.name;
-                                Debug.Log($"[ResourceManager] 에셋 로드: {assetName} ({typeName}) - 키: {key}, 타입 키: {typeKey}");
+                                _debugClassFacade?.LogInfo(GetType().Name, $"[ResourceManager] 에셋 로드: {assetName} ({typeName}) - 키: {key}, 타입 키: {typeKey}");
                                 //[ResourceManager] 에셋 로드: green_slime (AnimatorController) - 키: green_slime, 타입 키: green_slime.animatorcontroller
                                 #endif
                                 
@@ -272,7 +272,6 @@ namespace Unity.Assets.Scripts.Resource
             Debug.Log($"[ResourceManager] Clear 시작: {_resources.Count}개 리소스, {_handles.Count}개 핸들");
             
             // ScriptableObject 초기화
-            ResetAllScriptableObjects();
             
             // 핸들 해제
             int releasedCount = 0;
@@ -312,24 +311,6 @@ namespace Unity.Assets.Scripts.Resource
             Debug.Log("[ResourceManager] Clear 완료");
         }
         
-        // ScriptableObject 초기화 메서드
-        private void ResetAllScriptableObjects()
-        {
-            // 로드된 모든 ScriptableObject 찾기
-            var scriptableObjects = _resources.Values
-                .OfType<ScriptableObject>()
-                .ToList();
-            
-            foreach (var so in scriptableObjects)
-            {
-                // IResettable 인터페이스를 구현한 경우 Reset 호출
-                if (so is IResettable resettable)
-                {
-                    resettable.Reset();
-                    Debug.Log($"[ResourceManager] Reset {so.name} ({so.GetType().Name})");
-                }
-            }
-        }
 
         // 간단한 디버그용 메서드: 리소스 딕셔너리의 키와 값만 출력
         public void DebugSimpleResources()

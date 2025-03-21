@@ -11,7 +11,6 @@ namespace Unity.Assets.Scripts.Scene
 public class StartUpScene : BaseScene
 {
 	[Inject] private ResourceManager _resourceManager;
-    [Inject] private SceneManagerEx _sceneManager;
 
 	private const string PRELOAD_LABEL = "PreLoad";
 	

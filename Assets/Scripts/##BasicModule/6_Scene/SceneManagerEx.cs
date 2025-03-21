@@ -21,7 +21,10 @@ namespace Unity.Assets.Scripts.Scene
     public class SceneManagerEx
     {
         [Inject] private ResourceManager _resourceManager;
-        
+        [Inject] private NetworkManager _networkManager;
+
+
+
         public BaseScene CurrentScene { get { return GameObject.FindAnyObjectByType<BaseScene>(); } }
 
         public void LoadScene(EScene type)
@@ -53,6 +56,14 @@ namespace Unity.Assets.Scripts.Scene
         {
             string name = System.Enum.GetName(typeof(EScene), type);
             return name;
+        }
+
+        public void ChangeSceneForAllPlayers(EScene type)
+        {
+            if (_networkManager.IsHost)
+            {
+                _networkManager.SceneManager.LoadScene(type.ToString(), UnityEngine.SceneManagement.LoadSceneMode.Single);
+            }
         }
 
         public void Clear()

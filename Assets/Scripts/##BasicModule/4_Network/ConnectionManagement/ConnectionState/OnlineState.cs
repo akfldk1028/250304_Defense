@@ -16,29 +16,49 @@ namespace Unity.Assets.Scripts.Network
     /// 네트워크 연결이 활성화된 상태에서의 기본 동작을 정의합니다.
     /// NetworkBehaviour 기능을 활용하여 네트워크 상태를 관리합니다.
     /// </summary>
-abstract class OnlineState : ConnectionState
-{
-    public override void OnUserRequestedShutdown()
+    public abstract class OnlineState : ConnectionState
     {
-        Debug.Log("[OnlineState] 사용자 종료 요청");
+        protected const float k_ReconnectTimeout = 10f;
+        protected float m_ReconnectStartTime;
+        protected bool m_IsReconnecting;
 
-        // m_ConnectStatusPublisher.Publish(ConnectStatus.UserRequestedDisconnect);
+        [Inject] protected DebugClassFacade m_DebugClassFacade;
 
-        Debug.Log("[OnlineState] 연결 상태 발행: UserRequestedDisconnect");
+        [Inject] protected ConnectionManager m_ConnectionManager;
+        public override void OnUserRequestedShutdown()
+        {
+            m_DebugClassFacade?.LogInfo(GetType().Name, "[OnlineState] 사용자 종료 요청");
+            PublishConnectStatus(ConnectStatus.UserRequestedDisconnect);
+            m_ConnectionManager.ChangeState(m_ConnectionManager.m_Offline);
+        }
 
-        m_ConnectionManager.ChangeState(m_ConnectionManager.m_Offline);
+        public override void OnTransportFailure(ulong clientId)
+        {
+            m_DebugClassFacade?.LogWarning(GetType().Name, "[OnlineState] 네트워크 연결 실패");
+            PublishConnectStatus(ConnectStatus.GenericDisconnect);
+            m_ConnectionManager.ChangeState(m_ConnectionManager.m_Offline);
+        }
 
-        Debug.Log("[OnlineState] 상태 변경: Offline");
+        protected virtual void StartReconnect()
+        {
+            m_IsReconnecting = true;
+            m_ReconnectStartTime = Time.time;
+            m_DebugClassFacade?.LogInfo(GetType().Name, "[OnlineState] 재연결 시작");
+        }
+
+        protected virtual void StopReconnect()
+        {
+            m_IsReconnecting = false;
+            m_DebugClassFacade?.LogInfo(GetType().Name, "[OnlineState] 재연결 중단");
+        }
+
+        protected virtual void Update()
+        {
+            if (m_IsReconnecting && Time.time - m_ReconnectStartTime > k_ReconnectTimeout)
+            {
+                m_DebugClassFacade?.LogError(GetType().Name, "[OnlineState] 재연결 시간 초과");
+                OnTransportFailure(0);
+            }
+        }
     }
-
-    public override void OnTransportFailure()
-    {
-        // This behaviour will be the same for every online state
-        Debug.Log("[OnlineState] 연결 상태 발행: GenericDisconnect");
-
-        m_ConnectionManager.ChangeState(m_ConnectionManager.m_Offline);
-
-        Debug.Log("[OnlineState] 상태 변경: Offline");
-    }
-}
 }

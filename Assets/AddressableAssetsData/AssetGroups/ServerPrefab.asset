@@ -22,7 +22,7 @@ MonoBehaviour:
     - PreLoad
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: b6e03a8d4f12db54fb0e52cc2eb60c59
-    m_Address: Monster
+    m_Address: ServerMonster
     m_ReadOnly: 0
     m_SerializedLabels:
     - PreLoad

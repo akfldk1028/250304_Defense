@@ -8,19 +8,16 @@ using Object = UnityEngine.Object;
 using Unity.Netcode;
 using Unity.Assets.Scripts.UI;
 using Unity.Netcode.Transports.UTP;
-
+using Unity.Assets.Scripts.Network;
 
 namespace Unity.Assets.Scripts.Scene
 {
 public class MainMenuScene : BaseScene
 {
-    [Inject] private SceneManagerEx _sceneManager;
     
     [Inject] private NetworkManager _networkManager;
+    [Inject] private ConnectionManager _connectionManager;
     // 서버 연결 정보
-    [SerializeField] private string _ipAddress = "127.0.0.1"; // 기본값은 로컬호스트
-    [SerializeField] private ushort _port = 7777; // 기본 포트
-
 	public override bool Init()
 	{
 		if (base.Init() == false)
@@ -70,33 +67,19 @@ public class MainMenuScene : BaseScene
     // 이벤트 핸들러
     private void OnRandomMatchRequested()
     {
-        // NetworkManager에 UnityTransport가 있는지 확인하고 없으면 추가
-
-
-
-        _networkManager.StartHost();
-        Debug.Log("ȣ��Ʈ�� ���۵Ǿ����ϴϴ�");
-
-        _networkManager.OnClientConnectedCallback += OnClientConnected;
-        _networkManager.OnClientDisconnectCallback += OnHostDisconnected;
-        _sceneManager.LoadScene(EScene.BasicGame);
+        _connectionManager.StartHostLobby();
+        // 연결 상태 변경을 구독하고 연결 성공 시 씬 전환
+        _connectionManager.OnConnectionStatusChanged += OnConnectionStatusChanged;
     }
 
-        private void OnClientConnected(ulong clientId)
+    private void OnConnectionStatusChanged(ConnectStatus status)
     {
-        // OnPlayerJoined();
-    }
-
-    private void OnHostDisconnected(ulong clientId)
-    {
-        if(clientId == _networkManager.LocalClientId && _networkManager.IsHost)
+        if (status == ConnectStatus.Connected)
         {
-            _networkManager.OnClientConnectedCallback -= OnClientConnected;
-            _networkManager.OnClientDisconnectCallback -= OnHostDisconnected;
+            _connectionManager.OnConnectionStatusChanged -= OnConnectionStatusChanged;
+            _sceneManager.LoadScene(EScene.BasicGame);
         }
     }
-
-
 }
 
 }

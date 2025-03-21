@@ -3,9 +3,12 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using Unity.Assets.Scripts.Scene;
+using VContainer;
 
 public abstract class BaseScene : InitBase
 {
+    [Inject] public SceneManagerEx _sceneManager;
+
 	public EScene SceneType { get; protected set; } = EScene.Unknown;
 
 	public override bool Init()

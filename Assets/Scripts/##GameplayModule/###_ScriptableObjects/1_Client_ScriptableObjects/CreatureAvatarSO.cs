@@ -12,7 +12,7 @@ namespace Unity.Assets.Scripts.Objects
     /// 생물체의 시각적 요소와 데이터 참조를 관리하는 ScriptableObject의 기본 클래스입니다.
     /// 이 클래스는 프리팹, 스프라이트, 애니메이터 컨트롤러와 같은 시각적 요소를 포함합니다.
     /// </summary>
-    public abstract class CreatureAvatarSO : GuidScriptableObject, IResettable
+    public abstract class CreatureAvatarSO : GuidScriptableObject
     {
         [Header("식별 정보")]
         [Tooltip("생물체의 고유 ID (CreatureStatsSO의 DataId와 일치해야 함)")]
@@ -140,31 +140,9 @@ namespace Unity.Assets.Scripts.Objects
             #endif
         }
         
-        /// <summary>
+      
     
-        
-        /// <summary>
-        /// 게임 모드 종료 시 객체의 상태를 초기화합니다.
-        /// </summary>
-        public virtual void Reset()
-        {
-            // 참조 초기화
-            creatureSprite = null;
-            animatorController = null;
-            spawnEffectPrefab = null;
-            deathEffectPrefab = null;
-            
-            // 사운드 배열 초기화
-            if (creatureSounds != null)
-            {
-                for (int i = 0; i < creatureSounds.Length; i++)
-                {
-                    creatureSounds[i] = null;
-                }
-            }
-            
-            Debug.Log($"[CreatureAvatarSO] {name} 초기화 완료");
-        }
+   
         
         /// <summary>
         /// 유효성 검사를 수행합니다.

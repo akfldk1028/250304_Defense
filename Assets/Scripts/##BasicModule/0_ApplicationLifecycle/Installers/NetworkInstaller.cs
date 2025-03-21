@@ -31,9 +31,23 @@ namespace Unity.Assets.Scripts.Module.ApplicationLifecycle.Installers
         {
             _debugClassFacade?.LogInfo(GetType().Name, "네트워크 모듈 설치 시작");
             
-            // builder.RegisterComponent(m_UpdateRunner);
-            // builder.RegisterComponent(m_ConnectionManager);
+            builder.RegisterComponent(m_UpdateRunner);
+            builder.RegisterComponent(m_ConnectionManager);
             builder.RegisterComponent(m_NetworkManager);
+
+            // builder.Register<OfflineState>(Lifetime.Singleton);
+            // builder.Register<LobbyConnectingState>(Lifetime.Singleton);
+            // builder.Register<ClientConnectingState>(Lifetime.Singleton);
+            // builder.Register<ClientConnectedState>(Lifetime.Singleton);
+            // builder.Register<ClientReconnectingState>(Lifetime.Singleton);
+            // builder.Register<StartingHostState>(Lifetime.Singleton);
+            // builder.Register<HostingState>(Lifetime.Singleton);
+
+            builder.RegisterInstance(new MessageChannel<ConnectStatus>()).AsImplementedInterfaces();
+            builder.RegisterInstance(new MessageChannel<ReconnectMessage>()).AsImplementedInterfaces();
+            builder.RegisterComponent(new NetworkedMessageChannel<ConnectionEventMessage>()).AsImplementedInterfaces();
+
+                
 
             builder.Register<NetUtils>(Lifetime.Singleton);
             _debugClassFacade?.LogInfo(GetType().Name, "네트워크 모듈 설치 완료");

@@ -39,7 +39,19 @@ public class DebugClassFacade
         EnableClass("ResourceInstaller", Color.blue);
         EnableClass("UIManager", Color.cyan);
         EnableClass("ResourceManager", Color.cyan);
+        EnableClass("ConnectionManager", Color.green);
+        EnableClass("NetworkManager", Color.magenta);
+        EnableClass("ConnectionState", Color.magenta);
+        EnableClass("OfflineState", Color.magenta);
+        EnableClass("LobbyConnectingState", Color.magenta);
+        EnableClass("ClientConnectingState", Color.magenta);
+        EnableClass("ClientConnectedState", Color.magenta);
+        EnableClass("ClientReconnectingState", Color.magenta);
+        EnableClass("StartingHostState", Color.magenta);
+        EnableClass("HostingState", Color.magenta);
+        EnableClass("ConnectionState", Color.magenta);
 
+        
             // s_instance.EnableClass(typeof(UIManager), Color.cyan);
         // 순환 참조 방지: 생성자에서 DebugManager.Instance를 직접 호출하지 않음
         // _debugManager는 나중에 SetDebugManager 메서드를 통해 설정됨
@@ -52,11 +64,7 @@ public class DebugClassFacade
     /// </summary>
     public static void Initialize()
     {
-            // EnableClass("ResourceInstaller", Color.blue);
-            
-            // // UIManager 클래스 등록 - 두 가지 방식으로 모두 등록
-            // s_instance.EnableClass("UIManager", Color.cyan);
-            // s_instance.EnableClass(typeof(UIManager), Color.cyan);
+
     }
     
     /// <summary>

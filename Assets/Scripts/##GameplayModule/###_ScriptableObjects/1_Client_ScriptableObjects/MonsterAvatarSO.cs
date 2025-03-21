@@ -9,7 +9,7 @@ namespace Unity.Assets.Scripts.Objects
     /// 몬스터의 시각적 요소와 데이터 참조를 관리하는 ScriptableObject입니다.
     /// </summary>
     [CreateAssetMenu(fileName = "MonsterAvatar", menuName = "GameData/MonsterAvatar", order = 2)]
-    public class MonsterAvatarSO : CreatureAvatarSO, IResettable
+    public class MonsterAvatarSO : CreatureAvatarSO
     {
  
         
@@ -27,16 +27,5 @@ namespace Unity.Assets.Scripts.Objects
         
   
         
-        public override void Reset()
-        {
-            // 부모 클래스의 Reset 호출
-            base.Reset();
-            
-            // 몬스터 특화 속성 초기화
-            attackEffectPrefab = null;
-            hitEffectPrefab = null;
-            
-            Debug.Log($"[MonsterAvatarSO] {name} 초기화 완료");
-        }
     }
 }

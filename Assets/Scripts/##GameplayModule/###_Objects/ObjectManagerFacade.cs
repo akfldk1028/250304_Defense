@@ -19,10 +19,10 @@ public class ObjectManagerFacade : NetworkBehaviour
 
     private Coroutine _spawnMonsterCoroutine;
 
-    private void Awake()
+    public void Awake()
     {
         InitializeNetworkObject();
-        SubscribeToEvents();
+        _networkMediator.RegisterHandler(NetworkEventType.NetworkSpawned, OnNetworkObjectSpawned);
     }
 
     private void InitializeNetworkObject()
@@ -35,23 +35,13 @@ public class ObjectManagerFacade : NetworkBehaviour
         }
     }
 
-    private void SubscribeToEvents()
-    {
-        MapSpawnerFacade.GridSpawned += OnGridSpawned;
-        _networkMediator.RegisterHandler(NetworkEventType.NetworkSpawned, OnNetworkObjectSpawned);
-    }
 
     private void OnDestroy()
     {
-        UnsubscribeFromEvents();
         StopSpawnCoroutine();
     }
 
-    private void UnsubscribeFromEvents()
-    {
-        MapSpawnerFacade.GridSpawned -= OnGridSpawned;
-        Debug.Log("[ObjectManagerFacade] OnDestroy: 이벤트 구독 해제");
-    }
+
 
     private void StopSpawnCoroutine()
     {
@@ -62,12 +52,6 @@ public class ObjectManagerFacade : NetworkBehaviour
         }
     }
 
-    private void OnGridSpawned()
-    {
-        Debug.Log("[ObjectManagerFacade] OnGridSpawned: 이동 경로 설정 완료 후 GridSpawned 이벤트 직접 호출");
-        // monster 를 servermonster 로 변경 TODO
-        Spawn_Monster(false, "Monster", 202001);
-    }
 
     private void OnNetworkObjectSpawned(MonsterSpawnEventData data)
     {
@@ -90,37 +74,32 @@ public class ObjectManagerFacade : NetworkBehaviour
         }
     }
 
-    public void Spawn_Monster(bool getBoss, string prefabName, int templateID)
+    public void Spawn_Monster(bool getBoss, int templateID)
     {
-        if (this == null)
-        {
-            Debug.LogError("[ObjectManagerFacade] MonoBehaviour 인스턴스가 유효하지 않습니다.");
-            return;
-        }
 
         Vector3 spawnPos = _mapSpawnerFacade.Player_move_list[0];
         Debug.Log($"<color=yellow>[ObjectManagerFacade] 위치: {spawnPos}</color>");
         
         StopSpawnCoroutine();
-        _spawnMonsterCoroutine = StartCoroutine(SpawnMonsterRoutine(getBoss, prefabName, spawnPos, templateID));
+        _spawnMonsterCoroutine = StartCoroutine(SpawnMonsterRoutine(getBoss, spawnPos, templateID));
     }
 
-    private IEnumerator SpawnMonsterRoutine(bool getBoss, string prefabName, Vector3 spawnPos, int templateID)
+    private IEnumerator SpawnMonsterRoutine(bool getBoss, Vector3 spawnPos, int templateID)
     {
         while (!getBoss)
         {
             yield return new WaitForSeconds(0.1f);
-            SpawnSingleMonster(prefabName, spawnPos,  templateID);
+            SpawnSingleMonster(spawnPos,  templateID);
         }
     }
 
-    private void SpawnSingleMonster(string prefabName, Vector3 spawnPos, int templateID)
+    private void SpawnSingleMonster(Vector3 spawnPos, int templateID)
     {
         try
         {
             ulong ClientId = 1;
             Vector3 cellPos = new Vector3(spawnPos.x, spawnPos.y, 0);
-            ServerMonster monster = _objectManager.Spawn<ServerMonster>(cellPos, ClientId, templateID, prefabName);
+            ServerMonster monster = _objectManager.Spawn<ServerMonster>(cellPos, ClientId, templateID);
             
             // 성공적으로 스폰된 몬스터 인스턴스에 대해 DataLoader 의존성이 주입되었는지 검사
             if (monster != null) {

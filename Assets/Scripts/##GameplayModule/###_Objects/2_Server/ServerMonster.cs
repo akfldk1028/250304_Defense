@@ -23,29 +23,8 @@ namespace Unity.Assets.Scripts.Objects
     /// </summary>
     public class ServerMonster : Creature
     {	
-        [Inject] private DataLoader _dataLoader;
+        // [Inject] private DataLoader _dataLoader;
 
-        #region Editor
-        #if UNITY_EDITOR
-        public class ReadOnlyAttribute : PropertyAttribute {}
-        
-        [CustomPropertyDrawer(typeof(ReadOnlyAttribute))]
-        public class ReadOnlyDrawer : PropertyDrawer
-        {
-            public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
-            {
-                return EditorGUI.GetPropertyHeight(property, label, true);
-            }
-            
-            public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
-            {
-                GUI.enabled = false;
-                EditorGUI.PropertyField(position, property, label, true);
-                GUI.enabled = true;
-            }
-        }
-        #endif
-        #endregion
 
         #region Singleton
         private static ServerMonster instance;
@@ -72,15 +51,10 @@ namespace Unity.Assets.Scripts.Objects
         [Space(10)]
         [SerializeField] 
         private MonsterAvatarSO monsterAvatarSO;
-        
-        // [Header("===== 자동 할당된 정보 =====")]
-        // [Space(5)]
-        // [SerializeField, ReadOnly] 
-        // private MonsterStatsSO monsterStatsSO;
-        
+
         [Header("===== 몬스터 특화 속성 (읽기 전용) =====")]
         [Space(5)]
-        [SerializeField, ReadOnly]
+        [SerializeField]
         private int dropItemId;
 
         // 네트워크 변수
@@ -181,27 +155,7 @@ namespace Unity.Assets.Scripts.Objects
         }
         #endregion
 
-        #region Data Management
-        private bool LoadMonsterDataFromAvatarSO()
-        {
-            if (monsterAvatarSO == null)
-            {
-                Debug.LogError("[ServerMonster] monsterAvatarSO가 null입니다!");
-                OnDataLoadComplete?.Invoke(this, false);
-                return false;
-            }
-
-            // monsterStatsSO = monsterAvatarSO.MonsterData;
-            // if (monsterStatsSO == null)
-            // {
-            //     Debug.LogError("[ServerMonster] monsterAvatarSO에서 MonsterStatsSO를 가져올 수 없습니다!");
-            //     OnDataLoadComplete?.Invoke(this, false);
-            //     return false;
-            // }
-
-            // SetupMonsterData();
-            return true;
-        }
+     
 
         // private void SetupMonsterData()
         // {
@@ -218,8 +172,7 @@ namespace Unity.Assets.Scripts.Objects
         //     OnDataLoadComplete?.Invoke(this, true);
         // }
 
-   
-        #endregion
+ 
 
         #region Combat
         public void TakeDamage(float damage)
@@ -324,7 +277,6 @@ namespace Unity.Assets.Scripts.Objects
 
             if (Application.isPlaying)
             {
-                LoadMonsterDataFromAvatarSO();
             }
             else
             {
