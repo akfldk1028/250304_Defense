@@ -29,8 +29,10 @@ namespace Unity.Assets.Scripts.Network
         private bool m_IsConnecting = false;
         private float m_ConnectionStartTime;
         private const float k_ConnectionTimeout = 30f;
-
-        // 로비 관련 변수 추가
+        private readonly float k_MatchmakingTimeout = 20.0f; // 매칭 타임아웃 (20초)
+        private float m_MatchmakingStartTime;
+        private bool m_IsWaitingForPlayers = false;
+                // 로비 관련 변수 추가
         private Lobby currentLobby;
         private const int maxPlayers = 2; // 최대 플레이어 수 (필요에 따라 조정)
         
@@ -39,19 +41,7 @@ namespace Unity.Assets.Scripts.Network
         private string m_LocalPlayerName = "Player"; // 기본 이름
         private SessionManager<SessionPlayerData> m_SessionManager => SessionManager<SessionPlayerData>.Instance;
               
-        // [Inject] protected DebugClassFacade m_DebugClassFacade;
         [Inject] private SceneManagerEx _sceneManagerEx;
-        // [Inject] private IObjectResolver m_Resolver;
-        // [Inject] protected ConnectionManager m_ConnectionManager;
-
-
-        // [Inject]
-        // protected NetworkManager m_NetworkManager;
-        // [Inject]
-        // protected IPublisher<ConnectStatus> m_ConnectStatusPublisher;
-
-        // [Inject]
-        // protected IPublisher<ConnectionEventMessage> m_ConnectionEventPublisher;
 
         public override void Enter()
         {
@@ -194,25 +184,36 @@ namespace Unity.Assets.Scripts.Network
 
         public async override void StartHostLobby()
         {
+            // 이미 연결 시도 중이면 중복 호출 방지
+            if (m_IsConnecting && currentLobby != null)
+            {
+                m_DebugClassFacade?.LogInfo(GetType().Name, "[LobbyConnectingState] 이미 로비 연결 시도 중입니다");
+                return;
+            }
+            
             m_DebugClassFacade?.LogInfo(GetType().Name, "[LobbyConnectingState] 호스트 로비 시작");
+            m_IsConnecting = true;
             
-            // 대기 시간 추가
-            if (Time.time - m_LastLobbyApiCallTime < k_LobbyApiCooldown)
+            try
             {
-                m_DebugClassFacade?.LogInfo(GetType().Name, "[LobbyConnectingState] API 쿨다운 중, 잠시 대기합니다.");
-                await Task.Delay(2000); // 2초 대기
-            }
-            
-            // 기존 로직 유지
-            currentLobby = await FindAvailableLobby();
+                // 먼저 사용 가능한 로비를 찾습니다
+                currentLobby = await FindAvailableLobby();
 
-            if (currentLobby == null)
-            {
-                await CreateNewLobby();
+                if (currentLobby == null)
+                {
+                    // 로비가 없으면 새로 생성합니다 
+                    await CreateNewLobby();
+                }
+                else
+                {
+                    // 로비가 있으면 직접 참가합니다 (호스트가 아닌 일반 클라이언트로)
+                    await JoinExistingLobby(currentLobby.Id);
+                }
             }
-            else
+            catch (Exception e)
             {
-                await JoinLobby(currentLobby.Id);
+                m_DebugClassFacade?.LogError(GetType().Name, $"로비 연결 중 예외 발생: {e.Message}");
+                OnConnectionFailed();
             }
         }
         private async Task<Lobby> FindAvailableLobby()
@@ -220,14 +221,14 @@ namespace Unity.Assets.Scripts.Network
             try
             {
                 m_DebugClassFacade?.LogInfo(GetType().Name, "[LobbyConnectingState] 가용 로비 검색");
-                var queryResponse = await LobbyService.Instance.QueryLobbiesAsync();
+                var queryResponse = await ExecuteLobbyAPIWithRetry(() => LobbyService.Instance.QueryLobbiesAsync());
                 if (queryResponse.Results.Count > 0)
                 {
                     m_DebugClassFacade?.LogInfo(GetType().Name, $"[LobbyConnectingState] 로비 발견: {queryResponse.Results[0].Id}");
                     return queryResponse.Results[0];
                 }
             }
-            catch (LobbyServiceException e)
+            catch (Exception e)
             {
                 m_DebugClassFacade?.LogError(GetType().Name, $"로비 조회 중 오류 발생: {e.Message}");
             }
@@ -235,7 +236,49 @@ namespace Unity.Assets.Scripts.Network
             return null;
         }
 
+        // API 호출을 위한 헬퍼 메서드 - 클래스에 추가해야 합니다
+        private async Task<T> ExecuteLobbyAPIWithRetry<T>(Func<Task<T>> apiCall, int maxRetries = 3)
+        {
+            await CheckAndWaitForCooldown();
+            
+            int retryCount = 0;
+            int baseDelay = 2000; // 기본 2초 대기
+            
+            while (true)
+            {
+                try
+                {
+                    var result = await apiCall();
+                    m_LastLobbyApiCallTime = Time.time;
+                    return result;
+                }
+                catch (LobbyServiceException e) when (e.Message.Contains("Rate limit") && retryCount < maxRetries)
+                {
+                    retryCount++;
+                    int delayMs = baseDelay * retryCount; // 점진적 대기 시간 증가: 2초, 4초, 6초...
+                    m_DebugClassFacade?.LogWarning(GetType().Name, $"Rate limit 발생, {retryCount}/{maxRetries} 재시도 (대기: {delayMs/1000}초)");
+                    await Task.Delay(delayMs);
+                }
+                catch (LobbyServiceException e)
+                {
+                    m_DebugClassFacade?.LogError(GetType().Name, $"로비 API 호출 중 오류: {e.Message}");
+                    throw;
+                }
+            }
+        }
 
+        // 쿨다운 체크 메서드도 클래스에 추가해야 합니다
+        private async Task<bool> CheckAndWaitForCooldown()
+        {
+            if (Time.time - m_LastLobbyApiCallTime < k_LobbyApiCooldown)
+            {
+                m_DebugClassFacade?.LogInfo(GetType().Name, $"[LobbyConnectingState] API 쿨다운 중 ({k_LobbyApiCooldown}초)");
+                await Task.Delay((int)(k_LobbyApiCooldown * 1000));
+                return true;
+            }
+            m_LastLobbyApiCallTime = Time.time;
+            return false;
+        }
 
 
         private async void DestroyLobby(string lobbyId)
@@ -288,15 +331,23 @@ namespace Unity.Assets.Scripts.Network
                     }
                 };
                 
-                currentLobby = await LobbyService.Instance.CreateLobbyAsync(randomLobbyName, maxPlayers, lobbyOptions);
+                // 로비 생성 - 이 때 호스트는 자동으로 멤버가 됨
+                currentLobby = await ExecuteLobbyAPIWithRetry(() => 
+                    LobbyService.Instance.CreateLobbyAsync(randomLobbyName, maxPlayers, lobbyOptions));
+                    
                 m_DebugClassFacade?.LogInfo(GetType().Name, $"[LobbyConnectingState] 로비 생성 완료: {currentLobby.Id}");
                 
+                // 릴레이 서버 할당 및 설정
                 await AllocateRelayServerAndJoin(currentLobby);
-                // CancelButton.onClick.AddListener(() => DestroyLobby(currentLobby.Id)); // UI 관련 코드는 필요에 따라 활성화
+                
+                // 호스트 시작 - 이미 로비의 멤버이므로 다시 Join 시도하지 않음
                 StartHost();
                 
                 // 세션 시작 표시
                 m_SessionManager.OnSessionStarted();
+
+                // 매칭 대기 시작
+                StartWaitingForPlayers();
             }
             catch (LobbyServiceException e)
             {
@@ -305,11 +356,28 @@ namespace Unity.Assets.Scripts.Network
             }
         }
 
-        private async Task JoinLobby(string lobbyId)
+        private void StartWaitingForPlayers()
+        {
+            m_IsWaitingForPlayers = true;
+            m_MatchmakingStartTime = Time.time;
+            m_DebugClassFacade?.LogInfo(GetType().Name, $"[LobbyConnectingState] 매칭 대기 시작 (최대 {k_MatchmakingTimeout}초)");
+            
+            // UI에 대기 상태 표시 (필요하다면)
+            // ShowWaitingUI(true);
+            
+            // 매칭 상태 업데이트를 위한 코루틴 시작
+            // StartCoroutine(WaitForPlayersCoroutine());
+        }
+
+
+
+
+        // 기존 로비에 참가하는 메서드 (클라이언트용)
+        private async Task JoinExistingLobby(string lobbyId)
         {
             try
             {
-                m_DebugClassFacade?.LogInfo(GetType().Name, $"[LobbyConnectingState] 로비 참가: {lobbyId}");
+                m_DebugClassFacade?.LogInfo(GetType().Name, $"[LobbyConnectingState] 기존 로비 참가: {lobbyId}");
                 
                 // 로비 참가 옵션에 플레이어 데이터 추가
                 var joinOptions = new JoinLobbyByIdOptions
@@ -323,17 +391,11 @@ namespace Unity.Assets.Scripts.Network
                     }
                 };
                 
-                currentLobby = await LobbyService.Instance.JoinLobbyByIdAsync(lobbyId, joinOptions);
+                // 로비 참가
+                currentLobby = await ExecuteLobbyAPIWithRetry(() => 
+                    LobbyService.Instance.JoinLobbyByIdAsync(lobbyId, joinOptions));
                 
-                // 로비에서 호스트 정보 확인
-                if (currentLobby.Data != null && 
-                    currentLobby.Data.TryGetValue("hostId", out var hostIdData))
-                {
-                    string hostId = hostIdData.Value;
-                    m_DebugClassFacade?.LogInfo(GetType().Name, $"[LobbyConnectingState] 호스트 정보: ID: {hostId}");
-                }
-                
-                // 로비에서 릴레이 코드 가져오기
+                // 릴레이 코드 가져와서 연결
                 if (currentLobby.Data != null && currentLobby.Data.TryGetValue("RelayJoinCode", out var relayJoinCodeData))
                 {
                     string relayJoinCode = relayJoinCodeData.Value;
@@ -347,6 +409,7 @@ namespace Unity.Assets.Scripts.Network
                     m_DebugClassFacade?.LogError(GetType().Name, "[LobbyConnectingState] 릴레이 코드를 찾을 수 없습니다");
                 }
                 
+                // 클라이언트로 시작
                 StartClientLobby();
             }
             catch (LobbyServiceException e)
@@ -355,7 +418,7 @@ namespace Unity.Assets.Scripts.Network
                 OnConnectionFailed();
             }
         }
-        
+                
         private async Task JoinRelayServer(string joinCode)
         {
             try
@@ -410,18 +473,21 @@ namespace Unity.Assets.Scripts.Network
             try
             {
                 // 로비 데이터 업데이트 - 현재 플레이어 수 정보
-                var lobbyData = new Dictionary<string, DataObject>();
-                lobbyData.Add("PlayerCount", new DataObject(
-                    visibility: DataObject.VisibilityOptions.Public,
-                    value: m_NetworkManager.ConnectedClients.Count.ToString()
-                ));
+                var lobbyData = new Dictionary<string, DataObject> {
+                    { "PlayerCount", new DataObject(
+                        visibility: DataObject.VisibilityOptions.Public,
+                        value: m_NetworkManager.ConnectedClients.Count.ToString()
+                    )}
+                };
                 
                 // 로비 데이터 업데이트
                 var updateLobbyOptions = new UpdateLobbyOptions { Data = lobbyData };
-                await LobbyService.Instance.UpdateLobbyAsync(currentLobby.Id, updateLobbyOptions);
+                await ExecuteLobbyAPIWithRetry(() => 
+                    LobbyService.Instance.UpdateLobbyAsync(currentLobby.Id, updateLobbyOptions));
+                    
                 m_DebugClassFacade?.LogInfo(GetType().Name, $"[LobbyConnectingState] 로비 플레이어 수 업데이트: {m_NetworkManager.ConnectedClients.Count}");
             }
-            catch (LobbyServiceException e)
+            catch (Exception e)
             {
                 m_DebugClassFacade?.LogError(GetType().Name, $"로비 데이터 업데이트 중 오류 발생: {e.Message}");
             }
