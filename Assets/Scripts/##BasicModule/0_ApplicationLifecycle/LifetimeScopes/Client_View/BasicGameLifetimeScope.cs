@@ -89,8 +89,9 @@ public class BasicGameLifetimeScope : LifetimeScope
                
                if (mapSpawnerObject.GetComponent<NetworkObject>() == null)
                {
-                   mapSpawnerObject.AddComponent<NetworkObject>();
-                   Debug.Log("[BasicGameLifetimeScope] MapSpawner에 NetworkObject 컴포넌트 추가 완료");
+                   var netObj = mapSpawnerObject.AddComponent<NetworkObject>();
+                   netObj.Spawn();
+                   Debug.Log("[BasicGameLifetimeScope] MapSpawner에 NetworkObject 컴포넌트 추가 및 스폰 완료");
                }
 
                // ObjectManagerFacade 초기화
@@ -100,8 +101,9 @@ public class BasicGameLifetimeScope : LifetimeScope
                
                if (objectManagerObject.GetComponent<NetworkObject>() == null)
                {
-                   objectManagerObject.AddComponent<NetworkObject>();
-                   Debug.Log("[BasicGameLifetimeScope] ObjectManagerFacade에 NetworkObject 컴포넌트 추가 완료");
+                   var netObj = objectManagerObject.AddComponent<NetworkObject>();
+                   netObj.Spawn();
+                   Debug.Log("[BasicGameLifetimeScope] ObjectManagerFacade에 NetworkObject 컴포넌트 추가 및 스폰 완료");
                }
 
                Debug.Log("[BasicGameLifetimeScope] MapSpawnerFacade와 ObjectManagerFacade 초기화 완료");

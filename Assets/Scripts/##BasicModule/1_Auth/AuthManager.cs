@@ -3,6 +3,7 @@ using VContainer;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Unity.Services.Authentication;
 
 namespace Unity.Assets.Scripts.Auth
 {
@@ -13,7 +14,8 @@ namespace Unity.Assets.Scripts.Auth
     {
         private const string PLAYER_PREFS_LAST_LOGIN_ID = "LastLoginId";
         private const string DEBUG_TAG = "[AuthService]";
-
+        // [Inject]
+        // IPublisher<UnityServiceErrorMessage> m_UnityServiceErrorMessagePublisher;
         public bool IsAuthenticated => Unity.Services.Authentication.AuthenticationService.Instance.IsSignedIn;
         public string PlayerId => Unity.Services.Authentication.AuthenticationService.Instance.PlayerId;
 
@@ -91,7 +93,36 @@ namespace Unity.Assets.Scripts.Auth
                 Debug.Log($"<color=yellow>{DEBUG_TAG} 로그아웃 완료</color>");
             }
         }
+        public async Task<bool> EnsurePlayerIsAuthorized()
+        {
+            if (AuthenticationService.Instance.IsAuthorized)
+            {
+                return true;
+            }
 
+            try
+            {
+                await AuthenticationService.Instance.SignInAnonymouslyAsync();
+                return true;
+            }
+            catch (AuthenticationException e)
+            {
+                var reason = e.InnerException == null ? e.Message : $"{e.Message} ({e.InnerException.Message})";
+                Debug.LogError($"<color=red>{DEBUG_TAG} 인증 실패: {reason}</color>");
+                // m_UnityServiceErrorMessagePublisher.Publish(new UnityServiceErrorMessage("Authentication Error", reason, UnityServiceErrorMessage.Service.Authentication, e));
+
+                //not rethrowing for authentication exceptions - any failure to authenticate is considered "handled failure"
+                return false;
+            }
+            catch (Exception e)
+            {
+                //all other exceptions should still bubble up as unhandled ones
+                var reason = e.InnerException == null ? e.Message : $"{e.Message} ({e.InnerException.Message})";
+                Debug.LogError($"<color=red>{DEBUG_TAG} 인증 실패: {reason}</color>");
+                // m_UnityServiceErrorMessagePublisher.Publish(new UnityServiceErrorMessage("Authentication Error", reason, UnityServiceErrorMessage.Service.Authentication, e));
+                throw;
+            }
+        }
         /// <summary>
         /// 현재 인증 상태를 확인합니다.
         /// </summary>

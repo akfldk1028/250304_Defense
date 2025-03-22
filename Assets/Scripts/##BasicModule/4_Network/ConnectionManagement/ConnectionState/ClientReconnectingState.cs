@@ -1,130 +1,138 @@
 ﻿using System;
-using System.Threading.Tasks;
+using System.Collections;
 using UnityEngine;
-using Unity.Netcode;
 using VContainer;
 
-namespace Unity.Assets.Scripts.Network
-{
+
     /// <summary>
-    /// 클라이언트 재연결 상태 클래스
-    /// 
-    /// 클라이언트 재연결 시도 상태를 관리하며, 연결 실패 후 재연결을 처리합니다.
+    /// Connection state corresponding to a client attempting to reconnect to a server. It will try to reconnect a
+    /// number of times defined by the ConnectionManager's NbReconnectAttempts property. If it succeeds, it will
+    /// transition to the ClientConnected state. If not, it will transition to the Offline state. If given a disconnect
+    /// reason first, depending on the reason given, may not try to reconnect again and transition directly to the
+    /// Offline state.
     /// </summary>
-    public class ClientReconnectingState : ConnectionState
+    class ClientReconnectingState : ClientConnectingState
     {
-        private bool m_IsReconnecting = false;
-        private float m_ReconnectStartTime;
-        private const float k_ReconnectTimeout = 30f;
-        private int m_ReconnectAttempts = 0;
-        private const int k_MaxReconnectAttempts = 3;
+        [Inject]
+        IPublisher<ReconnectMessage> m_ReconnectMessagePublisher;
 
-        // [Inject]
-        // protected ConnectionManager m_ConnectionManager;
+        Coroutine m_ReconnectCoroutine;
+        int m_NbAttempts;
 
-        // [Inject]
-        // protected IPublisher<ConnectStatus> m_ConnectStatusPublisher;
-
-        // [Inject]
-        // protected NetworkManager m_NetworkManager;
-
-        // [Inject]
-        // protected IPublisher<ConnectionEventMessage> m_ConnectionEventPublisher;
-
-        // [Inject] protected DebugClassFacade m_DebugClassFacade;
+        const float k_TimeBeforeFirstAttempt = 1;
+        const float k_TimeBetweenAttempts = 5;
 
         public override void Enter()
         {
-            m_DebugClassFacade?.LogInfo(GetType().Name, "[ClientReconnectingState] 클라이언트 재연결 시작");
-            m_IsReconnecting = true;
-            m_ReconnectStartTime = Time.time;
-            PublishConnectStatus(ConnectStatus.Connecting);
-            StartReconnect();
+            m_NbAttempts = 0;
+            m_ReconnectCoroutine = m_ConnectionManager.StartCoroutine(ReconnectCoroutine());
         }
 
         public override void Exit()
         {
-            m_DebugClassFacade?.LogInfo(GetType().Name, "[ClientReconnectingState] 클라이언트 재연결 종료");
-            m_IsReconnecting = false;
-            m_ReconnectAttempts = 0;
+            if (m_ReconnectCoroutine != null)
+            {
+                m_ConnectionManager.StopCoroutine(m_ReconnectCoroutine);
+                m_ReconnectCoroutine = null;
+            }
+            m_ReconnectMessagePublisher.Publish(new ReconnectMessage(m_ConnectionManager.NbReconnectAttempts, m_ConnectionManager.NbReconnectAttempts));
         }
 
-   
-
-        private async void StartReconnect()
+        public override void OnClientConnected(ulong _)
         {
-            try
-            {
-                if (m_ReconnectAttempts >= k_MaxReconnectAttempts)
-                {
-                    m_DebugClassFacade?.LogError(GetType().Name, "[ClientReconnectingState] 최대 재연결 시도 횟수 초과");
-                    OnReconnectFailed();
-                    return;
-                }
-
-                m_ReconnectAttempts++;
-                m_DebugClassFacade?.LogInfo(GetType().Name, $"[ClientReconnectingState] 재연결 시도 {m_ReconnectAttempts}/{k_MaxReconnectAttempts}");
-
-                if (!m_NetworkManager.StartClient())
-                {
-                    m_DebugClassFacade?.LogError(GetType().Name, "[ClientReconnectingState] 재연결 실패");
-                    OnReconnectFailed();
-                    return;
-                }
-
-                m_DebugClassFacade?.LogInfo(GetType().Name, "[ClientReconnectingState] 재연결 성공");
-            }
-            catch (Exception e)
-            {
-                m_DebugClassFacade?.LogError(GetType().Name, $"[ClientReconnectingState] 재연결 중 오류: {e.Message}");
-                OnReconnectFailed();
-            }
-        }
-
-        public override void OnClientConnected(ulong clientId)
-        {
-            if (!m_IsReconnecting) return;
-
-            m_DebugClassFacade?.LogInfo(GetType().Name, $"[ClientReconnectingState] 클라이언트 재연결됨: {clientId}");
-            m_ConnectionEventPublisher?.Publish(new ConnectionEventMessage { ClientId = clientId, ConnectStatus = ConnectStatus.Connected });
             m_ConnectionManager.ChangeState(m_ConnectionManager.m_ClientConnected);
         }
 
-        public override void OnClientDisconnect(ulong clientId)
+        public override void OnClientDisconnect(ulong _)
         {
-            if (!m_IsReconnecting) return;
+            var disconnectReason = m_ConnectionManager.NetworkManager.DisconnectReason;
+            if (m_NbAttempts < m_ConnectionManager.NbReconnectAttempts)
+            {
+                if (string.IsNullOrEmpty(disconnectReason))
+                {
+                    m_ReconnectCoroutine = m_ConnectionManager.StartCoroutine(ReconnectCoroutine());
+                }
+                else
+                {
+                    var connectStatus = JsonUtility.FromJson<ConnectStatus>(disconnectReason);
+                    m_ConnectStatusPublisher.Publish(connectStatus);
+                    switch (connectStatus)
+                    {
+                        case ConnectStatus.UserRequestedDisconnect:
+                        case ConnectStatus.HostEndedSession:
+                        case ConnectStatus.ServerFull:
+                        case ConnectStatus.IncompatibleBuildType:
+                            m_ConnectionManager.ChangeState(m_ConnectionManager.m_Offline);
+                            break;
+                        default:
+                            m_ReconnectCoroutine = m_ConnectionManager.StartCoroutine(ReconnectCoroutine());
+                            break;
+                    }
+                }
+            }
+            else
+            {
+                if (string.IsNullOrEmpty(disconnectReason))
+                {
+                    m_ConnectStatusPublisher.Publish(ConnectStatus.GenericDisconnect);
+                }
+                else
+                {
+                    var connectStatus = JsonUtility.FromJson<ConnectStatus>(disconnectReason);
+                    m_ConnectStatusPublisher.Publish(connectStatus);
+                }
 
-            m_DebugClassFacade?.LogInfo(GetType().Name, $"[ClientReconnectingState] 클라이언트 연결 해제: {clientId}");
-            m_ConnectionEventPublisher?.Publish(new ConnectionEventMessage { ClientId = clientId, ConnectStatus = ConnectStatus.Disconnected });
-            OnReconnectFailed();
+                m_ConnectionManager.ChangeState(m_ConnectionManager.m_Offline);
+            }
         }
 
-        public override void OnTransportFailure(ulong clientId)
+        IEnumerator ReconnectCoroutine()
         {
-            if (!m_IsReconnecting) return;
+            // If not on first attempt, wait some time before trying again, so that if the issue causing the disconnect
+            // is temporary, it has time to fix itself before we try again. Here we are using a simple fixed cooldown
+            // but we could want to use exponential backoff instead, to wait a longer time between each failed attempt.
+            // See https://en.wikipedia.org/wiki/Exponential_backoff
+            if (m_NbAttempts > 0)
+            {
+                yield return new WaitForSeconds(k_TimeBetweenAttempts);
+            }
 
-            m_DebugClassFacade?.LogError(GetType().Name, "[ClientReconnectingState] 네트워크 오류");
-            m_ConnectionEventPublisher?.Publish(new ConnectionEventMessage { ClientId = clientId, ConnectStatus = ConnectStatus.Failed });
-            OnReconnectFailed();
-        }
+            Debug.Log("Lost connection to host, trying to reconnect...");
 
-        private void OnReconnectFailed()
-        {
-            if (!m_IsReconnecting) return;
+            m_ConnectionManager.NetworkManager.Shutdown();
 
-            m_IsReconnecting = false;
-            m_NetworkManager.Shutdown();
-            m_ConnectionManager.ChangeState(m_ConnectionManager.m_Offline);
-        }
+            yield return new WaitWhile(() => m_ConnectionManager.NetworkManager.ShutdownInProgress); // wait until NetworkManager completes shutting down
+            Debug.Log($"Reconnecting attempt {m_NbAttempts + 1}/{m_ConnectionManager.NbReconnectAttempts}...");
+            m_ReconnectMessagePublisher.Publish(new ReconnectMessage(m_NbAttempts, m_ConnectionManager.NbReconnectAttempts));
 
-        public void CancelReconnect()
-        {
-            if (!m_IsReconnecting) return;
+            // If first attempt, wait some time before attempting to reconnect to give time to services to update
+            // (i.e. if in a Lobby and the host shuts down unexpectedly, this will give enough time for the lobby to be
+            // properly deleted so that we don't reconnect to an empty lobby
+            if (m_NbAttempts == 0)
+            {
+                yield return new WaitForSeconds(k_TimeBeforeFirstAttempt);
+            }
 
-            m_DebugClassFacade?.LogInfo(GetType().Name, "[ClientReconnectingState] 재연결 취소");
-            m_IsReconnecting = false;
-            m_NetworkManager.Shutdown();
-            m_ConnectionManager.ChangeState(m_ConnectionManager.m_Offline);
+            m_NbAttempts++;
+            var reconnectingSetupTask = m_ConnectionMethod.SetupClientReconnectionAsync();
+            yield return new WaitUntil(() => reconnectingSetupTask.IsCompleted);
+
+            if (!reconnectingSetupTask.IsFaulted && reconnectingSetupTask.Result.success)
+            {
+                // If this fails, the OnClientDisconnect callback will be invoked by Netcode
+                var connectingTask = ConnectClientAsync();
+                yield return new WaitUntil(() => connectingTask.IsCompleted);
+            }
+            else
+            {
+                if (!reconnectingSetupTask.Result.shouldTryAgain)
+                {
+                    // setting number of attempts to max so no new attempts are made
+                    m_NbAttempts = m_ConnectionManager.NbReconnectAttempts;
+                }
+                // Calling OnClientDisconnect to mark this attempt as failed and either start a new one or give up
+                // and return to the Offline state
+                OnClientDisconnect(0);
+            }
         }
     }
-}

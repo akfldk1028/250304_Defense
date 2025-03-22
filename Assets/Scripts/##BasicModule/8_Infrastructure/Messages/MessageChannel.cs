@@ -43,70 +43,54 @@ public class MessageChannel<T> : IMessageChannel<T>
     /// 모든 구독자에게 메시지를 발행
     /// </summary>
     /// <param name="message">전달할 메시지</param>
-    public virtual void Publish(T message)
-    {
-        Debug.Log($"{LOG_PREFIX} Publishing message for {typeof(T).Name}, Handlers: {m_MessageHandlers.Count}, Pending: {m_PendingHandlers.Count}");
-        
-        foreach (var handler in m_PendingHandlers.Keys)
-        {
-            if (m_PendingHandlers[handler])
-            {
-                Debug.Log($"{LOG_PREFIX} Adding pending handler for {typeof(T).Name}");
-                m_MessageHandlers.Add(handler);
-            }
-            else
-            {
-                Debug.Log($"{LOG_PREFIX} Removing pending handler for {typeof(T).Name}");
-                m_MessageHandlers.Remove(handler);
-            }
-        }
-        m_PendingHandlers.Clear();
+       public virtual void Publish(T message)
+       {
+           foreach (var handler in m_PendingHandlers.Keys)
+           {
+               if (m_PendingHandlers[handler])
+               {
+                   m_MessageHandlers.Add(handler);
+               }
+               else
+               {
+                   m_MessageHandlers.Remove(handler);
+               }
+           }
+           m_PendingHandlers.Clear();
 
-        foreach (var messageHandler in m_MessageHandlers)
-        {
-            if (messageHandler != null)
-            {
-                try
-                {
-                    messageHandler.Invoke(message);
-                }
-                catch (Exception e)
-                {
-                    Debug.LogError($"{LOG_PREFIX} Error handling message for {typeof(T).Name}: {e.Message}\n{e.StackTrace}");
-                }
-            }
-        }
-    }
+           foreach (var messageHandler in m_MessageHandlers)
+           {
+               if (messageHandler != null)
+               {
+                   messageHandler.Invoke(message);
+               }
+           }
+       }
 
     /// <summary>
     /// 새로운 구독자 등록
     /// </summary>
     /// <param name="handler">메시지를 처리할 콜백 함수</param>
     /// <returns>구독 해제에 사용할 수 있는 IDisposable 객체</returns>
-    public virtual IDisposable Subscribe(Action<T> handler)
-    {
-        Debug.Log($"{LOG_PREFIX} Subscribing to {typeof(T).Name}");
-        Assert.IsTrue(!IsSubscribed(handler), "Attempting to subscribe with the same handler more than once");
+       public virtual IDisposable Subscribe(Action<T> handler)
+       {
+           Assert.IsTrue(!IsSubscribed(handler), "Attempting to subscribe with the same handler more than once");
 
-        if (m_PendingHandlers.ContainsKey(handler))
-        {
-            if (!m_PendingHandlers[handler])
-            {
-                Debug.Log($"{LOG_PREFIX} Removing pending unsubscribe for {typeof(T).Name}");
-                m_PendingHandlers.Remove(handler);
-            }
-        }
-        else
-        {
-            Debug.Log($"{LOG_PREFIX} Adding pending subscribe for {typeof(T).Name}");
-            m_PendingHandlers[handler] = true;
-        }
+           if (m_PendingHandlers.ContainsKey(handler))
+           {
+               if (!m_PendingHandlers[handler])
+               {
+                   m_PendingHandlers.Remove(handler);
+               }
+           }
+           else
+           {
+               m_PendingHandlers[handler] = true;
+           }
 
-        return null;
-        // var subscription = new DisposableSubscription<T>(this, handler);
-        // return subscription;
-    }
-
+           var subscription = new DisposableSubscription<T>(this, handler);
+           return subscription;
+       }
     /// <summary>
     /// 구독자 제거
     /// </summary>

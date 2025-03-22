@@ -1,133 +1,176 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Unity.Netcode;
 using UnityEngine;
 using VContainer;
+using Unity.Assets.Scripts.UnityServices.Lobbies;
+using Unity.Assets.Scripts.Scene;
 
-namespace Unity.Assets.Scripts.Network
-{
-    /// <summary>
-    /// 호스트 모드로 실행 중인 상태를 나타내는 클래스
-    /// 
-    /// 이 상태에서는 로컬 플레이어가 서버와 클라이언트 역할을 모두 수행합니다.
-    /// 다른 클라이언트의 연결 요청을 처리하고, 게임 세션을 관리합니다.
-    /// NetworkBehaviour 기능을 활용하여 서버 역할을 수행합니다.
-    /// </summary>
-    public class HostingState : OnlineState
+
+/// <summary>
+/// Connection state corresponding to a listening host. Handles incoming client connections. When shutting down or
+/// being timed out, transitions to the Offline state.
+/// </summary>
+    class HostingState : OnlineState
     {
 
-        //  [Inject] protected DebugClassFacade m_DebugClassFacade;
-        //  [Inject] private IPublisher<ConnectionEventMessage> m_ConnectionEventPublisher;
-        // [Inject] private SceneManagerEx _sceneManagerEx;
-        // [Inject] protected ConnectionManager m_ConnectionManager;
+        [Inject]
+        protected LocalLobby m_LocalLobby;
 
+        [Inject] SceneManagerEx _sceneManagerEx;
 
-        private const int k_MaxConnectPayload = 1024;
-        private const int k_MaxPlayers = 2;
-        private bool m_IsHosting = false;
+        [Inject]
+        LobbyServiceFacade m_LobbyServiceFacade;
+
+        [Inject]
+        IPublisher<ConnectionEventMessage> m_ConnectionEventPublisher;
+
+        [Inject] DebugClassFacade m_DebugClassFacade;
+        // used in ApprovalCheck. This is intended as a bit of light protection against DOS attacks that rely on sending silly big buffers of garbage.
+        const int k_MaxConnectPayload = 1024;
 
         public override void Enter()
         {
-            m_DebugClassFacade?.LogInfo(GetType().Name, "[HostingState] 시작: Enter");
-            m_IsHosting = true;
-            PublishConnectStatus(ConnectStatus.Connected);
-            SetupHost();
+        //The "BossRoom" server always advances to CharSelect immediately on start. Different games
+        //may do this differently.
+        // SceneLoaderWrapper.Instance.LoadScene("CharSelect", useNetworkSceneManager: true);
+
+        if (m_LocalLobby.LobbyUsers.Count >= MaxConnectedPlayers)
+        {
+            Debug.Log(" HostingState HostingState HostingState HostingStateㅎㅎ HostingState");
+            _sceneManagerEx.LoadScene(EScene.BasicGame.ToString(), useNetworkSceneManager: true);
+
         }
 
-        private void SetupHost()
-        {
-            if (!m_ConnectionManager.NetworkManager.IsHost)
-            {
-                m_DebugClassFacade?.LogError(GetType().Name, "[HostingState] 호스트가 아닌 상태에서 호스트 설정 시도");
-                m_ConnectionManager.ChangeState(m_ConnectionManager.m_Offline);
-                return;
-            }
 
-            m_ConnectionManager.NetworkManager.OnClientConnectedCallback += OnClientConnected;
-            m_ConnectionManager.NetworkManager.OnClientDisconnectCallback += OnClientDisconnect;
-            m_DebugClassFacade?.LogInfo(GetType().Name, "[HostingState] 호스트 설정 완료");
+        if (m_LobbyServiceFacade.CurrentUnityLobby != null)
+            {
+                m_LobbyServiceFacade.BeginTracking();
+            }
         }
 
         public override void Exit()
         {
-            m_DebugClassFacade?.LogInfo(GetType().Name, "[HostingState] 종료: Exit");
-            m_IsHosting = false;
-
-            if (m_ConnectionManager.NetworkManager.IsHost)
-            {
-                m_ConnectionManager.NetworkManager.OnClientConnectedCallback -= OnClientConnected;
-                m_ConnectionManager.NetworkManager.OnClientDisconnectCallback -= OnClientDisconnect;
-            }
+            SessionManager<SessionPlayerData>.Instance.OnServerEnded();
         }
 
         public override void OnClientConnected(ulong clientId)
         {
-            m_DebugClassFacade?.LogInfo(GetType().Name, $"[HostingState] 클라이언트 연결됨: {clientId}");
-            m_ConnectionEventPublisher?.Publish(new ConnectionEventMessage { ClientId = clientId, ConnectStatus = ConnectStatus.Connected });
+            var playerData = SessionManager<SessionPlayerData>.Instance.GetPlayerData(clientId);
+            if (playerData != null)
+            {
+                m_ConnectionEventPublisher.Publish(new ConnectionEventMessage() { ConnectStatus = ConnectStatus.Success, ClientId = clientId });
+            }
+            else
+            {
+                // This should not happen since player data is assigned during connection approval
+                m_DebugClassFacade.LogInfo(GetType().Name,$"No player data associated with client {clientId}");
+                var reason = JsonUtility.ToJson(ConnectStatus.GenericDisconnect);
+                m_ConnectionManager.NetworkManager.DisconnectClient(clientId, reason);
+            }
+
         }
 
         public override void OnClientDisconnect(ulong clientId)
         {
-            m_DebugClassFacade?.LogInfo(GetType().Name, $"[HostingState] 클라이언트 연결 해제: {clientId}");
-            m_ConnectionEventPublisher?.Publish(new ConnectionEventMessage { ClientId = clientId, ConnectStatus = ConnectStatus.Disconnected });
-        }
-
-        public override void OnPlayerJoined(ulong clientId)
-        {
-            if (m_ConnectionManager.NetworkManager.ConnectedClients.Count >= k_MaxPlayers)
+            if (clientId != m_ConnectionManager.NetworkManager.LocalClientId)
             {
-                m_DebugClassFacade?.LogInfo(GetType().Name, "[HostingState] 최대 플레이어 수 도달");
-                // _sceneManagerEx.ChangeSceneForAllPlayers(EScene.BasicGame);
+                var playerId = SessionManager<SessionPlayerData>.Instance.GetPlayerId(clientId);
+                if (playerId != null)
+                {
+                    var sessionData = SessionManager<SessionPlayerData>.Instance.GetPlayerData(playerId);
+                    if (sessionData.HasValue)
+                    {
+                        m_ConnectionEventPublisher.Publish(new ConnectionEventMessage() { ConnectStatus = ConnectStatus.GenericDisconnect, ClientId=clientId});
+                    }
+                    SessionManager<SessionPlayerData>.Instance.DisconnectClient(clientId);
+                }
             }
         }
 
-        public override void ApprovalCheck(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
+        public override void OnUserRequestedShutdown()
         {
-            var payload = System.Text.Encoding.UTF8.GetString(request.Payload);
-            var connectionPayload = JsonUtility.FromJson<ConnectionPayload>(payload);
-            
-            // SessionPlayerData를 사용하여 플레이어 연결 처리
-            var sessionManager = SessionManager<SessionPlayerData>.Instance;
-            
-            // 중복 연결 확인
-            if (sessionManager.IsDuplicateConnection(connectionPayload.playerId))
+            var reason = JsonUtility.ToJson(ConnectStatus.HostEndedSession);
+            for (var i = m_ConnectionManager.NetworkManager.ConnectedClientsIds.Count - 1; i >= 0; i--)
             {
-                m_DebugClassFacade?.LogWarning(GetType().Name, $"[HostingState] 중복 연결 시도: {connectionPayload.playerId}");
-                response.Approved = false;
-                response.Reason = "중복된 플레이어 ID로 연결 시도";
-                return;
+                var id = m_ConnectionManager.NetworkManager.ConnectedClientsIds[i];
+                if (id != m_ConnectionManager.NetworkManager.LocalClientId)
+                {
+                    m_ConnectionManager.NetworkManager.DisconnectClient(id, reason);
+                }
             }
-            
-            // 새 플레이어의 세션 데이터 생성
-            var sessionPlayerData = new SessionPlayerData(
-                request.ClientNetworkId,
-                connectionPayload.playerName,
-                true
-            );
-            
-            // 세션 매니저에 등록
-            sessionManager.SetupConnectingPlayerSessionData(
-                request.ClientNetworkId,
-                connectionPayload.playerId,
-                sessionPlayerData
-            );
-            
-            m_DebugClassFacade?.LogInfo(GetType().Name, $"[HostingState] 플레이어 연결 승인: {connectionPayload.playerName}, ID: {connectionPayload.playerId}");
-            
-            // 연결 승인
-            response.Approved = true;
-            response.CreatePlayerObject = true;
-            response.Position = Vector3.zero;
-            response.Rotation = Quaternion.identity;
-        }
-
-        public override void OnServerStopped(bool indicator)
-        {
-            m_DebugClassFacade?.LogInfo(GetType().Name, "[HostingState] 서버 중지");
             m_ConnectionManager.ChangeState(m_ConnectionManager.m_Offline);
         }
+
+        public override void OnServerStopped()
+        {
+            m_ConnectStatusPublisher.Publish(ConnectStatus.GenericDisconnect);
+            m_ConnectionManager.ChangeState(m_ConnectionManager.m_Offline);
+        }
+
+        /// <summary>
+        /// This logic plugs into the "ConnectionApprovalResponse" exposed by Netcode.NetworkManager. It is run every time a client connects to us.
+        /// The complementary logic that runs when the client starts its connection can be found in ClientConnectingState.
+        /// </summary>
+        /// <remarks>
+        /// Multiple things can be done here, some asynchronously. For example, it could authenticate your user against an auth service like UGS' auth service. It can
+        /// also send custom messages to connecting users before they receive their connection result (this is useful to set status messages client side
+        /// when connection is refused, for example).
+        /// Note on authentication: It's usually harder to justify having authentication in a client hosted game's connection approval. Since the host can't be trusted,
+        /// clients shouldn't send it private authentication tokens you'd usually send to a dedicated server.
+        /// </remarks>
+        /// <param name="request"> The initial request contains, among other things, binary data passed into StartClient. In our case, this is the client's GUID,
+        /// which is a unique identifier for their install of the game that persists across app restarts.
+        ///  <param name="response"> Our response to the approval process. In case of connection refusal with custom return message, we delay using the Pending field.
+        public override void ApprovalCheck(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
+        {
+            var connectionData = request.Payload;
+            var clientId = request.ClientNetworkId;
+            if (connectionData.Length > k_MaxConnectPayload)
+            {
+                // If connectionData too high, deny immediately to avoid wasting time on the server. This is intended as
+                // a bit of light protection against DOS attacks that rely on sending silly big buffers of garbage.
+                response.Approved = false;
+                return;
+            }
+
+            var payload = System.Text.Encoding.UTF8.GetString(connectionData);
+            var connectionPayload = JsonUtility.FromJson<ConnectionPayload>(payload); // https://docs.unity3d.com/2020.2/Documentation/Manual/JSONSerialization.html
+            var gameReturnStatus = GetConnectStatus(connectionPayload);
+
+            if (gameReturnStatus == ConnectStatus.Success)
+            {
+                SessionManager<SessionPlayerData>.Instance.SetupConnectingPlayerSessionData(clientId, connectionPayload.playerId,
+                    new SessionPlayerData(clientId, connectionPayload.playerName, new NetworkGuid(), 0, true));
+
+                // connection approval will create a player object for you
+                response.Approved = true;
+                response.CreatePlayerObject = true;
+                response.Position = Vector3.zero;
+                response.Rotation = Quaternion.identity;
+                return;
+            }
+
+            response.Approved = false;
+            response.Reason = JsonUtility.ToJson(gameReturnStatus);
+            if (m_LobbyServiceFacade.CurrentUnityLobby != null)
+            {
+                m_LobbyServiceFacade.RemovePlayerFromLobbyAsync(connectionPayload.playerId);
+            }
+        }
+
+        ConnectStatus GetConnectStatus(ConnectionPayload connectionPayload)
+        {
+            if (m_ConnectionManager.NetworkManager.ConnectedClientsIds.Count >= m_ConnectionManager.MaxConnectedPlayers)
+            {
+                return ConnectStatus.ServerFull;
+            }
+
+            if (connectionPayload.isDebug != Debug.isDebugBuild)
+            {
+                return ConnectStatus.IncompatibleBuildType;
+            }
+
+            return SessionManager<SessionPlayerData>.Instance.IsDuplicateConnection(connectionPayload.playerId) ?
+                ConnectStatus.LoggedInAgain : ConnectStatus.Success;
+        }
     }
-}

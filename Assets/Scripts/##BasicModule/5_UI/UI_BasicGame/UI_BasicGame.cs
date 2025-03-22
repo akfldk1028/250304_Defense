@@ -35,8 +35,7 @@ namespace Unity.Assets.Scripts.UI
             Summon_T,
             Timer_T,
             Wave_T,
-            HeroCount_T,
-            Navigation_T
+            HeroCount_T
         }
         
         enum Images
@@ -63,7 +62,6 @@ namespace Unity.Assets.Scripts.UI
         [Inject] private BasicGameState _basicGameState;
         // [Inject] private BasicGameManager _basicGameManager;
         // [Inject] private MainMenuScene _MainMenuScene;
-        List<GameObject> NavigationTextList = new List<GameObject>();
 
         public int MonsterLimitCount = 100;
         private float _elapsedTime = 0.0f;

@@ -227,7 +227,7 @@ public class ObjectManager
 
 		prefabName = typeof(T).Name;
 
-		// 풀링 시스템을 통해 오브젝트 생성 (NetworkObject 스폰은 풀링 시스템에서 처리)
+		// 풀링 시스템을 통해 오브젝트 생성
 		GameObject go = _resourceManager.Instantiate(prefabName, pooling: true, position: position);
 		if (go == null)
 		{
@@ -245,19 +245,32 @@ public class ObjectManager
 		}
 		
 		// NetworkObject 처리
-        var eventData = new MonsterSpawnEventData(go, prefabName, position, clientID);
+		NetworkObject networkObject = go.GetComponent<NetworkObject>();
+		if (networkObject == null)
+		{
+			networkObject = go.AddComponent<NetworkObject>();
+		}
 
-        NetworkObject networkObject = go.GetComponent<NetworkObject>();
-        if (networkObject != null)
-        {
-            networkObject.Spawn();
-            eventData.NetworkObjectId = networkObject.NetworkObjectId;
-            
-            // 네트워크 스폰 완료 이벤트 발생
-            _spawnMediator.Notify(NetworkEventType.NetworkSpawned, eventData);
-        }
+		try 
+		{
+			if (!networkObject.IsSpawned)
+			{
+				networkObject.Spawn();
+				Debug.Log($"[ObjectManager] NetworkObject 스폰 완료: {networkObject.NetworkObjectId}");
+			}
 
-	
+			var eventData = new MonsterSpawnEventData(go, prefabName, position, clientID);
+			eventData.NetworkObjectId = networkObject.NetworkObjectId;
+			
+			// 네트워크 스폰 완료 이벤트 발생
+			_spawnMediator.Notify(NetworkEventType.NetworkSpawned, eventData);
+		}
+		catch (Exception e)
+		{
+			Debug.LogError($"[ObjectManager] NetworkObject 스폰 중 오류 발생: {e.Message}");
+			_resourceManager.Destroy(go);
+			return null;
+		}
 
 		if (obj.ObjectType == EObjectType.Creature)
 		{

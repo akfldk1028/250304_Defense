@@ -1,6 +1,8 @@
 using System;
 using Unity.Netcode;
 
+namespace Unity.Assets.Scripts.Infrastructure
+{
     public struct NetworkGuid : INetworkSerializeByMemcpy
     {
         public ulong FirstHalf;
@@ -25,3 +27,4 @@ using Unity.Netcode;
             return new Guid(bytes);
         }
     }
+}

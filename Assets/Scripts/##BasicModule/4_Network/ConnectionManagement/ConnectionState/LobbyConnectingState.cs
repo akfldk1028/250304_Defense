@@ -13,6 +13,10 @@ using System.Collections.Generic;
 using Unity.Assets.Scripts.Auth;
 using Unity.Assets.Scripts.Scene;
 using Unity.VisualScripting;
+using System.Collections;
+using Unity.Networking.Transport;
+using Unity.Assets.Scripts.UnityServices.Lobbies;
+
 
 namespace Unity.Assets.Scripts.Network
 {
@@ -24,209 +28,103 @@ namespace Unity.Assets.Scripts.Network
     public class LobbyConnectingState : ConnectionState
     {
         
-        private readonly float k_LobbyApiCooldown = 2.0f; // 2초 쿨다운
-        private float m_LastLobbyApiCallTime = 0f;
-        private bool m_IsConnecting = false;
-        private float m_ConnectionStartTime;
-        private const float k_ConnectionTimeout = 30f;
-        private readonly float k_MatchmakingTimeout = 20.0f; // 매칭 타임아웃 (20초)
-        private float m_MatchmakingStartTime;
+
+        private readonly float k_MatchmakingTimeout = 60.0f; // 매칭 타임아웃 (20초)
         private bool m_IsWaitingForPlayers = false;
                 // 로비 관련 변수 추가
-        private Lobby currentLobby;
         private const int maxPlayers = 2; // 최대 플레이어 수 (필요에 따라 조정)
-        
+        public static event Action<bool> OnWaitingStateChanged; // true: 대기 시작, false: 대기 종료
+
         // 플레이어 세션 관련 변수
         private string m_LocalPlayerId;
         private string m_LocalPlayerName = "Player"; // 기본 이름
         private SessionManager<SessionPlayerData> m_SessionManager => SessionManager<SessionPlayerData>.Instance;
               
         [Inject] private SceneManagerEx _sceneManagerEx;
+        [Inject] private LocalLobby m_LocalLobby;
+        [Inject] private AuthManager m_authManager;
+        [Inject] private LobbyServiceFacade m_LobbyServiceFacade;
+
 
         public override void Enter()
         {
-            m_DebugClassFacade?.LogInfo(GetType().Name, "[LobbyConnectingState] 로비 연결 시작");
-            m_IsConnecting = true;
-            m_ConnectionStartTime = Time.time;
+            m_DebugClassFacade?.LogInfo(GetType().Name, "[LobbyConnectingState] 로비대기 상태");
 
-            // m_LocalPlayerId 초기화
-            m_LocalPlayerId = System.Guid.NewGuid().ToString();
-            m_DebugClassFacade?.LogInfo(GetType().Name, $"[LobbyConnectingState] 로컬 플레이어 ID 초기화: {m_LocalPlayerId}");
-     
-            //  if (m_AuthManager.IsAuthenticated)
-            // {
-            //     m_LocalPlayerId =  m_AuthManager.PlayerId;
-            //     // // 인증된 플레이어라면 DB에서 데이터 가져오기
-            //     // PlayerData data = await DatabaseService.GetPlayerData(m_LocalPlayerId);
-            //     // if (data != null)
-            //     // {
-            //     //     m_LocalPlayerName = data.playerName;
-            //     //     // 기타 데이터 로드
-            //     // }
-            // }
-                    // 로컬 플레이어 ID 생성 (고유 ID)
+            if (m_authManager.IsAuthenticated)
+            {
+                m_LocalPlayerId =  m_authManager.PlayerId;
+                m_DebugClassFacade?.LogInfo(GetType().Name, $"[LobbyConnectingState] 인증 플레이어 ID 초기화: {m_LocalPlayerId}");
 
-            PublishConnectStatus(ConnectStatus.Connecting);
+                // // 인증된 플레이어라면 DB에서 데이터 가져오기
+                // PlayerData data = await DatabaseService.GetPlayerData(m_LocalPlayerId);
+                // if (data != null)
+                // {
+                //     m_LocalPlayerName = data.playerName;
+                //     // 기타 데이터 로드
+                // }
+            } 
+            else {
+                m_LocalPlayerId = System.Guid.NewGuid().ToString();
+                m_DebugClassFacade?.LogInfo(GetType().Name, $"[LobbyConnectingState] 로컬 플레이어 ID 초기화: {m_LocalPlayerId}");
+            }
+
+            m_LobbyServiceFacade.EndTracking();
         }
-
+ 
         public override void Exit()
         {
-            m_DebugClassFacade?.LogInfo(GetType().Name, "[LobbyConnectingState] 로비 연결 종료");
-            m_IsConnecting = false;
+
         }
 
      
 
-
-        public override void OnClientConnected(ulong clientId)
-        {
-            if (!m_IsConnecting) return;
-
-            m_DebugClassFacade?.LogInfo(GetType().Name, $"[LobbyConnectingState] 클라이언트 연결됨: {clientId}");
+        // public async override void StartHostLobby()
+        // {
+        //     // 이미 연결 시도 중이면 중복 호출 방지
+        //     if (m_IsConnecting)
+        //     {
+        //         m_DebugClassFacade?.LogInfo(GetType().Name, "[LobbyConnectingState] 이미 로비 연결 시도 중입니다");
+        //         StartWaitingForPlayers();
+        //         return;
+        //     }
             
-            // 호스트인 경우 연결된 클라이언트의 세션 데이터를 초기화
-            if (m_NetworkManager.IsHost && clientId != m_NetworkManager.LocalClientId)
-            {
-                // 클라이언트가 연결되면 CreatePlayerData 메서드에서 세션 데이터 생성
-                // 이 단계에서는 아직 클라이언트 데이터를 받지 않았으므로 기본값으로 설정
-                m_DebugClassFacade?.LogInfo(GetType().Name, $"[LobbyConnectingState] 클라이언트({clientId})의 세션 데이터 초기화 준비");
-            }
+        //     m_DebugClassFacade?.LogInfo(GetType().Name, "[LobbyConnectingState] 호스트 로비 시작");
+        //     m_IsConnecting = true;
             
-            // 자신이 로컬 클라이언트인 경우 세션 데이터 초기화
-            if (clientId == m_NetworkManager.LocalClientId)
-            {
-                InitializeLocalPlayerSessionData();
-            }
-            
-            m_ConnectionEventPublisher?.Publish(new ConnectionEventMessage { ClientId = clientId, ConnectStatus = ConnectStatus.Connected });
-            OnPlayerJoined();
-        }
+        //     try
+        //     {
+        //         // 먼저 사용 가능한 로비를 찾습니다
+        //         currentLobby = await FindAvailableLobby();
 
-        private void InitializeLocalPlayerSessionData()
-        {
-            // 세션 매니저가 null인지 확인
-            if (m_SessionManager == null)
-            {
-                m_DebugClassFacade?.LogError(GetType().Name, "[LobbyConnectingState] 세션 매니저가 초기화되지 않았습니다.");
-                return;
-            }
+        //         if (currentLobby == null)
+        //         {
+        //             // 로비가 없으면 새로 생성합니다 
+        //             await CreateNewLobby();
+        //         }
+        //         else
+        //         {
+        //             await JoinExistingLobby(currentLobby.Id);
 
-            // 로컬 플레이어의 세션 데이터 생성
-            SessionPlayerData playerData = new SessionPlayerData(
-                m_NetworkManager.LocalClientId,
-                m_LocalPlayerName,
-                true
-            );
-            
-            // 세션 매니저에 등록
-            m_SessionManager.SetupConnectingPlayerSessionData(
-                m_NetworkManager.LocalClientId,
-                m_LocalPlayerId,
-                playerData
-            );
-            
-            m_DebugClassFacade?.LogInfo(GetType().Name, $"[LobbyConnectingState] 로컬 플레이어 세션 데이터 초기화: {m_LocalPlayerName}, ID: {m_LocalPlayerId}");
-        }
+        //         }
+        //     }
+        //     catch (Exception e)
+        //     {
+        //         m_DebugClassFacade?.LogError(GetType().Name, $"로비 연결 중 예외 발생: {e.Message}");
+        //         OnConnectionFailed();
+        //     }
+        // }
 
-
-        public override void OnClientDisconnect(ulong clientId)
-        {
-            if (!m_IsConnecting) return;
-
-            m_DebugClassFacade?.LogInfo(GetType().Name, $"[LobbyConnectingState] 클라이언트 연결 해제: {clientId}");
-            
-            // 세션 매니저에 연결 해제 알림
-            m_SessionManager.DisconnectClient(clientId);
-            
-            m_ConnectionEventPublisher?.Publish(new ConnectionEventMessage { ClientId = clientId, ConnectStatus = ConnectStatus.Disconnected });
-            OnConnectionFailed();
-        }
-
-        public override void OnTransportFailure(ulong clientId)
-        {
-            if (!m_IsConnecting) return;
-
-            m_DebugClassFacade?.LogError(GetType().Name, "[LobbyConnectingState] 네트워크 오류");
-            m_ConnectionEventPublisher?.Publish(new ConnectionEventMessage { ConnectStatus = ConnectStatus.Failed });
-            OnConnectionFailed();
-        }
-
-        private void OnConnectionFailed()
-        {
-            if (!m_IsConnecting) return;
-
-            m_IsConnecting = false;
-            if (m_ConnectionManager == null)
-            {
-                m_DebugClassFacade?.LogError(GetType().Name, "[LobbyConnectingState] ConnectionManager가 초기화되지 않았습니다.");
-                return;
-            }
-            m_ConnectionManager.ChangeState(m_ConnectionManager.m_Offline);
-        }
-
-        public void CancelConnection()
-        {
-            if (!m_IsConnecting) return;
-
-            m_DebugClassFacade?.LogInfo(GetType().Name, "[LobbyConnectingState] 연결 취소");
-            m_IsConnecting = false;
-            
-            // 로비가 존재하면 삭제
-            if (currentLobby != null)
-            {
-                DestroyLobby(currentLobby.Id);
-            }
-            
-            m_ConnectionManager.ChangeState(m_ConnectionManager.m_Offline);
-        }
-
-        // 여기서부터 주석 해제된 코드 구현
-
-        public async override void StartHostLobby()
-        {
-            // 이미 연결 시도 중이면 중복 호출 방지
-            if (m_IsConnecting && currentLobby != null)
-            {
-                m_DebugClassFacade?.LogInfo(GetType().Name, "[LobbyConnectingState] 이미 로비 연결 시도 중입니다");
-                return;
-            }
-            
-            m_DebugClassFacade?.LogInfo(GetType().Name, "[LobbyConnectingState] 호스트 로비 시작");
-            m_IsConnecting = true;
-            
-            try
-            {
-                // 먼저 사용 가능한 로비를 찾습니다
-                currentLobby = await FindAvailableLobby();
-
-                if (currentLobby == null)
-                {
-                    // 로비가 없으면 새로 생성합니다 
-                    await CreateNewLobby();
-                }
-                else
-                {
-                    // 로비가 있으면 직접 참가합니다 (호스트가 아닌 일반 클라이언트로)
-                    await JoinExistingLobby(currentLobby.Id);
-                }
-            }
-            catch (Exception e)
-            {
-                m_DebugClassFacade?.LogError(GetType().Name, $"로비 연결 중 예외 발생: {e.Message}");
-                OnConnectionFailed();
-            }
-        }
         private async Task<Lobby> FindAvailableLobby()
         {
             try
             {
                 m_DebugClassFacade?.LogInfo(GetType().Name, "[LobbyConnectingState] 가용 로비 검색");
-                var queryResponse = await ExecuteLobbyAPIWithRetry(() => LobbyService.Instance.QueryLobbiesAsync());
-                if (queryResponse.Results.Count > 0)
-                {
-                    m_DebugClassFacade?.LogInfo(GetType().Name, $"[LobbyConnectingState] 로비 발견: {queryResponse.Results[0].Id}");
-                    return queryResponse.Results[0];
-                }
+                // var queryResponse = await ExecuteLobbyAPIWithRetry(() => LobbyService.Instance.QueryLobbiesAsync());
+                // if (queryResponse.Results.Count > 0)
+                // {
+                //     m_DebugClassFacade?.LogInfo(GetType().Name, $"[LobbyConnectingState] 로비 발견: {queryResponse.Results[0].Id}");
+                //     return queryResponse.Results[0];
+                // }
             }
             catch (Exception e)
             {
@@ -236,388 +134,69 @@ namespace Unity.Assets.Scripts.Network
             return null;
         }
 
-        // API 호출을 위한 헬퍼 메서드 - 클래스에 추가해야 합니다
-        private async Task<T> ExecuteLobbyAPIWithRetry<T>(Func<Task<T>> apiCall, int maxRetries = 3)
-        {
-            await CheckAndWaitForCooldown();
-            
-            int retryCount = 0;
-            int baseDelay = 2000; // 기본 2초 대기
-            
-            while (true)
-            {
-                try
-                {
-                    var result = await apiCall();
-                    m_LastLobbyApiCallTime = Time.time;
-                    return result;
-                }
-                catch (LobbyServiceException e) when (e.Message.Contains("Rate limit") && retryCount < maxRetries)
-                {
-                    retryCount++;
-                    int delayMs = baseDelay * retryCount; // 점진적 대기 시간 증가: 2초, 4초, 6초...
-                    m_DebugClassFacade?.LogWarning(GetType().Name, $"Rate limit 발생, {retryCount}/{maxRetries} 재시도 (대기: {delayMs/1000}초)");
-                    await Task.Delay(delayMs);
-                }
-                catch (LobbyServiceException e)
-                {
-                    m_DebugClassFacade?.LogError(GetType().Name, $"로비 API 호출 중 오류: {e.Message}");
-                    throw;
-                }
-            }
-        }
-
-        // 쿨다운 체크 메서드도 클래스에 추가해야 합니다
-        private async Task<bool> CheckAndWaitForCooldown()
-        {
-            if (Time.time - m_LastLobbyApiCallTime < k_LobbyApiCooldown)
-            {
-                m_DebugClassFacade?.LogInfo(GetType().Name, $"[LobbyConnectingState] API 쿨다운 중 ({k_LobbyApiCooldown}초)");
-                await Task.Delay((int)(k_LobbyApiCooldown * 1000));
-                return true;
-            }
-            m_LastLobbyApiCallTime = Time.time;
-            return false;
-        }
 
 
-        private async void DestroyLobby(string lobbyId)
-        {
-            try
-            {
-                if (!string.IsNullOrEmpty(lobbyId))
-                {
-                    m_DebugClassFacade?.LogInfo(GetType().Name, $"[LobbyConnectingState] 로비 삭제: {lobbyId}");
-                    await LobbyService.Instance.DeleteLobbyAsync(lobbyId);
-                    Debug.Log("Lobby destroyed " + lobbyId);
-                }
-                if (m_NetworkManager.IsHost)
-                {
-                    m_NetworkManager.Shutdown();
-                    // Matching_Object.SetActive(false); // UI 관련 코드는 필요에 따라 활성화
-                }
-            }
-            catch(Exception e) 
-            {
-                m_DebugClassFacade?.LogError(GetType().Name, $"로비 삭제 중 오류 발생: {e.Message}");
-            }
-        }
+      
 
-        public override void StartClientIP(string playerName, string ipaddress, int port)
-        {
-            // IP 연결은 별도 구현 필요
-            m_DebugClassFacade?.LogInfo(GetType().Name, $"[LobbyConnectingState] IP 연결 시작: {ipaddress}:{port}");
-            // 플레이어 이름 저장
-            m_LocalPlayerName = playerName;
-            // var connectionMethod = new ConnectionMethodIP(ipaddress, (ushort)port, m_ConnectionManager, m_ProfileManager, playerName);
-            // m_ConnectionManager.m_ClientReconnecting.Configure(connectionMethod);
-            // m_ConnectionManager.ChangeState(m_ConnectionManager.m_ClientConnecting.Configure(connectionMethod));
-        }
 
-        private async Task CreateNewLobby()
-        {
-            try
-            {
-                m_DebugClassFacade?.LogInfo(GetType().Name, "[LobbyConnectingState] 새 로비 생성");
-                string randomLobbyName = GenerateRandomLobbyName();
-                
-                // 로비 옵션 생성 - 플레이어 데이터 포함
-                var lobbyOptions = new CreateLobbyOptions
-                {
-                    Data = new Dictionary<string, DataObject>
-                    {
-                        // 호스트 플레이어 정보 추가
-                        { "HostPlayerId", new DataObject(DataObject.VisibilityOptions.Member, m_LocalPlayerId) },
-                    }
-                };
-                
-                // 로비 생성 - 이 때 호스트는 자동으로 멤버가 됨
-                currentLobby = await ExecuteLobbyAPIWithRetry(() => 
-                    LobbyService.Instance.CreateLobbyAsync(randomLobbyName, maxPlayers, lobbyOptions));
-                    
-                m_DebugClassFacade?.LogInfo(GetType().Name, $"[LobbyConnectingState] 로비 생성 완료: {currentLobby.Id}");
-                
-                // 릴레이 서버 할당 및 설정
-                await AllocateRelayServerAndJoin(currentLobby);
-                
-                // 호스트 시작 - 이미 로비의 멤버이므로 다시 Join 시도하지 않음
-                StartHost();
-                
-                // 세션 시작 표시
-                m_SessionManager.OnSessionStarted();
+   
 
-                // 매칭 대기 시작
-                StartWaitingForPlayers();
-            }
-            catch (LobbyServiceException e)
-            {
-                m_DebugClassFacade?.LogError(GetType().Name, $"로비 생성 중 오류 발생: {e.Message}");
-                OnConnectionFailed();
-            }
-        }
-
+ 
         private void StartWaitingForPlayers()
         {
             m_IsWaitingForPlayers = true;
-            m_MatchmakingStartTime = Time.time;
             m_DebugClassFacade?.LogInfo(GetType().Name, $"[LobbyConnectingState] 매칭 대기 시작 (최대 {k_MatchmakingTimeout}초)");
             
-            // UI에 대기 상태 표시 (필요하다면)
-            // ShowWaitingUI(true);
+            OnWaitingStateChanged?.Invoke(true);
+
+            MonoBehaviour runner = m_ConnectionManager as MonoBehaviour;
+            if (runner != null)
+            {
+                runner.StartCoroutine(MatchmakingTimeoutCoroutine());
+            }
+        }
+
+
+
+        private IEnumerator MatchmakingTimeoutCoroutine()
+        {
+            // 매칭 타임아웃 대기
+            yield return new WaitForSeconds(k_MatchmakingTimeout);
             
-            // 매칭 상태 업데이트를 위한 코루틴 시작
-            // StartCoroutine(WaitForPlayersCoroutine());
+            // 아직 대기 중이고 최대 플레이어에 도달하지 않았으면 타임아웃 처리
+            if (m_IsWaitingForPlayers && m_NetworkManager.ConnectedClients.Count < maxPlayers)
+            {
+                m_DebugClassFacade?.LogInfo(GetType().Name, "[LobbyConnectingState] 매칭 타임아웃 발생");
+                
+                // 대기 상태 종료
+                // StopWaitingForPlayers();
+                
+                // 이벤트 발행 (UI에 알림)
+                OnWaitingStateChanged?.Invoke(false);
+                
+
+
+            }
         }
 
 
 
-
-        // 기존 로비에 참가하는 메서드 (클라이언트용)
-        private async Task JoinExistingLobby(string lobbyId)
+       public override void StartHostLobby(string playerName)
         {
-            try
-            {
-                m_DebugClassFacade?.LogInfo(GetType().Name, $"[LobbyConnectingState] 기존 로비 참가: {lobbyId}");
-                
-                // 로비 참가 옵션에 플레이어 데이터 추가
-                var joinOptions = new JoinLobbyByIdOptions
-                {
-                    Player = new Player
-                    {
-                        Data = new Dictionary<string, PlayerDataObject>
-                        {
-                            { "PlayerId", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, m_LocalPlayerId) },
-                        }
-                    }
-                };
-                
-                // 로비 참가
-                currentLobby = await ExecuteLobbyAPIWithRetry(() => 
-                    LobbyService.Instance.JoinLobbyByIdAsync(lobbyId, joinOptions));
-                
-                // 릴레이 코드 가져와서 연결
-                if (currentLobby.Data != null && currentLobby.Data.TryGetValue("RelayJoinCode", out var relayJoinCodeData))
-                {
-                    string relayJoinCode = relayJoinCodeData.Value;
-                    m_DebugClassFacade?.LogInfo(GetType().Name, $"[LobbyConnectingState] 릴레이 코드: {relayJoinCode}");
-                    
-                    // 릴레이 코드로 연결
-                    await JoinRelayServer(relayJoinCode);
-                }
-                else
-                {
-                    m_DebugClassFacade?.LogError(GetType().Name, "[LobbyConnectingState] 릴레이 코드를 찾을 수 없습니다");
-                }
-                
-                // 클라이언트로 시작
-                StartClientLobby();
-            }
-            catch (LobbyServiceException e)
-            {
-                m_DebugClassFacade?.LogError(GetType().Name, $"로비 조인 중 오류 발생: {e.Message}");
-                OnConnectionFailed();
-            }
+            var connectionMethod = new ConnectionMethodRelay(m_LobbyServiceFacade, m_LocalLobby, m_ConnectionManager, playerName);
+            m_ConnectionManager.ChangeState(m_ConnectionManager.m_StartingHost.Configure(connectionMethod));
         }
-                
-        private async Task JoinRelayServer(string joinCode)
+
+  
+
+     
+          public override void StartClientLobby(string playerName)
         {
-            try
-            {
-                m_DebugClassFacade?.LogInfo(GetType().Name, $"[LobbyConnectingState] 릴레이 서버 연결 시도: {joinCode}");
-                var joinAllocation = await RelayService.Instance.JoinAllocationAsync(joinCode);
-          
-            }
-            catch (RelayServiceException e)
-            {
-                m_DebugClassFacade?.LogError(GetType().Name, $"릴레이 서버 참가 중 오류 발생: {e.Message}");
-                OnConnectionFailed();
-            }
+            var connectionMethod = new ConnectionMethodRelay(m_LobbyServiceFacade, m_LocalLobby, m_ConnectionManager, playerName);
+            m_ConnectionManager.m_ClientReconnecting.Configure(connectionMethod);
+            m_ConnectionManager.ChangeState(m_ConnectionManager.m_ClientConnecting.Configure(connectionMethod));
         }
 
-        private void StartHost()
-        {
-            m_DebugClassFacade?.LogInfo(GetType().Name, "[LobbyConnectingState] 호스트 시작");
-            if (m_NetworkManager == null)
-            {
-                m_DebugClassFacade?.LogError(GetType().Name, "[LobbyConnectingState] NetworkManager가 초기화되지 않았습니다");
 
-            }
-            m_NetworkManager.StartHost();
-
-            m_NetworkManager.OnClientConnectedCallback += OnClientConnected;
-            m_NetworkManager.OnClientDisconnectCallback += OnHostDisconnected;
-            
-            // 클라이언트 상태 변경
-            m_ConnectionManager.ChangeState(m_ConnectionManager.m_Hosting);
-        }
-
-        public void OnPlayerJoined()
-        {
-            m_DebugClassFacade?.LogInfo(GetType().Name, $"[LobbyConnectingState] 플레이어 참가, 현재 인원: {m_NetworkManager.ConnectedClients.Count}");
-            
-            // 플레이어 수 업데이트를 로비에 반영 (호스트인 경우)
-            if (m_NetworkManager.IsHost && currentLobby != null)
-            {
-                UpdateLobbyPlayerCount();
-            }
-            
-            if(m_NetworkManager.ConnectedClients.Count >= maxPlayers)
-            {
-                m_DebugClassFacade?.LogInfo(GetType().Name, "[LobbyConnectingState] 최대 인원 도달, 게임 씬 전환");
-                _sceneManagerEx.ChangeSceneForAllPlayers(Unity.Assets.Scripts.Scene.EScene.BasicGame);
-            }
-        }
-        
-        private async void UpdateLobbyPlayerCount()
-        {
-            try
-            {
-                // 로비 데이터 업데이트 - 현재 플레이어 수 정보
-                var lobbyData = new Dictionary<string, DataObject> {
-                    { "PlayerCount", new DataObject(
-                        visibility: DataObject.VisibilityOptions.Public,
-                        value: m_NetworkManager.ConnectedClients.Count.ToString()
-                    )}
-                };
-                
-                // 로비 데이터 업데이트
-                var updateLobbyOptions = new UpdateLobbyOptions { Data = lobbyData };
-                await ExecuteLobbyAPIWithRetry(() => 
-                    LobbyService.Instance.UpdateLobbyAsync(currentLobby.Id, updateLobbyOptions));
-                    
-                m_DebugClassFacade?.LogInfo(GetType().Name, $"[LobbyConnectingState] 로비 플레이어 수 업데이트: {m_NetworkManager.ConnectedClients.Count}");
-            }
-            catch (Exception e)
-            {
-                m_DebugClassFacade?.LogError(GetType().Name, $"로비 데이터 업데이트 중 오류 발생: {e.Message}");
-            }
-        }
-
-        public override void OnHostDisconnected(ulong clientId)
-        {
-            m_DebugClassFacade?.LogInfo(GetType().Name, $"[LobbyConnectingState] 호스트 연결 해제: {clientId}");
-            if(clientId == m_NetworkManager.LocalClientId && m_NetworkManager.IsHost)
-            {
-                m_NetworkManager.OnClientConnectedCallback -= OnClientConnected;
-                m_NetworkManager.OnClientDisconnectCallback -= OnHostDisconnected;
-                
-                // 세션 종료 처리
-                m_SessionManager.OnSessionEnded();
-            }
-        }
-
-        private async Task AllocateRelayServerAndJoin(Lobby lobby)
-        {
-            try
-            {
-                m_DebugClassFacade?.LogInfo(GetType().Name, "[LobbyConnectingState] Relay 서버 할당");
-                var allocation = await RelayService.Instance.CreateAllocationAsync(lobby.MaxPlayers);
-                var joinCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
-                
-                // 필요한 경우 UI에 조인 코드 표시
-                // JoinCodeText.text = joinCode;
-                m_DebugClassFacade?.LogInfo(GetType().Name, $"Relay 연결 코드: {joinCode}");
-                
-                // 로비 데이터에 릴레이 코드 추가
-                try
-                {
-                    // 로비 데이터 준비
-                    var lobbyData = new Dictionary<string, DataObject>();
-                    lobbyData.Add("RelayJoinCode", new DataObject(
-                        visibility: DataObject.VisibilityOptions.Member,
-                        value: joinCode
-                    ));
-                    
-                    // 로비 데이터 업데이트
-                    var updateLobbyOptions = new UpdateLobbyOptions { Data = lobbyData };
-                    await LobbyService.Instance.UpdateLobbyAsync(lobby.Id, updateLobbyOptions);
-                    m_DebugClassFacade?.LogInfo(GetType().Name, "[LobbyConnectingState] 로비 데이터에 릴레이 코드 저장 완료");
-                }
-                catch (LobbyServiceException e)
-                {
-                    m_DebugClassFacade?.LogError(GetType().Name, $"로비 데이터 업데이트 중 오류 발생: {e.Message}");
-                }
-                
-                var transport = m_NetworkManager.GetComponent<UnityTransport>();
-                
-                // UnityTransport 컴포넌트가 없으면 추가
-                if (transport == null)
-                {
-                    m_DebugClassFacade?.LogWarning(GetType().Name, "[LobbyConnectingState] UnityTransport 컴포넌트가 없어 추가합니다");
-                    transport = m_NetworkManager.gameObject.AddComponent<UnityTransport>();
-                    
-                    if (transport == null)
-                    {
-                        m_DebugClassFacade?.LogError(GetType().Name, "[LobbyConnectingState] UnityTransport 컴포넌트 추가 실패");
-                        OnConnectionFailed();
-                        return;
-                    }
-                }
-                
-                // 할당값 직접 전달
-                // transport.SetHostRelayData(
-                //     allocation.RelayServer.IpV4,
-                //     (ushort)allocation.RelayServer.Port,
-                //     allocation.AllocationIdBytes,
-                //     allocation.Key,
-                //     allocation.ConnectionData
-                // );
-                
-                m_DebugClassFacade?.LogInfo(GetType().Name, "[LobbyConnectingState] Relay 서버 데이터 설정 완료");
-            }
-            catch (RelayServiceException e)
-            {
-                m_DebugClassFacade?.LogError(GetType().Name, $"Relay 연결 코드 생성 중 오류 발생: {e.Message}");
-                OnConnectionFailed();
-            }
-            catch (NullReferenceException e)
-            {
-                m_DebugClassFacade?.LogError(GetType().Name, $"NullReferenceException 발생: {e.Message}");
-                OnConnectionFailed();
-            }
-        }
-
-        public override void StartClientLobby()
-        {
-            m_DebugClassFacade?.LogInfo(GetType().Name, "[LobbyConnectingState] 클라이언트 로비 시작");
-            m_NetworkManager.StartClient();
-
-            // 클라이언트 상태 변경
-            m_ConnectionManager.ChangeState(m_ConnectionManager.m_ClientConnecting);
-        }
-
-        public override void StartRelayConnection()
-        {
-            m_DebugClassFacade?.LogInfo(GetType().Name, "[LobbyConnectingState] 릴레이 연결 시작");
-            // Relay 연결 코드 구현 필요
-            // var connectionMethod = new ConnectionMethodRelay(
-            //     m_LobbyServiceFacade, 
-            //     m_LocalLobby, 
-            //     m_ConnectionManager, 
-            //     m_ProfileManager, 
-            //     m_PlayerName
-            // );
-            // m_ConnectionManager.m_ClientReconnecting.Configure(connectionMethod);
-            // m_ConnectionManager.ChangeState(m_ConnectionManager.m_ClientConnecting.Configure(connectionMethod));
-        }
-
-        private string GenerateRandomLobbyName()
-        {
-            // 사용할 문자 집합: 알파벳 대문자와 숫자
-            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-            
-            // 로비 이름 길이 (예: 6자리)
-            int nameLength = 6;
-            
-            System.Random random = new System.Random();
-            char[] lobbyName = new char[nameLength];
-            
-            for (int i = 0; i < nameLength; i++)
-            {
-                lobbyName[i] = chars[random.Next(chars.Length)];
-            }
-            
-            return new string(lobbyName);
-        }
     }
 }

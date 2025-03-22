@@ -63,7 +63,7 @@ using VContainer;
     /// </summary>
     public struct ConnectionEventMessage : INetworkSerializeByMemcpy
     {
-        public ulong ClientId { get; set; }
+        public ulong ClientId;
 
         public ConnectStatus ConnectStatus;  // 현재 연결 상태
     }
@@ -101,6 +101,7 @@ namespace Unity.Assets.Scripts.Network
     public class ConnectionManager : MonoBehaviour
     {
         // 연결 상태 변경 이벤트
+        public int MaxConnectedPlayers = 2;
         public event System.Action<ConnectStatus> OnConnectionStatusChanged;
 
         [SerializeField]
@@ -123,7 +124,6 @@ namespace Unity.Assets.Scripts.Network
         
 
         // 최대 동시 접속 플레이어 수
-        public int MaxConnectedPlayers = 8;
 
         // 상태 패턴을 위한 상태 객체들
         internal readonly OfflineState m_Offline = new OfflineState();                    // 오프라인 상태
@@ -183,7 +183,15 @@ namespace Unity.Assets.Scripts.Network
             
             m_DebugClassFacade?.LogInfo(GetType().Name, "종료: Start");
         }
-
+        void OnDestroy()
+        {
+            NetworkManager.OnClientConnectedCallback -= OnClientConnectedCallback;
+            NetworkManager.OnClientDisconnectCallback -= OnClientDisconnectCallback;
+            NetworkManager.OnServerStarted -= OnServerStarted;
+            NetworkManager.ConnectionApprovalCallback -= ApprovalCheck;
+            NetworkManager.OnTransportFailure -= OnTransportFailure;
+            NetworkManager.OnServerStopped -= OnServerStopped;
+        }
         /// <summary>
         /// NetworkBehaviour의 OnNetworkSpawn 메서드 오버라이드
         /// 네트워크 오브젝트가 스폰될 때 호출됨
@@ -196,61 +204,33 @@ namespace Unity.Assets.Scripts.Network
     /// 상태 패턴의 핵심 구현부
     /// </summary>
     internal void ChangeState(ConnectionState nextState)
-    {
-        if (m_ConnectionMode == ConnectionMode.OnlineRequired)
         {
-            if (nextState is OfflineState)
+            Debug.Log($"{name}: Changed connection state from {m_CurrentState.GetType().Name} to {nextState.GetType().Name}.");
+
+            if (m_CurrentState != null)
             {
-                m_DebugClassFacade?.LogError(GetType().Name, "온라인 전용 모드에서는 오프라인 상태로 전환할 수 없습니다. 재연결을 시도합니다.");
-                // 대신 재연결 시도
-                m_CurrentState = m_ClientReconnecting;
-                m_CurrentState.Enter();
-                return;
+                m_CurrentState.Exit();
             }
+            m_CurrentState = nextState;
+            m_CurrentState.Enter();
         }
-
-        m_DebugClassFacade?.LogInfo(GetType().Name, $"[ConnectionManager] 상태 변경: {m_CurrentState.GetType().Name} -> {nextState.GetType().Name}");
-        
-        if (m_CurrentState != null)
-        {
-            m_DebugClassFacade?.LogInfo(GetType().Name, $"[ConnectionManager] 이전 상태 종료: {m_CurrentState.GetType().Name}");
-            m_CurrentState.Exit();
-        }
-        m_CurrentState = nextState;
-        m_DebugClassFacade?.LogInfo(GetType().Name, $"[ConnectionManager] 새로운 상태 시작: {nextState.GetType().Name}");
-        m_CurrentState.Enter();
-
-        // 연결 상태 변경 이벤트 발생
-        if (nextState is ClientConnectedState)
-        {
-            OnConnectionStatusChanged?.Invoke(ConnectStatus.Connected);
-        }
-        else if (nextState is OfflineState)
-        {
-            OnConnectionStatusChanged?.Invoke(ConnectStatus.Disconnected);
-        }
-        else if (nextState is ClientConnectingState)
-        {
-            OnConnectionStatusChanged?.Invoke(ConnectStatus.Connecting);
-        }
-    }
 
     // NGO 이벤트 핸들러들
     void OnClientDisconnectCallback(ulong clientId)
     {
-        m_DebugClassFacade?.LogInfo(GetType().Name, $"[ConnectionManager] 클라이언트 연결 해제: ClientID={clientId}");
+        m_DebugClassFacade?.LogInfo(GetType().Name, $"[ConnectionManager] OnClientDisconnectCallback: ClientID={clientId}");
         m_CurrentState.OnClientDisconnect(clientId);
     }
 
     void OnClientConnectedCallback(ulong clientId)
     {
-        m_DebugClassFacade?.LogInfo(GetType().Name, $"[ConnectionManager] 클라이언트 연결됨: ClientID={clientId}");
+        m_DebugClassFacade?.LogInfo(GetType().Name, $"[ConnectionManager]OnClientConnectedCallback ClientID={clientId}");
         m_CurrentState.OnClientConnected(clientId);
     }
 
     void OnServerStarted()
     {
-        m_DebugClassFacade?.LogInfo(GetType().Name, "[ConnectionManager] 서버 시작됨");
+        m_DebugClassFacade?.LogInfo(GetType().Name, "[ConnectionManager] 매치 서버 시작됨");
         m_CurrentState.OnServerStarted();
     }
       void ApprovalCheck(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
@@ -260,13 +240,13 @@ namespace Unity.Assets.Scripts.Network
     void OnTransportFailure()
     {
         m_DebugClassFacade?.LogError(GetType().Name, "[ConnectionManager] 전송 실패 발생");
-        m_CurrentState.OnTransportFailure(0);
+        m_CurrentState.OnTransportFailure();
     }
 
     void OnServerStopped(bool _)
     {
-        m_DebugClassFacade?.LogInfo(GetType().Name, "[ConnectionManager] 서버 중지됨");
-        m_CurrentState.OnServerStopped(true);
+        m_DebugClassFacade?.LogInfo(GetType().Name, "[ConnectionManager] 매치 서버 중지됨");
+        m_CurrentState.OnServerStopped();
     }
 
     /// <summary>
@@ -308,17 +288,17 @@ namespace Unity.Assets.Scripts.Network
     /// <summary>
     /// 로비를 통한 클라이언트 연결 시작
     /// </summary>
-    public void StartClientLobby()
+    public void StartClientLobby(string playerName)
     {
         m_DebugClassFacade?.LogInfo(GetType().Name, $"[ConnectionManager] 로비 클라이언트 시작: ");
-        m_CurrentState.StartClientLobby();
+        m_CurrentState.StartClientLobby(playerName);
     }
 
 
 
-    public void StartHostLobby()
+    public void StartHostLobby(string playerName)
     {
-            m_CurrentState.StartHostLobby();
+        m_CurrentState.StartHostLobby(playerName);
     }
 
 
@@ -326,6 +306,8 @@ namespace Unity.Assets.Scripts.Network
         {
             m_CurrentState.OnUserRequestedShutdown();
         }
+
+
     }
 }
 

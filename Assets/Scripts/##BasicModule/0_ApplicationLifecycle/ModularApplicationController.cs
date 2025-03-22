@@ -7,10 +7,11 @@ using VContainer;
 using VContainer.Unity;
 using Unity.Assets.Scripts.Module.ApplicationLifecycle.Installers;
 using Unity.Assets.Scripts.Resource;
-//using Unity.Assets.Scripts.UnityServices.Lobbies;
-//using Unity.Assets.Scripts.Infrastructure;
+using Unity.Assets.Scripts.UnityServices.Lobbies;
+using Unity.Assets.Scripts.Infrastructure;
 // using Unity.Assets.Scripts.Gameplay.GameplayObjects.RuntimeDataContainers;
 using Unity.Assets.Scripts.Network;
+using System.Collections;
 
 namespace Unity.Assets.Scripts.Module.ApplicationLifecycle
 {
@@ -58,8 +59,8 @@ namespace Unity.Assets.Scripts.Module.ApplicationLifecycle
         [SerializeField]
         NetworkManager m_NetworkManager;
 
-        //private LocalLobby m_LocalLobby;
-        //private LobbyServiceFacade m_LobbyServiceFacade;
+        private LocalLobby m_LocalLobby;
+        private LobbyServiceFacade m_LobbyServiceFacade;
         private readonly List<IModuleInstaller> m_Installers = new();
         private IDisposable m_Subscriptions;
 
@@ -200,7 +201,12 @@ namespace Unity.Assets.Scripts.Module.ApplicationLifecycle
 
             // 모듈 상태 관리자 초기화
             m_ModuleStateManager = ModuleStateManager.Instance;
-            
+            builder.Register<LocalLobbyUser>(Lifetime.Singleton);
+            builder.Register<LocalLobby>(Lifetime.Singleton);
+            builder.RegisterEntryPoint<LobbyServiceFacade>(Lifetime.Singleton).AsSelf();
+
+            builder.RegisterInstance(new BufferedMessageChannel<LobbyListFetchedMessage>()).AsImplementedInterfaces();
+
             // 인스톨러 자동 검색 (선택적으로 사용)
             // AutoDiscoverInstallers();
             
@@ -227,9 +233,8 @@ namespace Unity.Assets.Scripts.Module.ApplicationLifecycle
         private void Start()
         {
             UnityEngine.Debug.Log("[ModularApplicationController] 시작: Start");
-            
-            //m_LocalLobby = Container.Resolve<LocalLobby>();
-            //m_LobbyServiceFacade = Container.Resolve<LobbyServiceFacade>();
+            m_LocalLobby = Container.Resolve<LocalLobby>();
+            m_LobbyServiceFacade = Container.Resolve<LobbyServiceFacade>();
     // 메모리 로그 비활성화 코드 추가
             Application.SetStackTraceLogType(LogType.Log, StackTraceLogType.None);
             Application.SetStackTraceLogType(LogType.Warning, StackTraceLogType.None);
@@ -255,15 +260,39 @@ namespace Unity.Assets.Scripts.Module.ApplicationLifecycle
             }
 
             base.OnDestroy();
-            
+            if (m_Subscriptions != null)
+           {
+               m_Subscriptions.Dispose();
+           }
+
+           if (m_LobbyServiceFacade != null)
+           {
+               m_LobbyServiceFacade.EndTracking();
+           }
             UnityEngine.Debug.Log("[ModularApplicationController] 종료: OnDestroy");
         }
+        private IEnumerator LeaveBeforeQuit()
+        {
+            Debug.Log("[ModularApplicationController] 종료: LeaveBeforeQuit");
+            // We want to quit anyways, so if anything happens while trying to leave the Lobby, log the exception then carry on
+            try
+            {
+                m_LobbyServiceFacade.EndTracking();
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e.Message);
+            }
 
+            yield return null;
+            Application.Quit();
+        }
         private bool OnWantToQuit()
         {
             UnityEngine.Debug.Log("[ModularApplicationController] 애플리케이션 종료 시도");
-            
-            // 리소스 정리
+            Application.wantsToQuit -= OnWantToQuit;
+
+
             try
             {
                 var resourceManager = Container.Resolve<ResourceManager>();
@@ -277,8 +306,12 @@ namespace Unity.Assets.Scripts.Module.ApplicationLifecycle
             {
                 UnityEngine.Debug.LogError($"[ModularApplicationController] 리소스 정리 중 오류 발생: {ex.Message}");
             }
-            
-            Application.wantsToQuit -= OnWantToQuit;
+            // var canQuit = m_LocalLobby != null && string.IsNullOrEmpty(m_LocalLobby.LobbyID);
+            // if (!canQuit)
+            // {
+            //     StartCoroutine(LeaveBeforeQuit());
+            // }
+            StartCoroutine(LeaveBeforeQuit());
             return true;
         }
     }

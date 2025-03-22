@@ -11,6 +11,7 @@ using Unity.Netcode;
 // using Unity.Assets.Scripts.Gameplay.UI;
 // using Unity.Assets.Scripts.Utils;
 // using Unity.Assets.Scripts.ConnectionManagement;
+using Unity.Assets.Scripts.UnityServices.Lobbies;
 
 namespace Unity.Assets.Scripts.Network
 {
@@ -49,7 +50,8 @@ namespace Unity.Assets.Scripts.Network
         
         // 온라인 연결 확인 코루틴
         private Coroutine m_OnlineCheckCoroutine;
-
+        [Inject]
+        LobbyServiceFacade m_LobbyServiceFacade;
         /// <summary>
         /// 상태 진입 시 호출되는 메서드
         /// 
@@ -73,7 +75,7 @@ namespace Unity.Assets.Scripts.Network
             }
             
             // 로비 서비스 추적 종료 (필요한 경우)
-            // m_LobbyServiceFacade.EndTracking();
+            m_LobbyServiceFacade.EndTracking();
 
         }
         

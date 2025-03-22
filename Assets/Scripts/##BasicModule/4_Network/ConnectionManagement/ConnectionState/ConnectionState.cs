@@ -23,8 +23,9 @@ namespace Unity.Assets.Scripts.Network
     /// </summary>
     public abstract class ConnectionState
     {
+    public int MaxConnectedPlayers = 2;
 
-   protected DebugClassFacade m_DebugClassFacade;
+    protected DebugClassFacade m_DebugClassFacade;
     protected ConnectionManager m_ConnectionManager;
     protected NetworkManager m_NetworkManager;
     protected IPublisher<ConnectStatus> m_ConnectStatusPublisher;
@@ -62,7 +63,6 @@ namespace Unity.Assets.Scripts.Network
         /// </summary>
         public virtual void OnClientConnected(ulong clientId) { }
         
-        public virtual void OnHostDisconnected(ulong clientId) { }
 
         /// <summary>
         /// 클라이언트 연결 해제 시 호출되는 메서드
@@ -82,7 +82,7 @@ namespace Unity.Assets.Scripts.Network
         /// <summary>
         /// 로비를 통한 클라이언트 연결 시작 메서드
         /// </summary>
-        public virtual void StartClientLobby() { }
+        public virtual void StartClientLobby(string playerName) { }
 
         /// <summary>
         /// IP 주소를 통한 호스트 시작 메서드
@@ -92,7 +92,7 @@ namespace Unity.Assets.Scripts.Network
         /// <summary>
         /// 로비를 통한 호스트 시작 메서드
         /// </summary>
-        public virtual void StartHostLobby() { }
+        public virtual void StartHostLobby(string playerName) { }
 
         /// <summary>
         /// 사용자가 종료 요청 시 호출되는 메서드
@@ -107,31 +107,22 @@ namespace Unity.Assets.Scripts.Network
         /// <summary>
         /// 전송 실패 시 호출되는 메서드
         /// </summary>
-        public virtual void OnTransportFailure(ulong clientId) { }
+        public virtual void OnTransportFailure() { }
 
         /// <summary>
         /// 서버 중지 시 호출되는 메서드
         /// </summary>
-        public virtual void OnServerStopped(bool indicator) { }
+        public virtual void OnServerStopped() { }
 
         /// <summary>
         /// 릴레이 연결 시작 메서드
         /// </summary>
-        public virtual void StartRelayConnection() { }
 
         /// <summary>
         /// 플레이어가 게임에 참여할 때 호출되는 메서드
         /// </summary>
-        public virtual void OnPlayerJoined(ulong clientId) { }
 
-        /// <summary>
-        /// 상태 업데이트 메서드
-        /// </summary>
-
-        protected  virtual void PublishConnectStatus(ConnectStatus status)
-        {
-            // m_ConnectStatusPublisher?.Publish(status);
-        }
+    
 
 
     }

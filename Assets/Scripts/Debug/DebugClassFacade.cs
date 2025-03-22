@@ -300,4 +300,5 @@ public class DebugClassFacade
         _enabledClasses.CopyTo(classes);
         return classes;
     }
+
 }

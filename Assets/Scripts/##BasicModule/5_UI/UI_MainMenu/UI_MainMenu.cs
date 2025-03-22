@@ -10,6 +10,7 @@ using Object = UnityEngine.Object;
 using Unity.Assets.Scripts.UI;
 using VContainer.Unity;
 using Unity.Services.Lobbies.Models;
+using Unity.Assets.Scripts.Network;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -122,17 +123,26 @@ namespace Unity.Assets.Scripts.UI
         {
 
             base.SubscribeEvents();
-   
+            LobbyUIMediator.OnWaitingStateChanged += OnWaitingStateChanged;
+
         }
         
 
             protected override void UnsubscribeEvents()
         {
             base.UnsubscribeEvents(); // 부모 클래스의 구현 호출
-
+            LobbyUIMediator.OnWaitingStateChanged -= OnWaitingStateChanged;
         }
+        // 이벤트 핸들러
+        private void OnWaitingStateChanged(bool isWaiting)
+        {
+            if (MatchingObject != null)
+            {
+                MatchingObject.SetActive(isWaiting);
+                Debug.Log($"[UI_MainMenu] 매칭 UI {(isWaiting ? "활성화" : "비활성화")}");
 
-        
+            }
+        }
         #endregion
 
         #region Event Handlers
