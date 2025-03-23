@@ -36,10 +36,19 @@ public class BasicGameState : GameStateLifetimeScope
 
     private void InitializeNetworkObject()
     {
-        var netObj = GetComponent<NetworkObject>() ?? gameObject.AddComponent<NetworkObject>();
-        if (!netObj.IsSpawned)
+        // 서버인 경우에만 NetworkObject 스폰
+        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer)
         {
-            netObj.Spawn();
+            var netObj = GetComponent<NetworkObject>() ?? gameObject.AddComponent<NetworkObject>();
+            if (!netObj.IsSpawned)
+            {
+                netObj.Spawn();
+                Debug.Log("[BasicGameState] 네트워크 오브젝트 스폰 완료");
+            }
+        }
+        else
+        {
+            Debug.Log("[BasicGameState] 클라이언트에서는 네트워크 오브젝트를 스폰할 수 없음");
         }
     }
 

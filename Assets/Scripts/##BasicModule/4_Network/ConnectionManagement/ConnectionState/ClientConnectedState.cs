@@ -1,4 +1,5 @@
-﻿using Unity.Assets.Scripts.UnityServices.Lobbies;
+﻿using Unity.Assets.Scripts.Scene;
+using Unity.Assets.Scripts.UnityServices.Lobbies;
 using UnityEngine;
 using VContainer;
 
@@ -11,13 +12,20 @@ using VContainer;
     {
         [Inject]
         protected LobbyServiceFacade m_LobbyServiceFacade;
-
+        [Inject] SceneManagerEx _sceneManagerEx;
+        [Inject] LocalLobby m_LocalLobby;
         public override void Enter()
         {
+            Debug.Log("[ClientConnectedState] 클라이언트 연결 상태 진입");
             if (m_LobbyServiceFacade.CurrentUnityLobby != null)
             {
                 m_LobbyServiceFacade.BeginTracking();
             }
+            // if (m_LocalLobby.LobbyUsers.Count >= m_ConnectionManager.MaxConnectedPlayers)
+            // {
+            //     Debug.Log("[ClientConnectedState] 플레이어 수 충족 - 게임 씬으로 전환");
+            //     _sceneManagerEx.LoadScene(EScene.BasicGame.ToString(), useNetworkSceneManager: true);
+            // }
         }
 
         public override void Exit() { }

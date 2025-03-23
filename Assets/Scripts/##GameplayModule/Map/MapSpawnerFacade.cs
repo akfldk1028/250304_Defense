@@ -13,6 +13,7 @@ using Unity.Assets.Scripts.Objects;
 public class MapSpawnerFacade : NetworkBehaviour
 {
     [Inject] public ResourceManager _resourceManager;
+    [Inject] private NetUtils _netUtils; // NetUtils 추가
 
     [Inject] private NetworkManager _networkManager;
     // MapManager는 더 이상 사용하지 않으므로 주입 제거
@@ -46,7 +47,7 @@ public class MapSpawnerFacade : NetworkBehaviour
     public void LoadMap(string mapName)
     {
         GameObject mapPrefab = LoadMapPrefab(mapName);
-        InitializeNetworkObject();
+        // _netUtils.InitializeNetworkObject(gameObject);
         InstantiateMap(mapPrefab, mapName);
 
     }
@@ -57,22 +58,6 @@ public class MapSpawnerFacade : NetworkBehaviour
         return _resourceManager.Load<GameObject>(resourceKey);
     }
     
-    private void InitializeNetworkObject()
-    {
-        var netObj = GetComponent<NetworkObject>() ?? gameObject.AddComponent<NetworkObject>();
-        if (!netObj.IsSpawned)
-        {
-            if (_networkManager != null && _networkManager.IsServer)
-            {
-                netObj.Spawn();
-                Debug.Log("[ObjectManagerFacade] 네트워크 오브젝트 스폰 완료 (서버)");
-            }
-            else
-            {
-                Debug.Log("[ObjectManagerFacade] 클라이언트에서는 네트워크 오브젝트를 스폰하지 않음");
-            }
-        }
-    }
     private void InstantiateMap(GameObject mapPrefab, string mapName)
     {
         Debug.Log($"[MapSpawnerFacade] 프리팹 로드 성공: {mapPrefab.name}, 인스턴스화 시도");

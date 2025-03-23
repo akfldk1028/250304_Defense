@@ -21,26 +21,12 @@ public class ObjectManagerFacade : NetworkBehaviour
 
     public void Awake()
     {
-        InitializeNetworkObject();
+        _netUtils.InitializeNetworkObject(gameObject);
+        //스포된거 알리고 완료되면 client에서 처리
         _networkMediator.RegisterHandler(NetworkEventType.NetworkSpawned, OnNetworkObjectSpawned);
     }
 
-    private void InitializeNetworkObject()
-    {
-        var netObj = GetComponent<NetworkObject>() ?? gameObject.AddComponent<NetworkObject>();
-        if (!netObj.IsSpawned)
-        {
-            if (_networkManager != null && _networkManager.IsServer)
-            {
-                netObj.Spawn();
-                Debug.Log("[ObjectManagerFacade] 네트워크 오브젝트 스폰 완료 (서버)");
-            }
-            else
-            {
-                Debug.Log("[ObjectManagerFacade] 클라이언트에서는 네트워크 오브젝트를 스폰하지 않음");
-            }
-        }
-}
+
     private void OnDestroy()
     {
         StopSpawnCoroutine();
@@ -143,13 +129,16 @@ public class ObjectManagerFacade : NetworkBehaviour
             // 몬스터 스폰
             ServerMonster monster = _objectManager.Spawn<ServerMonster>(cellPos, clientId, templateID);
             
-            if (monster != null)
+            if (monster != null && monster.NetworkObject != null)
             {
-                // 몬스터 스폰 성공 시 클라이언트에 알림
-                NetworkObject netObj = GetComponent<NetworkObject>();
-                MonsterSetClientRpc(netObj.NetworkObjectId, clientId);
+                // 몬스터의 NetworkObject ID를 전달
+                MonsterSetClientRpc(monster.NetworkObject.NetworkObjectId, clientId);
                 
-                Debug.Log($"[ObjectManagerFacade] 몬스터 스폰 성공: ID={templateID}, Position={cellPos}");
+                Debug.Log($"[ObjectManagerFacade] 몬스터 스폰 성공: ID={templateID}, NetworkID={monster.NetworkObject.NetworkObjectId}, Position={cellPos}");
+            }
+            else
+            {
+                Debug.LogError("[ObjectManagerFacade] 몬스터 스폰 실패 또는 NetworkObject 없음");
             }
         }
         catch (Exception ex)
@@ -158,22 +147,64 @@ public class ObjectManagerFacade : NetworkBehaviour
         }
     }
 
+    
     [ClientRpc]
     public void MonsterSetClientRpc(ulong networkObjectId, ulong clientId) 
     {
-        if (_netUtils.TryGetSpawnedObject(networkObjectId, out NetworkObject monsterNetworkObject)) 
+        try 
         {
-            var moveList = clientId == _netUtils.LocalID() ? _mapSpawnerFacade.Player_move_list : _mapSpawnerFacade.Other_move_list;
+            Debug.Log($"[ObjectManagerFacade] MonsterSetClientRpc 호출됨 - NetworkID: {networkObjectId}, ClientID: {clientId}");
             
-            if (moveList.Count > 0)
+            if (_netUtils == null)
             {
-                monsterNetworkObject.transform.position = moveList[0];
-                monsterNetworkObject.GetComponent<ServerMonster>().SetMoveList(moveList);
+                Debug.LogError("[ObjectManagerFacade] _netUtils가 null입니다");
+                return;
+            }
+            
+            if (_mapSpawnerFacade == null)
+            {
+                Debug.LogError("[ObjectManagerFacade] _mapSpawnerFacade가 null입니다");
+                return;
+            }
+            
+            if (_netUtils.TryGetSpawnedObject(networkObjectId, out NetworkObject monsterNetworkObject)) 
+            {
+                var moveList = clientId == _netUtils.LocalID() ? _mapSpawnerFacade.Player_move_list : _mapSpawnerFacade.Other_move_list;
+                
+                if (moveList == null)
+                {
+                    Debug.LogError("[ObjectManagerFacade] moveList가 null입니다");
+                    return;
+                }
+                
+                if (moveList.Count > 0)
+                {
+                    monsterNetworkObject.transform.position = moveList[0];
+                    
+                    var serverMonster = monsterNetworkObject.GetComponent<ServerMonster>();
+                    if (serverMonster != null)
+                    {
+                        serverMonster.SetMoveList(moveList);
+                        Debug.Log($"[ObjectManagerFacade] 몬스터 이동 경로 설정 완료: {networkObjectId}");
+                    }
+                    else
+                    {
+                        Debug.LogError($"[ObjectManagerFacade] ServerMonster 컴포넌트를 찾을 수 없습니다: {networkObjectId}");
+                    }
+                }
+                else
+                {
+                    Debug.LogError($"[ObjectManagerFacade] 이동 경로 리스트가 비어 있습니다. ClientID: {clientId}, LocalID: {_netUtils.LocalID()}");
+                }
             }
             else
             {
-                Debug.LogError($"[ObjectManagerFacade] 이동 경로 리스트가 비어 있습니다. ClientID: {clientId}, LocalID: {_netUtils.LocalID()}");
+                Debug.LogError($"[ObjectManagerFacade] NetworkObjectId {networkObjectId}에 해당하는 객체를 찾을 수 없습니다");
             }
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"[ObjectManagerFacade] MonsterSetClientRpc 예외 발생: {ex.Message}\n{ex.StackTrace}");
         }
     }
 

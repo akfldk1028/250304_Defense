@@ -278,7 +278,6 @@ namespace Unity.Assets.Scripts.UnityServices.Lobbies{
 
                 // 모든 플레이어가 준비되었는지 확인하고 씬 전환
                 Debug.Log($"로비 사용자 수 확인: {m_LocalLobby.LobbyUsers.Count}/{MaxConnectedPlayers}");
-                // SceneLoad();
 
                 // as client, check if host is still in lobby
                 if (!m_LocalUser.IsHost)
@@ -296,42 +295,6 @@ namespace Unity.Assets.Scripts.UnityServices.Lobbies{
                 }
             }
         }
-
-                // SCENE LOAD
-        public void SceneLoad()
-        {
-            Debug.Log($"[LobbyServiceFacade] SceneLoad 호출됨 - 유저 수: {m_LocalLobby.LobbyUsers.Count}/{MaxConnectedPlayers}, 호스트?: {m_LocalUser.IsHost}");
-            
-            if (m_LocalLobby.LobbyUsers.Count >= MaxConnectedPlayers)
-            {
-                if (m_LocalUser.IsHost)
-                {
-                    Debug.Log("[LobbyServiceFacade] 호스트가 씬 전환 시작");
-                    
-                    // 네트워크로 모든 클라이언트에게 씬 전환 알림 (CustomMessage 사용)
-                    if (_networkManager.IsListening && _networkManager.IsServer)
-                    {
-                        Debug.Log("[LobbyServiceFacade] 게임 씬으로 전환 명령 전송 (RPCs)");
-                        
-                        // 실제 씬 로드
-                        // _sceneManagerEx.LoadScene(EScene.BasicGame.ToString(), useNetworkSceneManager: true);
-                    }
-                    else
-                    {
-                        Debug.LogError("[LobbyServiceFacade] NetworkManager가 준비되지 않음");
-                    }
-                }
-                else
-                {
-                    Debug.Log("[LobbyServiceFacade] 클라이언트는 호스트의 씬 전환 신호를 기다림");
-                }
-            }
-            else
-            {
-                Debug.Log($"[LobbyServiceFacade] 아직 플레이어가 부족함 ({m_LocalLobby.LobbyUsers.Count}/{MaxConnectedPlayers})");
-            }
-        }
-
         void OnKickedFromLobby()
         {
             Debug.Log("Kicked from Lobby");

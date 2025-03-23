@@ -321,7 +321,6 @@ class ClientConnectingState : OnlineState
             {
                 Debug.Log($"<color=green>[ClientConnectingState] Transport 설정 - ServerIP: {utp.ConnectionData.Address}, Port: {utp.ConnectionData.Port}, IsRelayEnabled: {utp.Protocol == UnityTransport.ProtocolType.RelayUnityTransport}</color>");
             }
-            m_ConnectionManager.NetworkManager.LogLevel = Unity.Netcode.LogLevel.Developer;
 // 연결 시도 횟수와 타임아웃 설정 (가능한 경우)
             try {
                 utp.MaxConnectAttempts = 5; // 연결 시도 횟수 증가
@@ -343,8 +342,6 @@ class ClientConnectingState : OnlineState
                 };
             }
 
-            // 추가: 모니터링을 위한 연결 상태 출력
-            m_ConnectionManager.StartCoroutine(MonitorConnectionStatus());
         }
         catch (Exception e)
         {
@@ -353,28 +350,6 @@ class ClientConnectingState : OnlineState
         }
     }
     
-    // 추가: 연결 상태 모니터링을 위한 코루틴
-    private IEnumerator MonitorConnectionStatus()
-    {
-        for (int i = 0; i < 10; i++) // 10초간 모니터링
-        {
-            yield return new WaitForSeconds(1.0f);
-            
-            // 네트워크 상태 출력
-            if (m_ConnectionManager.NetworkManager != null)
-            {
-                Debug.Log($"[ConnectionMonitor] State={m_ConnectionManager.NetworkManager.IsClient}|{m_ConnectionManager.NetworkManager.IsConnectedClient}|{m_ConnectionManager.NetworkManager.IsListening}, " +
-                          $"Clients={m_ConnectionManager.NetworkManager.ConnectedClientsIds.Count}, " +
-                          $"LocalClientId={m_ConnectionManager.NetworkManager.LocalClientId}");
-            }
-            
-            // 연결 완료 확인되면 종료
-            if (m_ConnectionManager.NetworkManager.IsConnectedClient)
-            {
-                Debug.Log("[ConnectionMonitor] 클라이언트 연결 확인됨!");
-                break;
-            }
-        }
-    }
+
 }
 

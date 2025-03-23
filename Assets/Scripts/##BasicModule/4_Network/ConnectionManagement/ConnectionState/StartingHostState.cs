@@ -19,10 +19,7 @@ namespace Unity.Assets.Scripts.Network
         LobbyServiceFacade m_LobbyServiceFacade;
         [Inject]
         LocalLobby m_LocalLobby;
-        
-        private bool m_IsStarting = false;
-        private float m_StartTime;
-        private const float k_HostStartTimeout = 10f;
+
         ConnectionMethodBase m_ConnectionMethod;
         public StartingHostState Configure(ConnectionMethodBase baseConnectionMethod)
         {

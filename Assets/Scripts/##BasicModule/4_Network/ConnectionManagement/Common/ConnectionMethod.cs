@@ -131,7 +131,6 @@ public abstract class ConnectionMethodBase
 
 
             NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(AllocationUtils.ToRelayServerData(joinedAllocation, k_DtlsConnType));
-            Debug.Log("<color=red>릴레이 서버 연결 성공: " + m_LocalLobby.RelayJoinCode + "</color>");
 
             // if (!string.IsNullOrEmpty(m_LocalLobby.RelayJoinCode) && m_ConnectionManager.NetworkManager.StartClient())
             // {
@@ -139,24 +138,10 @@ public abstract class ConnectionMethodBase
             //     return;
             // }
 
-// 연결 성공 후
+            // 연결 성공 후
             // Configure UTP with allocation
             // var utp = (UnityTransport)m_ConnectionManager.NetworkManager.NetworkConfig.NetworkTransport;
 
-            // // UnityTransport 설정 로그 추가
-            // Debug.Log($"Transport 설정: IP={utp.ConnectionData.Address}, Port={utp.ConnectionData.Port}, Protocol={utp.Protocol}");
-
-            // var utp = (UnityTransport)m_ConnectionManager.NetworkManager.NetworkConfig.NetworkTransport;
-
-            // utp.SetRelayServerData(new RelayServerData(
-            //     joinedAllocation.RelayServer.IpV4,    // 실제 Relay 서버 IP 사용
-            //     (ushort)joinedAllocation.RelayServer.Port,    // 실제 Relay 서버 포트 사용
-            //     joinedAllocation.AllocationIdBytes,
-            //     joinedAllocation.ConnectionData,
-            //     joinedAllocation.HostConnectionData,
-            //     joinedAllocation.Key,
-            //     false       // isSecure
-            // ));
 
             // 아래와 같이 변경:
             // utp.SetRelayServerData(
@@ -169,7 +154,6 @@ public abstract class ConnectionMethodBase
             // );
 
             Debug.Log($"<color=red>릴레이 서버 연결 성공: {joinedAllocation.ConnectionData[0]} {joinedAllocation.ConnectionData[1]}</color>");
-
             Debug.Log($"<color=red>릴레이 서버 연결 성공: {joinedAllocation.AllocationIdBytes}</color>");
             Debug.Log($"<color=red>릴레이 서버 연결 성공: {joinedAllocation.ConnectionData}</color>");
             Debug.Log($"<color=red>릴레이 서버 연결 성공: {joinedAllocation.Key}</color>");
@@ -232,13 +216,6 @@ public abstract class ConnectionMethodBase
 
             // Set connection payload for host after setting up relay
             SetConnectionPayload(GetPlayerId(), m_PlayerName);
-
-            Debug.Log($"<color=red>[ConnectionMethodRelay] Created relay allocation with join code {m_LocalLobby.RelayJoinCode}</color>");
-        
-            Debug.Log($"<color=red>[ConnectionMethodRelay] hostAllocation.RelayServer.IpV4: {hostAllocation.RelayServer.IpV4}</color>");
-            Debug.Log($"<color=red>[ConnectionMethodRelay] hostAllocation.RelayServer.Port: {hostAllocation.RelayServer.Port}</color>");
-            Debug.Log($"<color=red>[ConnectionMethodRelay] hostAllocation.AllocationId: {hostAllocation.AllocationId}</color>");
-            Debug.Log($"<color=red>[ConnectionMethodRelay] hostAllocation.Region: {hostAllocation.Region}</color>");
 
             Debug.Log($"<color=red>릴레이 서버 연결 성공: {hostAllocation.ConnectionData[0]} {hostAllocation.ConnectionData[1]}</color>");
             Debug.Log($"<color=red>릴레이 서버 연결 성공: {hostAllocation.AllocationIdBytes}</color>");

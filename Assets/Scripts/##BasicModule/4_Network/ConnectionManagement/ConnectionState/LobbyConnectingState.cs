@@ -71,25 +71,15 @@ namespace Unity.Assets.Scripts.Network
 
             // m_LobbyServiceFacade.EndTracking();
         }
- 
-        public override void Exit()
-        {
+        public override void Exit(){}
 
-        }
-
-     
-
-
-
-       public override void StartHostLobby(string playerName)
+        public override void StartHostLobby(string playerName)
         {
             var connectionMethod = new ConnectionMethodRelay(m_LobbyServiceFacade, m_LocalLobby, m_ConnectionManager, m_ProfileManager, playerName);
             m_ConnectionManager.ChangeState(m_ConnectionManager.m_StartingHost.Configure(connectionMethod));
         }
 
-  
 
-     
           public override void StartClientLobby(string playerName)
         {
             var connectionMethod = new ConnectionMethodRelay(m_LobbyServiceFacade, m_LocalLobby, m_ConnectionManager, m_ProfileManager, playerName);

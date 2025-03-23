@@ -760,155 +760,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1748675791
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1748675793}
-  - component: {fileID: 1748675792}
-  m_Layer: 0
-  m_Name: Runtime Network Stats Monitor
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1748675792
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1748675791}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 17737e0516da2445b9b0077ae2bd9b4f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Visible: 1
-  m_MaxRefreshRate: 30
-  <CustomStyleSheet>k__BackingField: {fileID: 0}
-  <PanelSettingsOverride>k__BackingField: {fileID: 0}
-  <Position>k__BackingField:
-    <OverridePosition>k__BackingField: 1
-    m_PositionLeftToRight: 0
-    m_PositionTopToBottom: 0
-  <Configuration>k__BackingField: {fileID: 11400000, guid: 8f1b4e3792d8446399527749cfb591a2, type: 2}
---- !u!4 &1748675793
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1748675791}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1766404396
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1766404398}
-  - component: {fileID: 1766404397}
-  m_Layer: 0
-  m_Name: Network Simulator
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1766404397
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1766404396}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 98d9db9626104da59357651088226725, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_PresetAsset: {fileID: 0}
-  m_PresetReference:
-    rid: 4530739397346197593
-  m_Scenario:
-    rid: -2
-  m_IsScenarioSettingsFolded: 0
-  AutoRunScenario: 0
-  references:
-    version: 2
-    RefIds:
-    - rid: -2
-      type: {class: , ns: , asm: }
-    - rid: 4530739397346197593
-      type: {class: NetworkSimulatorPreset, ns: Unity.Multiplayer.Tools.NetworkSimulator.Runtime, asm: Unity.Multiplayer.Tools.NetworkSimulator.Runtime}
-      data:
-        <Name>k__BackingField: 
-        <Description>k__BackingField: 
-        <PacketDelayMs>k__BackingField: 0
-        <PacketJitterMs>k__BackingField: 0
-        <PacketLossInterval>k__BackingField: 0
-        <PacketLossPercent>k__BackingField: 0
---- !u!4 &1766404398
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1766404396}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1825240425
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1825240426}
-  m_Layer: 0
-  m_Name: NetworkMediator
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1825240426
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1825240425}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 291.3031, y: 67.93256, z: -4.7316957}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1846976842
 GameObject:
   m_ObjectHideFlags: 0
@@ -1340,6 +1191,14 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 2923026997087005054, guid: 42d7b67473022de49a9a0499175ddd2a, type: 3}
+      propertyPath: LogLevel
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2923026997087005054, guid: 42d7b67473022de49a9a0499175ddd2a, type: 3}
+      propertyPath: NetworkConfig.SpawnTimeout
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 2923026997087005054, guid: 42d7b67473022de49a9a0499175ddd2a, type: 3}
       propertyPath: NetworkConfig.NetworkTransport
       value: 
       objectReference: {fileID: 2049789359}
@@ -1350,6 +1209,10 @@ PrefabInstance:
     - target: {fileID: 2923026997087005054, guid: 42d7b67473022de49a9a0499175ddd2a, type: 3}
       propertyPath: NetworkConfig.EnableSceneManagement
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2923026997087005054, guid: 42d7b67473022de49a9a0499175ddd2a, type: 3}
+      propertyPath: NetworkConfig.ClientConnectionBufferTimeout
+      value: 20
       objectReference: {fileID: 0}
     - target: {fileID: 2923026997087005054, guid: 42d7b67473022de49a9a0499175ddd2a, type: 3}
       propertyPath: 'NetworkConfig.Prefabs.NetworkPrefabsLists.Array.data[0]'
@@ -1662,6 +1525,3 @@ SceneRoots:
   - {fileID: 8504555733200679839}
   - {fileID: 881987300}
   - {fileID: 1460170589}
-  - {fileID: 1825240426}
-  - {fileID: 1748675793}
-  - {fileID: 1766404398}
