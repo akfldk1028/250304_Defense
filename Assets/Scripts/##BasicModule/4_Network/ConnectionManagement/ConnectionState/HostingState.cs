@@ -34,7 +34,7 @@ using Unity.Assets.Scripts.Scene;
         //may do this differently.
         // SceneLoaderWrapper.Instance.LoadScene("CharSelect", useNetworkSceneManager: true);
 
-        if (m_LocalLobby.LobbyUsers.Count >= MaxConnectedPlayers)
+        if (m_LocalLobby.LobbyUsers.Count >= m_ConnectionManager.MaxConnectedPlayers)
         {
             Debug.Log(" HostingState HostingState HostingState HostingStateㅎㅎ HostingState");
             _sceneManagerEx.LoadScene(EScene.BasicGame.ToString(), useNetworkSceneManager: true);
@@ -55,6 +55,7 @@ using Unity.Assets.Scripts.Scene;
 
         public override void OnClientConnected(ulong clientId)
         {
+            Debug.Log("[HostingState] OnClientConnected 호출됨: ClientID=" + clientId);
             var playerData = SessionManager<SessionPlayerData>.Instance.GetPlayerData(clientId);
             if (playerData != null)
             {
@@ -67,7 +68,14 @@ using Unity.Assets.Scripts.Scene;
                 var reason = JsonUtility.ToJson(ConnectStatus.GenericDisconnect);
                 m_ConnectionManager.NetworkManager.DisconnectClient(clientId, reason);
             }
+            Debug.Log($"[HostingState] playerData {playerData}");
 
+
+            if (m_LocalLobby.LobbyUsers.Count >= m_ConnectionManager.MaxConnectedPlayers)
+            {
+            Debug.Log(" HostingState HostingState HostingState HostingStateㅎㅎ HostingState");
+            _sceneManagerEx.LoadScene(EScene.BasicGame.ToString(), useNetworkSceneManager: true);
+            }
         }
 
         public override void OnClientDisconnect(ulong clientId)
@@ -123,6 +131,7 @@ using Unity.Assets.Scripts.Scene;
         ///  <param name="response"> Our response to the approval process. In case of connection refusal with custom return message, we delay using the Pending field.
         public override void ApprovalCheck(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
         {
+            Debug.Log("[HostingState] ApprovalCheck 호출됨");
             var connectionData = request.Payload;
             var clientId = request.ClientNetworkId;
             if (connectionData.Length > k_MaxConnectPayload)

@@ -120,8 +120,8 @@ using Unity.Assets.Scripts.UnityServices.Lobbies;
             // Configure UTP with allocation
             var utp = (UnityTransport)m_ConnectionManager.NetworkManager.NetworkConfig.NetworkTransport;
             utp.SetRelayServerData(new RelayServerData(
-                "0.0.0.0",  // host
-                0,          // port
+                joinedAllocation.RelayServer.IpV4,    // 실제 Relay 서버 IP 사용
+                (ushort)joinedAllocation.RelayServer.Port,    // 실제 Relay 서버 포트 사용
                 joinedAllocation.AllocationIdBytes,
                 joinedAllocation.ConnectionData,
                 joinedAllocation.HostConnectionData,
@@ -169,8 +169,8 @@ using Unity.Assets.Scripts.UnityServices.Lobbies;
             // Setup UTP with relay connection info
             var utp = (UnityTransport)m_ConnectionManager.NetworkManager.NetworkConfig.NetworkTransport;
             utp.SetRelayServerData(new RelayServerData(
-                "0.0.0.0",  // host
-                0,          // port
+                hostAllocation.RelayServer.IpV4,    // 실제 Relay 서버 IP 사용
+                (ushort) hostAllocation.RelayServer.Port,    // 실제 Relay 서버 포트 사용
                 hostAllocation.AllocationIdBytes,
                 hostAllocation.ConnectionData,
                 hostAllocation.ConnectionData,  // 호스트의 경우 ConnectionData를 사용

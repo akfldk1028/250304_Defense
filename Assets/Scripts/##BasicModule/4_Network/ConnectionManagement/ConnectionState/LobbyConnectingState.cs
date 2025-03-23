@@ -50,25 +50,25 @@ namespace Unity.Assets.Scripts.Network
         {
             m_DebugClassFacade?.LogInfo(GetType().Name, "[LobbyConnectingState] 로비대기 상태");
 
-            if (m_authManager.IsAuthenticated)
-            {
-                m_LocalPlayerId =  m_authManager.PlayerId;
-                m_DebugClassFacade?.LogInfo(GetType().Name, $"[LobbyConnectingState] 인증 플레이어 ID 초기화: {m_LocalPlayerId}");
+            // if (m_authManager.IsAuthenticated)
+            // {
+            //     m_LocalPlayerId =  m_authManager.PlayerId;
+            //     m_DebugClassFacade?.LogInfo(GetType().Name, $"[LobbyConnectingState] 인증 플레이어 ID 초기화: {m_LocalPlayerId}");
 
-                // // 인증된 플레이어라면 DB에서 데이터 가져오기
-                // PlayerData data = await DatabaseService.GetPlayerData(m_LocalPlayerId);
-                // if (data != null)
-                // {
-                //     m_LocalPlayerName = data.playerName;
-                //     // 기타 데이터 로드
-                // }
-            } 
-            else {
-                m_LocalPlayerId = System.Guid.NewGuid().ToString();
-                m_DebugClassFacade?.LogInfo(GetType().Name, $"[LobbyConnectingState] 로컬 플레이어 ID 초기화: {m_LocalPlayerId}");
-            }
+            //     // // 인증된 플레이어라면 DB에서 데이터 가져오기
+            //     // PlayerData data = await DatabaseService.GetPlayerData(m_LocalPlayerId);
+            //     // if (data != null)
+            //     // {
+            //     //     m_LocalPlayerName = data.playerName;
+            //     //     // 기타 데이터 로드
+            //     // }
+            // } 
+            // else {
+            //     m_LocalPlayerId = System.Guid.NewGuid().ToString();
+            //     m_DebugClassFacade?.LogInfo(GetType().Name, $"[LobbyConnectingState] 로컬 플레이어 ID 초기화: {m_LocalPlayerId}");
+            // }
 
-            m_LobbyServiceFacade.EndTracking();
+            // m_LobbyServiceFacade.EndTracking();
         }
  
         public override void Exit()
@@ -77,107 +77,6 @@ namespace Unity.Assets.Scripts.Network
         }
 
      
-
-        // public async override void StartHostLobby()
-        // {
-        //     // 이미 연결 시도 중이면 중복 호출 방지
-        //     if (m_IsConnecting)
-        //     {
-        //         m_DebugClassFacade?.LogInfo(GetType().Name, "[LobbyConnectingState] 이미 로비 연결 시도 중입니다");
-        //         StartWaitingForPlayers();
-        //         return;
-        //     }
-            
-        //     m_DebugClassFacade?.LogInfo(GetType().Name, "[LobbyConnectingState] 호스트 로비 시작");
-        //     m_IsConnecting = true;
-            
-        //     try
-        //     {
-        //         // 먼저 사용 가능한 로비를 찾습니다
-        //         currentLobby = await FindAvailableLobby();
-
-        //         if (currentLobby == null)
-        //         {
-        //             // 로비가 없으면 새로 생성합니다 
-        //             await CreateNewLobby();
-        //         }
-        //         else
-        //         {
-        //             await JoinExistingLobby(currentLobby.Id);
-
-        //         }
-        //     }
-        //     catch (Exception e)
-        //     {
-        //         m_DebugClassFacade?.LogError(GetType().Name, $"로비 연결 중 예외 발생: {e.Message}");
-        //         OnConnectionFailed();
-        //     }
-        // }
-
-        private async Task<Lobby> FindAvailableLobby()
-        {
-            try
-            {
-                m_DebugClassFacade?.LogInfo(GetType().Name, "[LobbyConnectingState] 가용 로비 검색");
-                // var queryResponse = await ExecuteLobbyAPIWithRetry(() => LobbyService.Instance.QueryLobbiesAsync());
-                // if (queryResponse.Results.Count > 0)
-                // {
-                //     m_DebugClassFacade?.LogInfo(GetType().Name, $"[LobbyConnectingState] 로비 발견: {queryResponse.Results[0].Id}");
-                //     return queryResponse.Results[0];
-                // }
-            }
-            catch (Exception e)
-            {
-                m_DebugClassFacade?.LogError(GetType().Name, $"로비 조회 중 오류 발생: {e.Message}");
-            }
-            m_DebugClassFacade?.LogInfo(GetType().Name, "[LobbyConnectingState] 가용 로비 없음");
-            return null;
-        }
-
-
-
-      
-
-
-   
-
- 
-        private void StartWaitingForPlayers()
-        {
-            m_IsWaitingForPlayers = true;
-            m_DebugClassFacade?.LogInfo(GetType().Name, $"[LobbyConnectingState] 매칭 대기 시작 (최대 {k_MatchmakingTimeout}초)");
-            
-            OnWaitingStateChanged?.Invoke(true);
-
-            MonoBehaviour runner = m_ConnectionManager as MonoBehaviour;
-            if (runner != null)
-            {
-                runner.StartCoroutine(MatchmakingTimeoutCoroutine());
-            }
-        }
-
-
-
-        private IEnumerator MatchmakingTimeoutCoroutine()
-        {
-            // 매칭 타임아웃 대기
-            yield return new WaitForSeconds(k_MatchmakingTimeout);
-            
-            // 아직 대기 중이고 최대 플레이어에 도달하지 않았으면 타임아웃 처리
-            if (m_IsWaitingForPlayers && m_NetworkManager.ConnectedClients.Count < maxPlayers)
-            {
-                m_DebugClassFacade?.LogInfo(GetType().Name, "[LobbyConnectingState] 매칭 타임아웃 발생");
-                
-                // 대기 상태 종료
-                // StopWaitingForPlayers();
-                
-                // 이벤트 발행 (UI에 알림)
-                OnWaitingStateChanged?.Invoke(false);
-                
-
-
-            }
-        }
 
 
 

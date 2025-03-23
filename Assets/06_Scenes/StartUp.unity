@@ -1225,6 +1225,22 @@ PrefabInstance:
       propertyPath: NetworkConfig.NetworkTransport
       value: 
       objectReference: {fileID: 2049789359}
+    - target: {fileID: 2923026997087005054, guid: 42d7b67473022de49a9a0499175ddd2a, type: 3}
+      propertyPath: NetworkConfig.ConnectionApproval
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2923026997087005054, guid: 42d7b67473022de49a9a0499175ddd2a, type: 3}
+      propertyPath: NetworkConfig.EnableSceneManagement
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2923026997087005054, guid: 42d7b67473022de49a9a0499175ddd2a, type: 3}
+      propertyPath: 'NetworkConfig.Prefabs.NetworkPrefabsLists.Array.data[0]'
+      value: 
+      objectReference: {fileID: 11400000, guid: f9853d22f2872044ebce75799fa68354, type: 2}
+    - target: {fileID: 7452996900238625247, guid: 42d7b67473022de49a9a0499175ddd2a, type: 3}
+      propertyPath: ConnectionData.ServerListenAddress
+      value: 127.0.0.1
+      objectReference: {fileID: 0}
     - target: {fileID: 7644122218660358259, guid: 42d7b67473022de49a9a0499175ddd2a, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0

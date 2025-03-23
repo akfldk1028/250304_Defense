@@ -6,6 +6,7 @@ using UnityEngine.SceneManagement;
 using VContainer;
 using Unity.Assets.Scripts.Resource;
 using System;
+using Unity.Assets.Scripts.Network;
 
 namespace Unity.Assets.Scripts.Scene
 {
@@ -19,11 +20,14 @@ namespace Unity.Assets.Scripts.Scene
         BasicGame
 	}
 
+
+    
     public class SceneManagerEx
     {
         [Inject] private ResourceManager _resourceManager;
         [Inject] private NetworkManager _networkManager;
 
+        [Inject] private ConnectionManager _connectionManager; // ConnectionManager 주입
 
 
         public BaseScene CurrentScene { get { return GameObject.FindAnyObjectByType<BaseScene>(); } }
@@ -41,28 +45,47 @@ namespace Unity.Assets.Scripts.Scene
 
         public virtual void LoadScene(string sceneName, bool useNetworkSceneManager, LoadSceneMode loadSceneMode = LoadSceneMode.Single)
         {
+            Debug.Log($"[SceneManagerEx] LoadScene 호출: {sceneName}, 네트워크={useNetworkSceneManager}");
+            
             if (useNetworkSceneManager)
             {
-                if (!_networkManager.ShutdownInProgress)
+                if (_networkManager == null)
                 {
-                    if (_networkManager.IsServer)
+                    Debug.LogError("[SceneManagerEx] NetworkManager가 null입니다.");
+                    return;
+                }
+
+                if (_networkManager.IsServer)
+                {
+                    Debug.Log($"[SceneManagerEx] 서버: 씬 전환 시작: {sceneName}");
+                    if (_networkManager.SceneManager != null)
                     {
-                        // If is active server and NetworkManager uses scene management, load scene using NetworkManager's SceneManager
-                        _networkManager.SceneManager.LoadScene(sceneName, loadSceneMode);
+                        _networkManager.SceneManager.LoadScene(sceneName, UnityEngine.SceneManagement.LoadSceneMode.Single);
+                    }
+                    else
+                    {
+                        Debug.LogError("[SceneManagerEx] NetworkManager.SceneManager가 null입니다.");
+                    }
+                }
+                else
+                {
+                    Debug.Log($"[SceneManagerEx] 클라이언트: 서버의 씬 전환 명령 대기 중");
+                    if (_connectionManager != null)
+                    {
+                        _connectionManager.LoadSceneClientRpc(sceneName);
+                    }
+                    else
+                    {
+                        Debug.LogError("[SceneManagerEx] ConnectionManager가 null입니다.");
                     }
                 }
             }
             else
             {
-                _networkManager.SceneManager.LoadScene(sceneName, loadSceneMode);
-                // Load using SceneManager
-                var loadOperation = SceneManager.LoadSceneAsync(sceneName, loadSceneMode);
-                if (loadSceneMode == LoadSceneMode.Single)
-                {
-                }
+                // 일반 씬 로드
+                SceneManager.LoadScene(sceneName);
             }
         }
-
 
         public void LoadSceneForAllPlayers(EScene type)
         {
@@ -79,57 +102,7 @@ namespace Unity.Assets.Scripts.Scene
             return name;
         }
 
-        public void ChangeSceneForAllPlayers(EScene type)
-        {
-            try
-            {
-                Debug.Log($"[SceneManagerEx] 네트워크를 통해 씬 변경 시도: {type}");
-                
-                // NetworkManager.Singleton null 체크
-                if (_networkManager == null)
-                {
-                    Debug.LogError("[SceneManagerEx] NetworkManager.Singleton이 null입니다. 로컬 씬 로드로 대체합니다.");
-                    LoadScene(type);
-                    return;
-                }
-
-                // SceneManager null 체크
-                if (_networkManager.SceneManager == null)
-                {
-                    Debug.LogError("[SceneManagerEx] NetworkManager.Singleton.SceneManager가 null입니다. 로컬 씬 로드로 대체합니다.");
-                    LoadScene(type);
-                    return;
-                }
-
-                // 호스트/서버인지 확인
-                if (!_networkManager.IsServer && !_networkManager.IsHost)
-                {
-                    Debug.LogError("[SceneManagerEx] 서버나 호스트가 아닙니다. 클라이언트는 씬 로드를 요청할 수 없습니다.");
-                    // 클라이언트가 호출하면 아무것도 하지 않습니다. 호스트의 요청을 기다려야 합니다.
-                    return;
-                }
-
-                // 실제 씬 변경 실행
-                string sceneName = type.ToString();
-                Debug.Log($"[SceneManagerEx] 네트워크를 통해 씬 '{sceneName}' 로드 시작");
-                _networkManager.SceneManager.LoadScene(sceneName, UnityEngine.SceneManagement.LoadSceneMode.Single);
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"[SceneManagerEx] 씬 변경 중 예외 발생: {ex.Message}\n{ex.StackTrace}");
-                
-                // 예외 발생 시 로컬 씬 로드로 폴백
-                try
-                {
-                    Debug.Log($"[SceneManagerEx] 로컬 씬 로드로 대체: {type}");
-                    LoadScene(type);
-                }
-                catch (Exception fallbackEx)
-                {
-                    Debug.LogError($"[SceneManagerEx] 로컬 씬 로드 중에도 예외 발생: {fallbackEx.Message}");
-                }
-            }
-        }
+     
         public void Clear()
         {
             // 현재 씬의 Clear 메서드 호출

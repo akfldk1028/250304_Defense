@@ -142,7 +142,7 @@ public class ObjectManagerFacade : NetworkBehaviour
             {
                 // 몬스터 스폰 성공 시 클라이언트에 알림
                 NetworkObject netObj = GetComponent<NetworkObject>();
-                MonsterSetClientRpc(netObj.NetworkObjectId, clientId);
+                // MonsterSetClientRpc(netObj.NetworkObjectId, clientId);
                 
                 Debug.Log($"[ObjectManagerFacade] 몬스터 스폰 성공: ID={templateID}, Position={cellPos}");
             }

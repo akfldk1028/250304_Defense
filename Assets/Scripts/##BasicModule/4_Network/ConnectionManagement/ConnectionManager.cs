@@ -6,6 +6,7 @@ using Unity.Netcode;
 using UnityEditor.VersionControl;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.SceneManagement;
 using VContainer;
 
     /// <summary>
@@ -149,6 +150,7 @@ namespace Unity.Assets.Scripts.Network
         {
             if (NetworkManager == null)
             {
+                Debug.LogError("[ConnectionManager] NetworkManager is null in Start");
                 return;
             }
 
@@ -167,13 +169,31 @@ namespace Unity.Assets.Scripts.Network
             m_DebugClassFacade?.LogInfo(GetType().Name, "초기 상태 설정: Offline");
             m_CurrentState = m_Offline;
 
-            m_DebugClassFacade?.LogInfo(GetType().Name, "네트워크 이벤트 핸들러 등록");
+            m_DebugClassFacade?.LogInfo(GetType().Name, "네트워크 이벤트 핸들러 등록 #######");
+            
+            // 이벤트 핸들러 등록 전에 기존 핸들러 제거
+            NetworkManager.OnClientConnectedCallback -= OnClientConnectedCallback;
+            NetworkManager.OnClientDisconnectCallback -= OnClientDisconnectCallback;
+            NetworkManager.OnServerStarted -= OnServerStarted;
+            // NetworkManager.ConnectionApprovalCallback -= ApprovalCheck;
+            NetworkManager.OnTransportFailure -= OnTransportFailure;
+            NetworkManager.OnServerStopped -= OnServerStopped;
+
+            // 이벤트 핸들러 등록
             NetworkManager.OnClientConnectedCallback += OnClientConnectedCallback;
+            m_DebugClassFacade?.LogInfo(GetType().Name, "[ConnectionManager] OnClientConnectedCallback 핸들러 등록됨");
+            
             NetworkManager.OnClientDisconnectCallback += OnClientDisconnectCallback;
+            m_DebugClassFacade?.LogInfo(GetType().Name, "[ConnectionManager] OnClientDisconnectCallback 핸들러 등록됨");
+            
             NetworkManager.OnServerStarted += OnServerStarted;
-            NetworkManager.ConnectionApprovalCallback += ApprovalCheck;
+            m_DebugClassFacade?.LogInfo(GetType().Name, "[ConnectionManager] OnServerStarted 핸들러 등록됨");
+            
+            // NetworkManager.ConnectionApprovalCallback += ApprovalCheck;
             NetworkManager.OnTransportFailure += OnTransportFailure;
             NetworkManager.OnServerStopped += OnServerStopped;
+            
+            m_DebugClassFacade?.LogInfo(GetType().Name, "네트워크 이벤트 핸들러 등록 완료");
             
             // ConnectionState 상태 객체들에 종속성 주입
             foreach (var connectionState in states)
@@ -188,7 +208,7 @@ namespace Unity.Assets.Scripts.Network
             NetworkManager.OnClientConnectedCallback -= OnClientConnectedCallback;
             NetworkManager.OnClientDisconnectCallback -= OnClientDisconnectCallback;
             NetworkManager.OnServerStarted -= OnServerStarted;
-            NetworkManager.ConnectionApprovalCallback -= ApprovalCheck;
+            // NetworkManager.ConnectionApprovalCallback -= ApprovalCheck;
             NetworkManager.OnTransportFailure -= OnTransportFailure;
             NetworkManager.OnServerStopped -= OnServerStopped;
         }
@@ -224,8 +244,25 @@ namespace Unity.Assets.Scripts.Network
 
     void OnClientConnectedCallback(ulong clientId)
     {
-        m_DebugClassFacade?.LogInfo(GetType().Name, $"[ConnectionManager]OnClientConnectedCallback ClientID={clientId}");
-        m_CurrentState.OnClientConnected(clientId);
+        try
+        {
+            Debug.Log($"[ConnectionManager] OnClientConnectedCallback 시작: ClientID={clientId}");
+            Debug.Log($"[ConnectionManager] 현재 NetworkManager 상태 - IsClient: {NetworkManager.IsClient}, IsConnectedClient: {NetworkManager.IsConnectedClient}, IsListening: {NetworkManager.IsListening}");
+            Debug.Log($"[ConnectionManager] 현재 State: {m_CurrentState?.GetType().Name}");
+            
+            if (m_CurrentState == null)
+            {
+                Debug.LogError("[ConnectionManager] m_CurrentState가 null입니다");
+                return;
+            }
+            
+            m_CurrentState.OnClientConnected(clientId);
+            Debug.Log($"[ConnectionManager] OnClientConnectedCallback 완료: ClientID={clientId}");
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[ConnectionManager] OnClientConnectedCallback 처리 중 오류 발생: {e.Message}\n{e.StackTrace}");
+        }
     }
 
     void OnServerStarted()
@@ -233,10 +270,10 @@ namespace Unity.Assets.Scripts.Network
         m_DebugClassFacade?.LogInfo(GetType().Name, "[ConnectionManager] 매치 서버 시작됨");
         m_CurrentState.OnServerStarted();
     }
-      void ApprovalCheck(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
-      {
-          m_CurrentState.ApprovalCheck(request, response);
-      }
+    //   void ApprovalCheck(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
+    //   {
+    //       m_CurrentState.ApprovalCheck(request, response);
+    //   }
     void OnTransportFailure()
     {
         m_DebugClassFacade?.LogError(GetType().Name, "[ConnectionManager] 전송 실패 발생");
@@ -307,7 +344,29 @@ namespace Unity.Assets.Scripts.Network
             m_CurrentState.OnUserRequestedShutdown();
         }
 
+        
+    // [ServerRpc(RequireOwnership = false)]
+    // private void ServerMonsterSpawnServerRpc(ulong clientId, bool GetBoss , int templateID)
+    // {
+    //      SpawnSingleMonster(clientId, GetBoss, templateID);
+    // }
 
+    
+    [ClientRpc]
+    public void LoadSceneClientRpc(string sceneName)
+    {
+        Debug.Log($"[ConnectionManager] 씬 전환 RPC 수신: {sceneName}");
+        if (m_NetworkManager != null && m_NetworkManager.SceneManager != null)
+        {
+            m_NetworkManager.SceneManager.LoadScene(sceneName, UnityEngine.SceneManagement.LoadSceneMode.Single);
+        }
+        else
+        {
+            Debug.LogError("[ConnectionManager] NetworkManager 또는 SceneManager가 null입니다.");
+        }
+    }
+
+    
     }
 }
 

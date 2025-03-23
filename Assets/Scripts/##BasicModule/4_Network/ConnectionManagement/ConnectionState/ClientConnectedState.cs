@@ -21,12 +21,20 @@ using Unity.Assets.Scripts.Scene;
         {
 
 
-
+            Debug.Log("[ClientConnectedState]");
 
             if (m_LobbyServiceFacade.CurrentUnityLobby != null)
             {
                     m_LobbyServiceFacade.BeginTracking();
             }
+
+            if (m_LocalLobby.LobbyUsers.Count >= m_ConnectionManager.MaxConnectedPlayers)
+           {
+            Debug.Log("ClientConnectingState");
+            _sceneManagerEx.LoadScene(EScene.BasicGame.ToString(), useNetworkSceneManager: true);
+
+           }
+
         }
 
         public override void Exit() { }
