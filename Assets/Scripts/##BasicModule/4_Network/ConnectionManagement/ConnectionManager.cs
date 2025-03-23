@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks;
@@ -99,6 +100,8 @@ public class ConnectionPayload
 
 namespace Unity.Assets.Scripts.Network
 {
+
+
     public class ConnectionManager : MonoBehaviour
     {
         // 연결 상태 변경 이벤트
@@ -112,40 +115,36 @@ namespace Unity.Assets.Scripts.Network
         ConnectionState m_CurrentState;
         [Inject] private DebugClassFacade m_DebugClassFacade;
 
-        [Inject] private NetworkManager m_NetworkManager;          // Unity NGO의 네트워크 매니저
-        [Inject] IObjectResolver m_Resolver;               // VContainer의 의존성 해결사
+        [Inject] private NetworkManager m_NetworkManager;
+        [Inject] IObjectResolver m_Resolver;
         [Inject] private IPublisher<ConnectionEventMessage> m_ConnectionEventPublisher;
         [Inject] protected IPublisher<ConnectStatus> m_ConnectStatusPublisher;
         public NetworkManager NetworkManager => m_NetworkManager;
 
         [SerializeField]
-        int m_NbReconnectAttempts = 2;           // 최대 재연결 시도 횟수
+        int m_NbReconnectAttempts = 2;
         public int NbReconnectAttempts => m_NbReconnectAttempts;
 
-        
-
-        // 최대 동시 접속 플레이어 수
-
         // 상태 패턴을 위한 상태 객체들
-        internal readonly OfflineState m_Offline = new OfflineState();                    // 오프라인 상태
-        internal readonly LobbyConnectingState m_LobbyConnecting = new LobbyConnectingState();    // 로비 연결 상태
-        internal readonly ClientConnectingState m_ClientConnecting = new ClientConnectingState();  // 클라이언트 연결 중
-        internal readonly ClientConnectedState m_ClientConnected = new ClientConnectedState();    // 클라이언트 연결됨
-        internal readonly ClientReconnectingState m_ClientReconnecting = new ClientReconnectingState();  // 재연결 중
-        internal readonly StartingHostState m_StartingHost = new StartingHostState();      // 호스트 시작 중
-        internal readonly HostingState m_Hosting = new HostingState();                    // 호스팅 중
+        internal readonly OfflineState m_Offline = new OfflineState();
+        internal readonly LobbyConnectingState m_LobbyConnecting = new LobbyConnectingState();
+        internal readonly ClientConnectingState m_ClientConnecting = new ClientConnectingState();
+        internal readonly ClientConnectedState m_ClientConnected = new ClientConnectedState();
+        internal readonly ClientReconnectingState m_ClientReconnecting = new ClientReconnectingState();
+        internal readonly StartingHostState m_StartingHost = new StartingHostState();
+        internal readonly HostingState m_Hosting = new HostingState();
 
-        /// <summary>
-        /// 씬 전환 시에도 파괴되지 않도록 설정
-        /// </summary>
+        // 네트워크 이벤트 구독/해제 상태 추적
+        private bool m_IsNetworkCallbacksRegistered = false;
+        
+        // 연결 상태 체크 코루틴
+        private Coroutine m_ConnectionStatusCheckCoroutine;
+
         void Awake()
         {
             DontDestroyOnLoad(gameObject);
         }
 
-        /// <summary>
-        /// 초기화 및 이벤트 핸들러 등록
-        /// </summary>
         void Start()
         {
             if (NetworkManager == null)
@@ -169,31 +168,8 @@ namespace Unity.Assets.Scripts.Network
             m_DebugClassFacade?.LogInfo(GetType().Name, "초기 상태 설정: Offline");
             m_CurrentState = m_Offline;
 
-            m_DebugClassFacade?.LogInfo(GetType().Name, "네트워크 이벤트 핸들러 등록 #######");
-            
-            // 이벤트 핸들러 등록 전에 기존 핸들러 제거
-            NetworkManager.OnClientConnectedCallback -= OnClientConnectedCallback;
-            NetworkManager.OnClientDisconnectCallback -= OnClientDisconnectCallback;
-            NetworkManager.OnServerStarted -= OnServerStarted;
-            // NetworkManager.ConnectionApprovalCallback -= ApprovalCheck;
-            NetworkManager.OnTransportFailure -= OnTransportFailure;
-            NetworkManager.OnServerStopped -= OnServerStopped;
-
             // 이벤트 핸들러 등록
-            NetworkManager.OnClientConnectedCallback += OnClientConnectedCallback;
-            m_DebugClassFacade?.LogInfo(GetType().Name, "[ConnectionManager] OnClientConnectedCallback 핸들러 등록됨");
-            
-            NetworkManager.OnClientDisconnectCallback += OnClientDisconnectCallback;
-            m_DebugClassFacade?.LogInfo(GetType().Name, "[ConnectionManager] OnClientDisconnectCallback 핸들러 등록됨");
-            
-            NetworkManager.OnServerStarted += OnServerStarted;
-            m_DebugClassFacade?.LogInfo(GetType().Name, "[ConnectionManager] OnServerStarted 핸들러 등록됨");
-            
-            // NetworkManager.ConnectionApprovalCallback += ApprovalCheck;
-            NetworkManager.OnTransportFailure += OnTransportFailure;
-            NetworkManager.OnServerStopped += OnServerStopped;
-            
-            m_DebugClassFacade?.LogInfo(GetType().Name, "네트워크 이벤트 핸들러 등록 완료");
+            RegisterNetworkCallbacks();
             
             // ConnectionState 상태 객체들에 종속성 주입
             foreach (var connectionState in states)
@@ -201,31 +177,117 @@ namespace Unity.Assets.Scripts.Network
                 m_Resolver.Inject(connectionState);
             }
             
+            // 연결 상태 체크 코루틴 시작
+            StartConnectionStatusCheck();
+            
             m_DebugClassFacade?.LogInfo(GetType().Name, "종료: Start");
         }
-        void OnDestroy()
+
+        // 네트워크 콜백 등록을 별도 메서드로 분리
+        private void RegisterNetworkCallbacks()
         {
+            if (m_IsNetworkCallbacksRegistered)
+            {
+                m_DebugClassFacade?.LogInfo(GetType().Name, "네트워크 이벤트 핸들러가 이미 등록되어 있습니다.");
+                return;
+            }
+
+            m_DebugClassFacade?.LogInfo(GetType().Name, "네트워크 이벤트 핸들러 등록 시작");
+            NetworkManager.NetworkConfig.ConnectionApproval = true;
+            NetworkManager.NetworkConfig.EnableSceneManagement = true;
+            // 이벤트 핸들러 등록
+            NetworkManager.OnClientConnectedCallback += OnClientConnectedCallback;
+            m_DebugClassFacade?.LogInfo(GetType().Name, "[ConnectionManager] OnClientConnectedCallback 핸들러 등록됨");
+            NetworkManager.ConnectionApprovalCallback += ApprovalCheck; // 추가: 기존 콜백 제거
+
+            NetworkManager.OnClientDisconnectCallback += OnClientDisconnectCallback;
+            m_DebugClassFacade?.LogInfo(GetType().Name, "[ConnectionManager] OnClientDisconnectCallback 핸들러 등록됨");
+            
+            NetworkManager.OnServerStarted += OnServerStarted;
+            m_DebugClassFacade?.LogInfo(GetType().Name, "[ConnectionManager] OnServerStarted 핸들러 등록됨");
+            
+            NetworkManager.OnTransportFailure += OnTransportFailure;
+            NetworkManager.OnServerStopped += OnServerStopped;
+            
+            m_DebugClassFacade?.LogInfo(GetType().Name, "네트워크 이벤트 핸들러 등록 완료");
+            
+            m_IsNetworkCallbacksRegistered = true;
+        }
+
+        private void UnregisterNetworkCallbacks()
+        {
+            if (!m_IsNetworkCallbacksRegistered)
+                return;
+
             NetworkManager.OnClientConnectedCallback -= OnClientConnectedCallback;
             NetworkManager.OnClientDisconnectCallback -= OnClientDisconnectCallback;
             NetworkManager.OnServerStarted -= OnServerStarted;
-            // NetworkManager.ConnectionApprovalCallback -= ApprovalCheck;
             NetworkManager.OnTransportFailure -= OnTransportFailure;
             NetworkManager.OnServerStopped -= OnServerStopped;
+            NetworkManager.ConnectionApprovalCallback -= ApprovalCheck; // 추가: 기존 콜백 제거
+
+            m_IsNetworkCallbacksRegistered = false;
+            m_DebugClassFacade?.LogInfo(GetType().Name, "네트워크 이벤트 핸들러 등록 해제");
         }
-        /// <summary>
-        /// NetworkBehaviour의 OnNetworkSpawn 메서드 오버라이드
-        /// 네트워크 오브젝트가 스폰될 때 호출됨
-        /// 
-        /// 서버, 클라이언트, 호스트에 따라 다른 초기화 로직을 수행합니다.
-        /// 이 메서드는 네트워크 오브젝트가 생성된 후 자동으로 호출됩니다.
-        /// </summary>
-    /// <summary>
-    /// 연결 상태 변경 메서드
-    /// 상태 패턴의 핵심 구현부
-    /// </summary>
-    internal void ChangeState(ConnectionState nextState)
+
+        // 연결 상태 주기적 체크 코루틴
+        private void StartConnectionStatusCheck()
         {
-            Debug.Log($"{name}: Changed connection state from {m_CurrentState.GetType().Name} to {nextState.GetType().Name}.");
+            if (m_ConnectionStatusCheckCoroutine != null)
+            {
+                StopCoroutine(m_ConnectionStatusCheckCoroutine);
+            }
+            m_ConnectionStatusCheckCoroutine = StartCoroutine(ConnectionStatusCheckCoroutine());
+        }
+
+        private IEnumerator ConnectionStatusCheckCoroutine()
+        {
+            while (true)
+            {
+                yield return new WaitForSeconds(5.0f);
+                
+                if (NetworkManager != null)
+                {
+                    bool isClient = NetworkManager.IsClient;
+                    bool isConnected = NetworkManager.IsConnectedClient;
+                    bool isHost = NetworkManager.IsHost;
+                    bool isServer = NetworkManager.IsServer;
+                    
+                    m_DebugClassFacade?.LogInfo(GetType().Name, 
+                        $"연결 상태 체크: Client={isClient}, Connected={isConnected}, Host={isHost}, Server={isServer}, " +
+                        $"현재 상태={m_CurrentState?.GetType().Name}");
+                    
+                    // 상태와 실제 연결 상태의 불일치 감지
+                    if (isClient && isConnected && m_CurrentState is ClientConnectingState)
+                    {
+                        m_DebugClassFacade?.LogWarning(GetType().Name, "연결은 완료되었는데 상태가 ClientConnecting에 머물러 있음 - 상태 전환 시도");
+                        ChangeState(m_ClientConnected);
+                    }
+                    
+                    // 콜백 등록 확인 및 필요시 재등록
+                    if (!m_IsNetworkCallbacksRegistered)
+                    {
+                        m_DebugClassFacade?.LogWarning(GetType().Name, "네트워크 콜백이 등록되지 않음 - 재등록 시도");
+                        RegisterNetworkCallbacks();
+                    }
+                }
+            }
+        }
+
+        void OnDestroy()
+        {
+            UnregisterNetworkCallbacks();
+            
+            if (m_ConnectionStatusCheckCoroutine != null)
+            {
+                StopCoroutine(m_ConnectionStatusCheckCoroutine);
+                m_ConnectionStatusCheckCoroutine = null;
+            }
+        }
+
+        internal void ChangeState(ConnectionState nextState)
+        {
+            Debug.Log($"{name}: Changed connection state from {m_CurrentState?.GetType().Name} to {nextState.GetType().Name}.");
 
             if (m_CurrentState != null)
             {
@@ -235,138 +297,141 @@ namespace Unity.Assets.Scripts.Network
             m_CurrentState.Enter();
         }
 
-    // NGO 이벤트 핸들러들
-    void OnClientDisconnectCallback(ulong clientId)
-    {
-        m_DebugClassFacade?.LogInfo(GetType().Name, $"[ConnectionManager] OnClientDisconnectCallback: ClientID={clientId}");
-        m_CurrentState.OnClientDisconnect(clientId);
-    }
-
-    void OnClientConnectedCallback(ulong clientId)
-    {
-        try
+        // NGO 이벤트 핸들러들
+        void OnClientDisconnectCallback(ulong clientId)
         {
-            Debug.Log($"[ConnectionManager] OnClientConnectedCallback 시작: ClientID={clientId}");
-            Debug.Log($"[ConnectionManager] 현재 NetworkManager 상태 - IsClient: {NetworkManager.IsClient}, IsConnectedClient: {NetworkManager.IsConnectedClient}, IsListening: {NetworkManager.IsListening}");
-            Debug.Log($"[ConnectionManager] 현재 State: {m_CurrentState?.GetType().Name}");
-            
-            if (m_CurrentState == null)
-            {
-                Debug.LogError("[ConnectionManager] m_CurrentState가 null입니다");
-                return;
-            }
-            
+            m_CurrentState.OnClientDisconnect(clientId);
+        }
+
+        void OnClientConnectedCallback(ulong clientId)
+        {
             m_CurrentState.OnClientConnected(clientId);
-            Debug.Log($"[ConnectionManager] OnClientConnectedCallback 완료: ClientID={clientId}");
         }
-        catch (Exception e)
+        void OnServerStarted()
         {
-            Debug.LogError($"[ConnectionManager] OnClientConnectedCallback 처리 중 오류 발생: {e.Message}\n{e.StackTrace}");
-        }
-    }
-
-    void OnServerStarted()
-    {
-        m_DebugClassFacade?.LogInfo(GetType().Name, "[ConnectionManager] 매치 서버 시작됨");
-        m_CurrentState.OnServerStarted();
-    }
-    //   void ApprovalCheck(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
-    //   {
-    //       m_CurrentState.ApprovalCheck(request, response);
-    //   }
-    void OnTransportFailure()
-    {
-        m_DebugClassFacade?.LogError(GetType().Name, "[ConnectionManager] 전송 실패 발생");
-        m_CurrentState.OnTransportFailure();
-    }
-
-    void OnServerStopped(bool _)
-    {
-        m_DebugClassFacade?.LogInfo(GetType().Name, "[ConnectionManager] 매치 서버 중지됨");
-        m_CurrentState.OnServerStopped();
-    }
-
-    /// <summary>
-    /// 네트워크 상태를 비동기적으로 확인하는 메서드
-    /// </summary>
-    /// <returns>네트워크가 준비되었는지 여부를 나타내는 Task</returns>
-    public async Task<bool> CheckNetworkStatusAsync()
-    {
-        try
-        {
-            // 1. 인터넷 연결 상태 확인
-            bool isOnline = Application.internetReachability != NetworkReachability.NotReachable;
-            if (!isOnline)
+            m_DebugClassFacade?.LogInfo(GetType().Name, "[ConnectionManager] 매치 서버 시작됨");
+            
+            if (m_CurrentState != null)
             {
-                m_DebugClassFacade?.LogWarning(GetType().Name, "인터넷 연결이 없습니다.");
+                m_CurrentState.OnServerStarted();
+            }
+            else
+            {
+                m_DebugClassFacade?.LogError(GetType().Name, "[ConnectionManager] m_CurrentState가 null입니다 - OnServerStarted 처리 불가");
+            }
+        }
+
+       void OnTransportFailure()
+       {
+           m_CurrentState.OnTransportFailure();
+       }
+
+        void OnServerStopped(bool _)
+        {
+            m_CurrentState.OnServerStopped();
+        }
+
+        public async Task<bool> CheckNetworkStatusAsync()
+        {
+            try
+            {
+                // 1. 인터넷 연결 상태 확인
+                bool isOnline = Application.internetReachability != NetworkReachability.NotReachable;
+                if (!isOnline)
+                {
+                    m_DebugClassFacade?.LogWarning(GetType().Name, "인터넷 연결이 없습니다.");
+                    return false;
+                }
+
+                // 2. 현재 연결 상태 확인
+                if (m_CurrentState is OfflineState)
+                {
+                    // 오프라인 상태인 경우, 로비 연결 상태로 전환
+                    m_DebugClassFacade?.LogInfo(GetType().Name, "오프라인 상태에서 로비 연결 상태로 전환");
+                    ChangeState(m_LobbyConnecting);
+                    await System.Threading.Tasks.Task.Delay(1000); // 상태 전환 대기
+                    return m_CurrentState is not OfflineState;
+                }
+
+                // 3. 현재 상태가 오프라인이 아닌 경우
+                return true;
+            }
+            catch (System.Exception e)
+            {
+                m_DebugClassFacade?.LogError(GetType().Name, $"네트워크 상태 확인 중 오류 발생: {e.Message}");
                 return false;
             }
-
-            // 2. 현재 연결 상태 확인
-            if (m_CurrentState is OfflineState)
-            {
-                // 오프라인 상태인 경우, 로비 연결 상태로 전환
-                m_DebugClassFacade?.LogInfo(GetType().Name, "오프라인 상태에서 로비 연결 상태로 전환");
-                ChangeState(m_LobbyConnecting);
-                await System.Threading.Tasks.Task.Delay(1000); // 상태 전환 대기
-                return m_CurrentState is not OfflineState;
-            }
-
-            // 3. 현재 상태가 오프라인이 아닌 경우
-            return true;
         }
-        catch (System.Exception e)
+
+        public void StartClientLobby(string playerName)
         {
-            m_DebugClassFacade?.LogError(GetType().Name, $"네트워크 상태 확인 중 오류 발생: {e.Message}");
-            return false;
+            m_CurrentState.StartClientLobby(playerName);
         }
-    }
 
-    /// <summary>
-    /// 로비를 통한 클라이언트 연결 시작
-    /// </summary>
-    public void StartClientLobby(string playerName)
-    {
-        m_DebugClassFacade?.LogInfo(GetType().Name, $"[ConnectionManager] 로비 클라이언트 시작: ");
-        m_CurrentState.StartClientLobby(playerName);
-    }
+        public void StartHostLobby(string playerName)
+        {
+            m_CurrentState.StartHostLobby(playerName);
+        }
 
 
+      // 추가: 연결 승인 콜백
+       void ApprovalCheck(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
+       {
+           m_CurrentState.ApprovalCheck(request, response);
+       }
 
-    public void StartHostLobby(string playerName)
-    {
-        m_CurrentState.StartHostLobby(playerName);
-    }
 
-
-    public void RequestShutdown()
+        public void RequestShutdown()
         {
             m_CurrentState.OnUserRequestedShutdown();
         }
+        
+        [ClientRpc]
+        public void LoadSceneClientRpc(string sceneName)
+        {
+            m_DebugClassFacade?.LogInfo(GetType().Name, $"[ConnectionManager] 씬 전환 RPC 수신: {sceneName}");
+            
+            if (m_NetworkManager != null && m_NetworkManager.SceneManager != null)
+            {
+                try
+                {
+                    m_DebugClassFacade?.LogInfo(GetType().Name, $"[ConnectionManager] NetworkSceneManager를 통해 {sceneName} 씬 로드 시작");
+                    m_NetworkManager.SceneManager.LoadScene(sceneName, UnityEngine.SceneManagement.LoadSceneMode.Single);
+                    m_DebugClassFacade?.LogInfo(GetType().Name, $"[ConnectionManager] NetworkSceneManager 통한 씬 로드 요청 완료: {sceneName}");
+                }
+                catch (Exception e)
+                {
+                    m_DebugClassFacade?.LogError(GetType().Name, $"[ConnectionManager] NetworkSceneManager를 통한 씬 로드 실패: {e.Message}");
+                    
+                    // 실패 시 직접 씬 로드 시도
+                    try
+                    {
+                        m_DebugClassFacade?.LogWarning(GetType().Name, $"[ConnectionManager] 직접 {sceneName} 씬 로드 시도");
+                        UnityEngine.SceneManagement.SceneManager.LoadScene(sceneName);
+                    }
+                    catch (Exception e2)
+                    {
+                        m_DebugClassFacade?.LogError(GetType().Name, $"[ConnectionManager] 직접 씬 로드도 실패: {e2.Message}");
+                    }
+                }
+            }
+            else
+            {
+                m_DebugClassFacade?.LogError(GetType().Name, "[ConnectionManager] NetworkManager 또는 SceneManager가 null입니다.");
+                
+                // NetworkManager가 null이면 직접 씬 로드 시도
+                try
+                {
+                    m_DebugClassFacade?.LogWarning(GetType().Name, $"[ConnectionManager] NetworkManager가 null이므로 직접 {sceneName} 씬 로드 시도");
+                    UnityEngine.SceneManagement.SceneManager.LoadScene(sceneName);
+                }
+                catch (Exception e)
+                {
+                    m_DebugClassFacade?.LogError(GetType().Name, $"[ConnectionManager] 직접 씬 로드 실패: {e.Message}");
+                }
+            }
+        }
 
         
-    // [ServerRpc(RequireOwnership = false)]
-    // private void ServerMonsterSpawnServerRpc(ulong clientId, bool GetBoss , int templateID)
-    // {
-    //      SpawnSingleMonster(clientId, GetBoss, templateID);
-    // }
-
-    
-    [ClientRpc]
-    public void LoadSceneClientRpc(string sceneName)
-    {
-        Debug.Log($"[ConnectionManager] 씬 전환 RPC 수신: {sceneName}");
-        if (m_NetworkManager != null && m_NetworkManager.SceneManager != null)
-        {
-            m_NetworkManager.SceneManager.LoadScene(sceneName, UnityEngine.SceneManagement.LoadSceneMode.Single);
-        }
-        else
-        {
-            Debug.LogError("[ConnectionManager] NetworkManager 또는 SceneManager가 null입니다.");
-        }
-    }
-
-    
     }
 }
-

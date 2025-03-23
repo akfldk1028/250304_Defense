@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -23,7 +23,6 @@ namespace Unity.Assets.Scripts.Network
     /// </summary>
     public abstract class ConnectionState
     {
-    public int MaxConnectedPlayers = 2;
 
     protected DebugClassFacade m_DebugClassFacade;
     protected ConnectionManager m_ConnectionManager;

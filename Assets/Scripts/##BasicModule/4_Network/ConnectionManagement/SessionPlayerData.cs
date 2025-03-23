@@ -1,6 +1,7 @@
 
 using UnityEngine;
 
+
     public struct SessionPlayerData : ISessionPlayerData
     {
         public string PlayerName;

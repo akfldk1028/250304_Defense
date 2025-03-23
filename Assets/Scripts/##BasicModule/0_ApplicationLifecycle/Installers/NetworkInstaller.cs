@@ -47,7 +47,7 @@ namespace Unity.Assets.Scripts.Module.ApplicationLifecycle.Installers
             builder.RegisterInstance(new MessageChannel<ReconnectMessage>()).AsImplementedInterfaces();
             builder.RegisterComponent(new NetworkedMessageChannel<ConnectionEventMessage>()).AsImplementedInterfaces();
 
-                
+            builder.Register<ProfileManager>(Lifetime.Singleton);
 
             builder.Register<NetUtils>(Lifetime.Singleton);
             _debugClassFacade?.LogInfo(GetType().Name, "네트워크 모듈 설치 완료");

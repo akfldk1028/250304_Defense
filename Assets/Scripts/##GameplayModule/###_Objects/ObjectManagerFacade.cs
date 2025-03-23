@@ -30,12 +30,17 @@ public class ObjectManagerFacade : NetworkBehaviour
         var netObj = GetComponent<NetworkObject>() ?? gameObject.AddComponent<NetworkObject>();
         if (!netObj.IsSpawned)
         {
-            netObj.Spawn();
-            Debug.Log("[ObjectManagerFacade] 네트워크 오브젝트 스폰 완료");
+            if (_networkManager != null && _networkManager.IsServer)
+            {
+                netObj.Spawn();
+                Debug.Log("[ObjectManagerFacade] 네트워크 오브젝트 스폰 완료 (서버)");
+            }
+            else
+            {
+                Debug.Log("[ObjectManagerFacade] 클라이언트에서는 네트워크 오브젝트를 스폰하지 않음");
+            }
         }
-    }
-
-
+}
     private void OnDestroy()
     {
         StopSpawnCoroutine();
@@ -142,7 +147,7 @@ public class ObjectManagerFacade : NetworkBehaviour
             {
                 // 몬스터 스폰 성공 시 클라이언트에 알림
                 NetworkObject netObj = GetComponent<NetworkObject>();
-                // MonsterSetClientRpc(netObj.NetworkObjectId, clientId);
+                MonsterSetClientRpc(netObj.NetworkObjectId, clientId);
                 
                 Debug.Log($"[ObjectManagerFacade] 몬스터 스폰 성공: ID={templateID}, Position={cellPos}");
             }

@@ -13,6 +13,8 @@ using Unity.Assets.Scripts.Objects;
 public class MapSpawnerFacade : NetworkBehaviour
 {
     [Inject] public ResourceManager _resourceManager;
+
+    [Inject] private NetworkManager _networkManager;
     // MapManager는 더 이상 사용하지 않으므로 주입 제거
     // [Inject] private MapManager _mapManager;
     // [Inject] private ObjectManagerFacade _objectManagerFacade;
@@ -60,8 +62,15 @@ public class MapSpawnerFacade : NetworkBehaviour
         var netObj = GetComponent<NetworkObject>() ?? gameObject.AddComponent<NetworkObject>();
         if (!netObj.IsSpawned)
         {
-            netObj.Spawn();
-            Debug.Log("[ObjectManagerFacade] 네트워크 오브젝트 스폰 완료");
+            if (_networkManager != null && _networkManager.IsServer)
+            {
+                netObj.Spawn();
+                Debug.Log("[ObjectManagerFacade] 네트워크 오브젝트 스폰 완료 (서버)");
+            }
+            else
+            {
+                Debug.Log("[ObjectManagerFacade] 클라이언트에서는 네트워크 오브젝트를 스폰하지 않음");
+            }
         }
     }
     private void InstantiateMap(GameObject mapPrefab, string mapName)

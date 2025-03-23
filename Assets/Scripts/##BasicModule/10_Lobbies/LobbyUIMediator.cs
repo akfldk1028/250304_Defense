@@ -240,7 +240,7 @@ public class LobbyUIMediator : MonoBehaviour
         void OnJoinedLobby(Unity.Services.Lobbies.Models.Lobby remoteLobby)
         {
             m_LobbyServiceFacade.SetRemoteLobby(remoteLobby);
-            Debug.Log($"Joined lobby with code: {m_LocalLobby.LobbyCode}");
+            Debug.Log($"[LobbyUIMediator]  Joined lobby with code: {m_LocalLobby.LobbyCode}");
             
             // 로비 참가 완료 이벤트 발생
             OnLobbyJoined?.Invoke();
@@ -259,17 +259,7 @@ public class LobbyUIMediator : MonoBehaviour
             //m_LobbyServiceFacade.SceneLoad();
         }
 
-        // public void SceneLoad()
-        // {
-        //       if (m_LocalUser.IsHost && m_LocalLobby.LobbyUsers.Count >= ConnectionManager.MaxConnectedPlayers)
-        //         {
-        //             _sceneManagerEx.LoadSceneForAllPlayers(EScene.BasicGame);
-        //         }
-        //     // 잠시 대기하여 모든 플레이어가 준비될 시간을 줍니다
-        // }
-
-        //show/hide UI
-
+ 
       
 
      
@@ -278,7 +268,7 @@ public class LobbyUIMediator : MonoBehaviour
   
         public void RegenerateName()
         {
-            m_LocalUser.DisplayName = "Player" + UnityEngine.Random.Range(1, 1000000);
+            m_LocalUser.DisplayName = "Player" ;
         }
         public static event Action<bool> OnWaitingStateChanged; // true: 대기 시작, false: 대기 종료
 

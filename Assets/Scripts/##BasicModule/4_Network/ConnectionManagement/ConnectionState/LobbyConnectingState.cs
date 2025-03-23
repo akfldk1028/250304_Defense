@@ -45,7 +45,8 @@ namespace Unity.Assets.Scripts.Network
         [Inject] private AuthManager m_authManager;
         [Inject] private LobbyServiceFacade m_LobbyServiceFacade;
 
-
+        [Inject]
+        ProfileManager m_ProfileManager;
         public override void Enter()
         {
             m_DebugClassFacade?.LogInfo(GetType().Name, "[LobbyConnectingState] 로비대기 상태");
@@ -82,7 +83,7 @@ namespace Unity.Assets.Scripts.Network
 
        public override void StartHostLobby(string playerName)
         {
-            var connectionMethod = new ConnectionMethodRelay(m_LobbyServiceFacade, m_LocalLobby, m_ConnectionManager, playerName);
+            var connectionMethod = new ConnectionMethodRelay(m_LobbyServiceFacade, m_LocalLobby, m_ConnectionManager, m_ProfileManager, playerName);
             m_ConnectionManager.ChangeState(m_ConnectionManager.m_StartingHost.Configure(connectionMethod));
         }
 
@@ -91,7 +92,7 @@ namespace Unity.Assets.Scripts.Network
      
           public override void StartClientLobby(string playerName)
         {
-            var connectionMethod = new ConnectionMethodRelay(m_LobbyServiceFacade, m_LocalLobby, m_ConnectionManager, playerName);
+            var connectionMethod = new ConnectionMethodRelay(m_LobbyServiceFacade, m_LocalLobby, m_ConnectionManager, m_ProfileManager, playerName);
             m_ConnectionManager.m_ClientReconnecting.Configure(connectionMethod);
             m_ConnectionManager.ChangeState(m_ConnectionManager.m_ClientConnecting.Configure(connectionMethod));
         }

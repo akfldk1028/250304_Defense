@@ -74,7 +74,7 @@ using UnityEngine;
                 Filter = m_Filters,
                 Player = new Player(id: requesterUasId, data: localUserData)
             };
-
+            Debug.Log($"[LobbyAPIInterface] m_Filters{m_Filters}  id: {requesterUasId}, data: {localUserData}");
             return await LobbyService.Instance.QuickJoinLobbyAsync(joinRequest);
         }
 

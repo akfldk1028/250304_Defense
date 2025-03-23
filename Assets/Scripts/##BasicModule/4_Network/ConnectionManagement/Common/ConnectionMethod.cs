@@ -9,16 +9,23 @@ using Unity.Services.Relay.Models;
 using UnityEngine;
 using Unity.Assets.Scripts.Network;
 using Unity.Assets.Scripts.UnityServices.Lobbies;
-    /// <summary>
-    /// ConnectionMethod contains all setup needed to setup NGO to be ready to start a connection, either host or client side.
-    /// Please override this abstract class to add a new transport or way of connecting.
-    /// </summary>
-    public abstract class ConnectionMethodBase
+using Unity.Netcode;
+
+
+/// <summary>       
+/// ConnectionMethod contains all setup needed to setup NGO to be ready to start a connection, either host or client side.
+/// Please override this abstract class to add a new transport or way of connecting.
+/// </summary>
+/// 
+
+public abstract class ConnectionMethodBase
     {
         protected ConnectionManager m_ConnectionManager;
+
+        readonly ProfileManager m_ProfileManager;
+
         protected readonly string m_PlayerName;
         protected const string k_DtlsConnType = "dtls";
-
         /// <summary>
         /// Setup the host connection prior to starting the NetworkManager
         /// </summary>
@@ -41,9 +48,10 @@ using Unity.Assets.Scripts.UnityServices.Lobbies;
         /// </returns>
         public abstract Task<(bool success, bool shouldTryAgain)> SetupClientReconnectionAsync();
 
-        public ConnectionMethodBase(ConnectionManager connectionManager, string playerName)
+        public ConnectionMethodBase(ConnectionManager connectionManager, ProfileManager profileManager, string playerName)
         {
             m_ConnectionManager = connectionManager;
+            m_ProfileManager = profileManager;
             m_PlayerName = playerName;
         }
 
@@ -68,15 +76,15 @@ using Unity.Assets.Scripts.UnityServices.Lobbies;
         /// setting up a UGS account. It's recommended to investigate your own initialization and IsSigned flows to see if you need
         /// those checks on your own and react accordingly. We offer here the option for offline access for debug purposes, but in your own game you
         /// might want to show an error popup and ask your player to connect to the internet.
-        protected string GetPlayerId()
-        {
-            if (Unity.Services.Core.UnityServices.State != ServicesInitializationState.Initialized)
-            {
-                return ClientPrefs.GetGuid();
-            }
+      protected string GetPlayerId()
+      {
+          if (Unity.Services.Core.UnityServices.State != ServicesInitializationState.Initialized)
+          {
+              return ClientPrefs.GetGuid() + m_ProfileManager.Profile;
+          }
 
-            return AuthenticationService.Instance.IsSignedIn ? AuthenticationService.Instance.PlayerId : ClientPrefs.GetGuid();
-        }
+          return AuthenticationService.Instance.IsSignedIn ? AuthenticationService.Instance.PlayerId : ClientPrefs.GetGuid() + m_ProfileManager.Profile;
+      }
     }
 
 
@@ -87,18 +95,18 @@ using Unity.Assets.Scripts.UnityServices.Lobbies;
     {
         LobbyServiceFacade m_LobbyServiceFacade;
         LocalLobby m_LocalLobby;
-
-        public ConnectionMethodRelay(LobbyServiceFacade lobbyServiceFacade, LocalLobby localLobby, ConnectionManager connectionManager, string playerName)
-            : base(connectionManager,  playerName)
-        {
-            m_LobbyServiceFacade = lobbyServiceFacade;
-            m_LocalLobby = localLobby;
-            m_ConnectionManager = connectionManager;
-        }
+        
+       public ConnectionMethodRelay(LobbyServiceFacade lobbyServiceFacade, LocalLobby localLobby, ConnectionManager connectionManager, ProfileManager profileManager, string playerName)
+           : base(connectionManager, profileManager, playerName)
+       {
+           m_LobbyServiceFacade = lobbyServiceFacade;
+           m_LocalLobby = localLobby;
+           m_ConnectionManager = connectionManager;
+       }
 
         public override async Task SetupClientConnectionAsync()
         {
-            Debug.Log("Setting up Unity Relay client");
+            Debug.Log("<color=red>[ConnectionMethodRelay] Setting up Unity Relay client</color>");
 
             SetConnectionPayload(GetPlayerId(), m_PlayerName);
 
@@ -110,24 +118,64 @@ using Unity.Assets.Scripts.UnityServices.Lobbies;
             Debug.Log($"Setting Unity Relay client with join code {m_LocalLobby.RelayJoinCode}");
 
             // Create client joining allocation from join code
-            var joinedAllocation = await RelayService.Instance.JoinAllocationAsync(m_LocalLobby.RelayJoinCode);
-            Debug.Log($"client: {joinedAllocation.ConnectionData[0]} {joinedAllocation.ConnectionData[1]}, " +
+            var joinedAllocation = await RelayService.Instance.JoinAllocationAsync(joinCode: m_LocalLobby.RelayJoinCode);
+            Debug.Log($"<color=red>[ConnectionMethodRelay] client: {joinedAllocation.ConnectionData[0]} {joinedAllocation.ConnectionData[1]}, " +
                 $"host: {joinedAllocation.HostConnectionData[0]} {joinedAllocation.HostConnectionData[1]}, " +
-                $"client: {joinedAllocation.AllocationId}");
+                $"client: {joinedAllocation.AllocationId}</color>");
 
+            // await m_LobbyServiceFacade.UpdatePlayerDataAsync(joinedAllocation.AllocationId.ToString(), m_LocalLobby.RelayJoinCode);
             await m_LobbyServiceFacade.UpdatePlayerDataAsync(joinedAllocation.AllocationId.ToString(), m_LocalLobby.RelayJoinCode);
+            Debug.Log("<color=red>joinedAllocation.AllocationIdBytes: " + joinedAllocation.AllocationIdBytes + "</color>");
+            Debug.Log("<color=red>joinedAllocation.AllocationIdBytes.ToString(): " + joinedAllocation.AllocationId.ToString() + "</color>");
+            Debug.Log($"<color=red>릴레이 서버 연결 시도: {m_LocalLobby.RelayJoinCode}</color>");
 
+
+            NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(AllocationUtils.ToRelayServerData(joinedAllocation, k_DtlsConnType));
+            Debug.Log("<color=red>릴레이 서버 연결 성공: " + m_LocalLobby.RelayJoinCode + "</color>");
+
+            // if (!string.IsNullOrEmpty(m_LocalLobby.RelayJoinCode) && m_ConnectionManager.NetworkManager.StartClient())
+            // {
+            //     Debug.Log("<color=red>릴레이 서버 연결 성공: " + m_LocalLobby.RelayJoinCode + "</color>");
+            //     return;
+            // }
+
+// 연결 성공 후
             // Configure UTP with allocation
-            var utp = (UnityTransport)m_ConnectionManager.NetworkManager.NetworkConfig.NetworkTransport;
-            utp.SetRelayServerData(new RelayServerData(
-                joinedAllocation.RelayServer.IpV4,    // 실제 Relay 서버 IP 사용
-                (ushort)joinedAllocation.RelayServer.Port,    // 실제 Relay 서버 포트 사용
-                joinedAllocation.AllocationIdBytes,
-                joinedAllocation.ConnectionData,
-                joinedAllocation.HostConnectionData,
-                joinedAllocation.Key,
-                true       // isSecure
-            ));
+            // var utp = (UnityTransport)m_ConnectionManager.NetworkManager.NetworkConfig.NetworkTransport;
+
+            // // UnityTransport 설정 로그 추가
+            // Debug.Log($"Transport 설정: IP={utp.ConnectionData.Address}, Port={utp.ConnectionData.Port}, Protocol={utp.Protocol}");
+
+            // var utp = (UnityTransport)m_ConnectionManager.NetworkManager.NetworkConfig.NetworkTransport;
+
+            // utp.SetRelayServerData(new RelayServerData(
+            //     joinedAllocation.RelayServer.IpV4,    // 실제 Relay 서버 IP 사용
+            //     (ushort)joinedAllocation.RelayServer.Port,    // 실제 Relay 서버 포트 사용
+            //     joinedAllocation.AllocationIdBytes,
+            //     joinedAllocation.ConnectionData,
+            //     joinedAllocation.HostConnectionData,
+            //     joinedAllocation.Key,
+            //     false       // isSecure
+            // ));
+
+            // 아래와 같이 변경:
+            // utp.SetRelayServerData(
+            //     joinedAllocation.RelayServer.IpV4,
+            //     (ushort)joinedAllocation.RelayServer.Port,
+            //     joinedAllocation.AllocationIdBytes,
+            //     joinedAllocation.Key,
+            //     joinedAllocation.ConnectionData,
+            //     joinedAllocation.HostConnectionData
+            // );
+
+            Debug.Log($"<color=red>릴레이 서버 연결 성공: {joinedAllocation.ConnectionData[0]} {joinedAllocation.ConnectionData[1]}</color>");
+
+            Debug.Log($"<color=red>릴레이 서버 연결 성공: {joinedAllocation.AllocationIdBytes}</color>");
+            Debug.Log($"<color=red>릴레이 서버 연결 성공: {joinedAllocation.ConnectionData}</color>");
+            Debug.Log($"<color=red>릴레이 서버 연결 성공: {joinedAllocation.Key}</color>");
+            Debug.Log($"<color=red>릴레이 서버 연결 성공: {joinedAllocation.RelayServer.IpV4}</color>");
+            Debug.Log($"<color=red>릴레이 서버 연결 성공: {joinedAllocation.RelayServer.Port}</color>");
+
         }
 
         public override async Task<(bool success, bool shouldTryAgain)> SetupClientReconnectionAsync()
@@ -151,20 +199,24 @@ using Unity.Assets.Scripts.UnityServices.Lobbies;
 
         public override async Task SetupHostConnectionAsync()
         {
-            Debug.Log("Setting up Unity Relay host");
+            Debug.Log("<color=red>[ConnectionMethodRelay] Setting up Unity Relay host</color>");
 
             // Create relay allocation
             Allocation hostAllocation = await RelayService.Instance.CreateAllocationAsync(m_ConnectionManager.MaxConnectedPlayers, region: null);
             var joinCode = await RelayService.Instance.GetJoinCodeAsync(hostAllocation.AllocationId);
 
-            Debug.Log($"server: connection data: {hostAllocation.ConnectionData[0]} {hostAllocation.ConnectionData[1]}, " +
-                $"allocation ID:{hostAllocation.AllocationId}, region:{hostAllocation.Region}");
+            Debug.Log($"<color=red>[ConnectionMethodRelay] server: connection data: {hostAllocation.ConnectionData[0]} {hostAllocation.ConnectionData[1]}, " +
+                $"allocation ID:{hostAllocation.AllocationId}, region:{hostAllocation.Region}</color>");
 
             m_LocalLobby.RelayJoinCode = joinCode;
 
             // next line enables lobby and relay services integration
             await m_LobbyServiceFacade.UpdateLobbyDataAndUnlockAsync();
             await m_LobbyServiceFacade.UpdatePlayerDataAsync(hostAllocation.AllocationIdBytes.ToString(), joinCode);
+
+            // NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(AllocationUtils.ToRelayServerData(hostAllocation, k_DtlsConnType ));
+            // return NetworkManager.Singleton.StartHost() ? joinCode : null;
+
 
             // Setup UTP with relay connection info
             var utp = (UnityTransport)m_ConnectionManager.NetworkManager.NetworkConfig.NetworkTransport;
@@ -175,12 +227,24 @@ using Unity.Assets.Scripts.UnityServices.Lobbies;
                 hostAllocation.ConnectionData,
                 hostAllocation.ConnectionData,  // 호스트의 경우 ConnectionData를 사용
                 hostAllocation.Key,
-                true       // isSecure
+                false       // isSecure
             ));
 
             // Set connection payload for host after setting up relay
             SetConnectionPayload(GetPlayerId(), m_PlayerName);
 
-            Debug.Log($"Created relay allocation with join code {m_LocalLobby.RelayJoinCode}");
+            Debug.Log($"<color=red>[ConnectionMethodRelay] Created relay allocation with join code {m_LocalLobby.RelayJoinCode}</color>");
+        
+            Debug.Log($"<color=red>[ConnectionMethodRelay] hostAllocation.RelayServer.IpV4: {hostAllocation.RelayServer.IpV4}</color>");
+            Debug.Log($"<color=red>[ConnectionMethodRelay] hostAllocation.RelayServer.Port: {hostAllocation.RelayServer.Port}</color>");
+            Debug.Log($"<color=red>[ConnectionMethodRelay] hostAllocation.AllocationId: {hostAllocation.AllocationId}</color>");
+            Debug.Log($"<color=red>[ConnectionMethodRelay] hostAllocation.Region: {hostAllocation.Region}</color>");
+
+            Debug.Log($"<color=red>릴레이 서버 연결 성공: {hostAllocation.ConnectionData[0]} {hostAllocation.ConnectionData[1]}</color>");
+            Debug.Log($"<color=red>릴레이 서버 연결 성공: {hostAllocation.AllocationIdBytes}</color>");
+            Debug.Log($"<color=red>릴레이 서버 연결 성공: {hostAllocation.ConnectionData}</color>");
+            Debug.Log($"<color=red>릴레이 서버 연결 성공: {hostAllocation.Key}</color>");
+            Debug.Log($"<color=red>릴레이 서버 연결 성공: {hostAllocation.RelayServer.IpV4}</color>");
+            Debug.Log($"<color=red>릴레이 서버 연결 성공: {hostAllocation.RelayServer.Port}</color>");
         }
     }

@@ -122,7 +122,7 @@ using Unity.Services.Lobbies.Models;
         public Dictionary<string, PlayerDataObject> GetDataForUnityServices() =>
             new Dictionary<string, PlayerDataObject>()
             {
-                {"DisplayName", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, DisplayName)},
+                // {"DisplayName", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, DisplayName)},
             };
     }
     }

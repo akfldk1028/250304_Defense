@@ -12,6 +12,7 @@ using Unity.Assets.Scripts.Network;
 using UnityEditor.PackageManager.Requests;
 using System;
 using Unity.Assets.Scripts.Auth;
+using Unity.Assets.Scripts.UnityServices.Lobbies;
 
 namespace Unity.Assets.Scripts.Scene
 {
@@ -114,7 +115,13 @@ public class MainMenuScene : BaseScene
             {
                 // 기존 로비에 참가합니다
                 Debug.Log($"[MainMenuScene] 로비 {currentLobby.Id}에 참가합니다");
-                m_LobbyUIMediator.QuickJoinRequest();
+                // m_LobbyUIMediator.QuickJoinRequest();
+                var localLobby = new LocalLobby
+                {
+                    LobbyID = currentLobby.Id,
+                    LobbyCode = currentLobby.LobbyCode
+                };
+                m_LobbyUIMediator.JoinLobbyRequest(localLobby);
             }
             else
             {
@@ -136,7 +143,6 @@ public class MainMenuScene : BaseScene
     {
         // 10초 대기 후 타임아웃으로 간주
         yield return new WaitForSeconds(30f);
-        
         // 아직 처리 중이면 타임아웃으로 간주하고 플래그 초기화
         if (_isProcessingLobbyRequest)
         {
@@ -149,10 +155,7 @@ public class MainMenuScene : BaseScene
 
     private void StartWaitingForPlayers()
     {
-            
-            OnWaitingStateChanged?.Invoke(true);
-
-           
+        OnWaitingStateChanged?.Invoke(true);
     }
 }
 

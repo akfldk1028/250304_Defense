@@ -87,25 +87,37 @@ public class BasicGameLifetimeScope : LifetimeScope
                GameObject mapSpawnerObject = mapSpawnerFacade.gameObject;
                DontDestroyOnLoad(mapSpawnerObject);
                
-               if (mapSpawnerObject.GetComponent<NetworkObject>() == null)
-               {
-                   var netObj = mapSpawnerObject.AddComponent<NetworkObject>();
-                   netObj.Spawn();
-                   Debug.Log("[BasicGameLifetimeScope] MapSpawner에 NetworkObject 컴포넌트 추가 및 스폰 완료");
-               }
-
-               // ObjectManagerFacade 초기화
+                if (mapSpawnerObject.GetComponent<NetworkObject>() == null)
+                {
+                    var netObj = mapSpawnerObject.AddComponent<NetworkObject>();
+                    if (NetworkManager.Singleton.IsServer)
+                    {
+                        netObj.Spawn();
+                        Debug.Log("[BasicGameLifetimeScope] MapSpawner에 NetworkObject 컴포넌트 추가 및 스폰 완료");
+                    }
+                    else
+                    {
+                        Debug.Log("[BasicGameLifetimeScope] 클라이언트 - MapSpawner에 NetworkObject 컴포넌트만 추가 (스폰 안함)");
+                    }
+                }
+                            // ObjectManagerFacade 초기화
                var objectManagerFacade = container.Resolve<ObjectManagerFacade>();
                GameObject objectManagerObject = objectManagerFacade.gameObject;
                DontDestroyOnLoad(objectManagerObject);
                
-               if (objectManagerObject.GetComponent<NetworkObject>() == null)
-               {
-                   var netObj = objectManagerObject.AddComponent<NetworkObject>();
-                   netObj.Spawn();
-                   Debug.Log("[BasicGameLifetimeScope] ObjectManagerFacade에 NetworkObject 컴포넌트 추가 및 스폰 완료");
-               }
-
+                if (objectManagerObject.GetComponent<NetworkObject>() == null)
+                {
+                    var netObj = objectManagerObject.AddComponent<NetworkObject>();
+                    if (NetworkManager.Singleton.IsServer)
+                    {
+                        netObj.Spawn();
+                        Debug.Log("[BasicGameLifetimeScope] ObjectManagerFacade에 NetworkObject 컴포넌트 추가 및 스폰 완료");
+                    }
+                    else
+                    {
+                        Debug.Log("[BasicGameLifetimeScope] 클라이언트 - ObjectManagerFacade에 NetworkObject 컴포넌트만 추가 (스폰 안함)");
+                    }
+                }
                Debug.Log("[BasicGameLifetimeScope] MapSpawnerFacade와 ObjectManagerFacade 초기화 완료");
            }
            catch (Exception e)

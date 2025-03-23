@@ -218,6 +218,14 @@ namespace Unity.Assets.Scripts.UnityServices.Lobbies{
             Debug.Log($"[LobbyServiceFacade] 로비 빠르게 참가 요청");
             try
             {
+                Debug.Log($"<color=red>[LobbyServiceFacade] AuthenticationService.Instance.PlayerId: {AuthenticationService.Instance.PlayerId}</color>");
+                Debug.Log($"<color=red>[LobbyServiceFacade] m_LocalUser.GetDataForUnityServices(): {m_LocalUser.GetDataForUnityServices()}</color>");
+                Debug.Log($"<color=red>[LobbyServiceFacade] m_LocalLobby.LobbyID: {m_LocalLobby.LobbyID}</color>");
+                Debug.Log($"<color=red>[LobbyServiceFacade] m_LocalLobby.LobbyUsers: {m_LocalLobby.LobbyUsers}</color>");
+                Debug.Log($"<color=red>[LobbyServiceFacade] m_LocalLobby.LobbyUsers.Count: {m_LocalLobby.LobbyUsers.Count}</color>");
+                Debug.Log($"<color=red>[LobbyServiceFacade] m_LocalLobby.LobbyUsers.Values: {m_LocalLobby.LobbyUsers.Values}</color>");
+                Debug.Log($"<color=red>[LobbyServiceFacade] m_LocalLobby.LobbyUsers.Values.Count: {m_LocalLobby.LobbyUsers.Values.Count}</color>");
+
                 var lobby = await m_LobbyApiInterface.QuickJoinLobby(AuthenticationService.Instance.PlayerId, m_LocalUser.GetDataForUnityServices());
                 Debug.Log($"[LobbyServiceFacade] 로비 빠르게 참가 요청 성공");
                 return (true, lobby);
@@ -306,7 +314,7 @@ namespace Unity.Assets.Scripts.UnityServices.Lobbies{
                         Debug.Log("[LobbyServiceFacade] 게임 씬으로 전환 명령 전송 (RPCs)");
                         
                         // 실제 씬 로드
-                        _sceneManagerEx.LoadScene(EScene.BasicGame.ToString(), useNetworkSceneManager: true);
+                        // _sceneManagerEx.LoadScene(EScene.BasicGame.ToString(), useNetworkSceneManager: true);
                     }
                     else
                     {
@@ -515,11 +523,13 @@ namespace Unity.Assets.Scripts.UnityServices.Lobbies{
             try
             {
                 var result = await m_LobbyApiInterface.UpdatePlayer(CurrentUnityLobby.Id, AuthenticationService.Instance.PlayerId, m_LocalUser.GetDataForUnityServices(), allocationId, connectionInfo);
-
+                Debug.Log($"<color=red>[LobbyServiceFacade] UpdatePlayerDataAsync 호출됨 - 결과: {result}</color>");
                 if (result != null)
                 {
                     CurrentUnityLobby = result; // Store the most up-to-date lobby now since we have it, instead of waiting for the next heartbeat.
+                    Debug.Log($"<color=red>[LobbyServiceFacade] UpdatePlayerDataAsync 호출됨 - 결과: {result}</color>");
                 }
+
             }
             catch (LobbyServiceException e)
             {
