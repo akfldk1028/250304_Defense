@@ -166,7 +166,7 @@ class ClientConnectingState : OnlineState
     [Inject] LobbyServiceFacade m_LobbyServiceFacade;
     // 연결 시도 타임아웃을 관리하기 위한 필드 추가
     private Coroutine m_ConnectionTimeoutCoroutine;
-    private const float CONNECTION_TIMEOUT = 15.0f; // 15초 타임아웃
+    private const float CONNECTION_TIMEOUT = 30.0f; // 15초 타임아웃
     private bool m_ConnectionTimeoutTriggered = false;
 
     public ClientConnectingState Configure(ConnectionMethodBase baseConnectionMethod)

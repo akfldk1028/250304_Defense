@@ -767,8 +767,9 @@ GameObject:
   m_Component:
   - component: {fileID: 7421864509543774825}
   - component: {fileID: 5450208930816126822}
+  - component: {fileID: 7964739476359031152}
   m_Layer: 0
-  m_Name: Spawner
+  m_Name: MapSpawner
   m_TagString: Spawn
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -817,3 +818,21 @@ MonoBehaviour:
   AutoObjectParentSync: 1
   SyncOwnerTransformWhenParented: 1
   AllowOwnerToParent: 0
+--- !u!114 &7964739476359031152
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8114563699716518573}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dbe109fc0b7ff5b42bcd80ab580963c3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
+  _mapPrefabName: 
+  Player_move_list: []
+  Other_move_list: []
+  _hostSpawnPositions: []
+  _clientSpawnPositions: []

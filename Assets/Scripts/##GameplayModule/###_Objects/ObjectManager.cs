@@ -171,21 +171,8 @@ public class ObjectManager
 	}
 
 	public Transform HeroRoot { get { return GetRootTransform("@Heroes"); } }
-	public Transform MonsterRoot 
-	{ 
-		get 
-		{ 
-			GameObject root = GameObject.Find("@Monsters");
-			if (root == null)
-			{
-				root = new GameObject { name = "@Monsters" };
-				// MonsterRoot에 NetworkObject 추가하고 스폰
-				var netObj = root.AddComponent<NetworkObject>();
-				netObj.Spawn();
-			}
-			return root.transform;
-		} 
-	}
+	public Transform MonsterRoot { get { return GetRootTransform("@Monsters"); } }
+
 	public Transform ProjectileRoot { get { return GetRootTransform("@Projectiles"); } }
 	public Transform EnvRoot { get { return GetRootTransform("@Envs"); } }
 	public Transform EffectRoot { get { return GetRootTransform("@Effects"); } }
@@ -236,6 +223,14 @@ public class ObjectManager
 		}
 		go.name = prefabName;
 		
+		// 타입에 따라 적절한 부모 오브젝트 설정
+
+		// 다른 타입의 경우 여기에 추가
+		// else if (typeof(T) == typeof(Hero))
+		// {
+		//     go.transform.SetParent(HeroRoot);
+		// }
+		
 		BaseObject obj = go.GetComponent<BaseObject>();
 		if (obj == null)
 		{
@@ -244,12 +239,9 @@ public class ObjectManager
 			return null;
 		}
 		
+
 		// NetworkObject 처리
 		NetworkObject networkObject = go.GetComponent<NetworkObject>();
-		if (networkObject == null)
-		{
-			networkObject = go.AddComponent<NetworkObject>();
-		}
 
 		try 
 		{
@@ -272,13 +264,18 @@ public class ObjectManager
 			return null;
 		}
 
+
+
+
 		if (obj.ObjectType == EObjectType.Creature)
 		{
 			Creature creature = obj.GetComponent<Creature>();
 
 			if (creature.CreatureType == CharacterTypeEnum.Monster)
 			{
-				obj.transform.parent = MonsterRoot;
+    			MonsterRoot.SetParent(obj.transform, false);
+
+
 				CreatureData = DataLoader.instance.MonsterDic[templateID];
 				
 				ClientMonster clientMonster = go.GetComponent<ClientMonster>();

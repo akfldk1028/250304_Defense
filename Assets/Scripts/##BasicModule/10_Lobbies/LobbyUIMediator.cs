@@ -272,11 +272,33 @@ public class LobbyUIMediator : MonoBehaviour
         }
         public static event Action<bool> OnWaitingStateChanged; // true: 대기 시작, false: 대기 종료
 
-        void BlockUIWhileLoadingIsInProgress()
+            public void BlockUIWhileLoadingIsInProgress()
         {
-            // m_CanvasGroup.interactable = false;
-            // m_LoadingSpinner.SetActive(true);
             OnWaitingStateChanged?.Invoke(true);
+            StartCoroutine(WaitForNetworkConnection());
+        }
+
+        private IEnumerator WaitForNetworkConnection()
+        {
+            // 네트워크 연결이 완료될 때까지 대기
+            while (m_ConnectionManager.NetworkManager != null && !m_ConnectionManager.NetworkManager.IsConnectedClient)
+            {
+                Debug.Log("[LobbyUIMediator] 네트워크 연결 대기 중...");
+                yield return new WaitForSeconds(0.5f);
+            }
+            
+            // 네트워크 연결이 실패하거나 타임아웃된 경우 처리
+            if (m_ConnectionManager.NetworkManager == null || !m_ConnectionManager.NetworkManager.IsConnectedClient)
+            {
+                Debug.LogWarning("[LobbyUIMediator] 네트워크 연결 실패 또는 타임아웃");
+                UnblockUIAfterLoadingIsComplete();
+            }
+            else
+            {
+                Debug.Log("[LobbyUIMediator] 네트워크 연결 완료");
+                // 연결이 완료된 후에도 UI는 차단된 상태로 유지
+                // 실제 작업(로비 생성/참가 등)이 완료된 후 UnblockUIAfterLoadingIsComplete()가 호출될 것임
+            }
         }
         void UnblockUIAfterLoadingIsComplete()
         {

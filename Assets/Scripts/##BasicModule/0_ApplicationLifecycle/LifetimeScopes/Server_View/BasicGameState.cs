@@ -7,11 +7,13 @@ using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using static Define;
+using VContainer;
+using Unity.Assets.Scripts.Resource;
 
 //class 하나더만들어서 basicGameManager 에서 사용하는 것으로 변경
 [RequireComponent(typeof(NetcodeHooks))]
 
-public class BasicGameState : GameStateLifetimeScope
+public class BasicGameState : GameStateLifetimeScope 
 {    
     [SerializeField]
     NetcodeHooks m_NetcodeHooks;
@@ -25,14 +27,26 @@ public class BasicGameState : GameStateLifetimeScope
     public bool GetBoss = false;
     public int UpgradeMoney = 100;
     public float Timer = 20.0f;
+    [Inject] public ResourceManager _resourceManager;
+    private GameObject _BasicGameLifetimeScope_Server;
 
     public override GameState ActiveState { get { return GameState.BasicGame; } }
     public void Awake()
     {            
         base.Awake();
-        InitializeNetworkObject();
 
     }
+
+    public void Initialize(){}
+    
+    
+    public void Load()
+    {
+        GameObject BasicGameLifetimeScope_Server = _resourceManager.Load<GameObject>("BasicGameLifetimeScope_Server".EndsWith(".prefab") ? "BasicGameLifetimeScope_Server".Replace(".prefab", "") : "BasicGameLifetimeScope_Server");
+
+        _BasicGameLifetimeScope_Server = Instantiate(BasicGameLifetimeScope_Server);  
+    }
+
 
     private void InitializeNetworkObject()
     {

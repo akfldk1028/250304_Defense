@@ -14,134 +14,175 @@ using Unity.Assets.Scripts.Data;
 public class BasicGameLifetimeScope : LifetimeScope
 {
     [Inject] private DebugClassFacade _debugClassFacade;
+    private GameObject _mapSpawnerPrefab;
+    private GameObject _objectSpawnerPrefab;
 
     protected override void Configure(IContainerBuilder builder)
     {
-       _debugClassFacade?.LogInfo(GetType().Name, "BasicGameLifetimeScope Configure 시작");
-       base.Configure(builder);
+        _debugClassFacade?.LogInfo(GetType().Name, "BasicGameLifetimeScope Configure 시작");
+        base.Configure(builder);
+      
+        // 부모 스코프에서 ResourceManager 참조 (새 인스턴스 생성 방지)
+        ResourceManager resourceManager = null;
+        if (Parent != null && Parent.Container.Resolve<ResourceManager>() != null)
+        {
+            resourceManager = Parent.Container.Resolve<ResourceManager>();
+            builder.RegisterInstance(resourceManager);
+            Debug.Log("[BasicGameLifetimeScope] 부모 스코프에서 ResourceManager 참조 성공");
+        }
 
-       builder.Register<ObjectManager>(Lifetime.Singleton);
-    //    builder.Register<ServerMonster>(Lifetime.Transient);
-
-       // 기존 스포너 찾기
-       GameObject existingMapSpawner = GameObject.Find("MapSpawner");
-       GameObject existingMonsterSpawner = GameObject.Find("MonsterSpawner");
-    //    GameObject existingBasicGameManager = GameObject.Find("BasicGameManager");
-
-    //    if (existingBasicGameManager != null)
-    //    {
-    //        builder.RegisterInstance(existingBasicGameManager.GetComponent<BasicGameManager>());
-    //        Debug.Log("[BasicGameLifetimeScope] 기존 BasicGameManager 재사용");
-    //    }
-    //    else
-    //    {
-    //     builder.RegisterComponentOnNewGameObject<BasicGameManager>(
-    //         Lifetime.Singleton,
-    //         "BasicGameManager"
-    //     );
-    //     Debug.Log("[BasicGameLifetimeScope] 새로운 BasicGameManager 생성");
-    //    }
+        NetUtils netUtils = null;
+        if (Parent != null && Parent.Container.Resolve<NetUtils>() != null)
+        {
+            netUtils = Parent.Container.Resolve<NetUtils>();
+            builder.RegisterInstance(netUtils);
+            Debug.Log("[BasicGameLifetimeScope] 부모 스코프에서 NetUtils 참조 성공");
+        }
+  
+        // 기본 매니저 등록
+        builder.Register<ObjectManager>(Lifetime.Singleton);
+        builder.Register<MapManager>(Lifetime.Singleton);
+        builder.Register<BasicGameState>(Lifetime.Singleton);
        
+        // 프리팹을 로드하고 인스턴스화하여 등록 (ResourceManager가 있는 경우)
+        MapSpawnerFacade mapSpawnerFacade = null;
+        ObjectManagerFacade objectManagerFacade = null;
+       
+        if (resourceManager != null)
+        {
+            try
+            {
+                // 맵 스포너 프리팹 로드하고 인스턴스화
+                _mapSpawnerPrefab = resourceManager.Load<GameObject>("MapSpawner");
+                if (_mapSpawnerPrefab != null)
+                {
+                    GameObject mapSpawnerInstance = Instantiate(_mapSpawnerPrefab);
+                    mapSpawnerInstance.name = "MapSpawner_Instance";
+                    mapSpawnerFacade = mapSpawnerInstance.GetComponent<MapSpawnerFacade>();
+                    
+                    if (mapSpawnerFacade != null)
+                    {
+                        // 게임 오브젝트는 등록하지 않고 컴포넌트만 등록
+                        builder.RegisterInstance(mapSpawnerFacade).AsSelf();
+                        Debug.Log("[BasicGameLifetimeScope] MapSpawnerFacade 컴포넌트 등록 성공");
+                        
+                        // DontDestroyOnLoad 설정
+                        DontDestroyOnLoad(mapSpawnerInstance);
+                        NetworkObject networkObject = mapSpawnerInstance.GetComponent<NetworkObject>();
+                        if (!networkObject.IsSpawned)
+                        {
+                        networkObject.Spawn();
+                            Debug.Log($"[BasicGameLifetimeScope] ObjectManagerFacade NetworkObject 스폰 완료 - NetworkObjectId: {networkObject.NetworkObjectId}");
+                        }
+                    }
+                    else
+                    {
+                        Debug.LogError("[BasicGameLifetimeScope] MapSpawner 프리팹에 MapSpawnerFacade 컴포넌트가 없습니다");
+                    }
+                }
+               
+                // ObjectSpawner 프리팹 로드 및 인스턴스화
+                _objectSpawnerPrefab = resourceManager.Load<GameObject>("ObjectSpawner");
+                if (_objectSpawnerPrefab != null)
+                {
+                    GameObject objectSpawnerInstance = Instantiate(_objectSpawnerPrefab);
+                    objectSpawnerInstance.name = "ObjectSpawner_Instance";
+                    objectManagerFacade = objectSpawnerInstance.GetComponent<ObjectManagerFacade>();
+                    
+                    if (objectManagerFacade != null)
+                    {
+                        // 게임 오브젝트는 등록하지 않고 컴포넌트만 등록
+                        builder.RegisterInstance(objectManagerFacade).AsSelf();
+                        Debug.Log("[BasicGameLifetimeScope] ObjectManagerFacade 컴포넌트 등록 성공");
+                        
+                        // DontDestroyOnLoad 설정
+                        DontDestroyOnLoad(objectSpawnerInstance);
+                        
+                        // MapSpawnerFacade 참조 직접 설정
+                        if (mapSpawnerFacade != null)
+                        {
+                            objectManagerFacade._mapSpawnerFacade = mapSpawnerFacade;
+                            Debug.Log("[BasicGameLifetimeScope] ObjectManagerFacade에 MapSpawnerFacade 직접 설정");
+                        }
+                        NetworkObject networkObject = objectSpawnerInstance.GetComponent<NetworkObject>();
+                        if (!networkObject.IsSpawned)
+                        {
+                        networkObject.Spawn();
+                            Debug.Log($"[BasicGameLifetimeScope] ObjectManagerFacade NetworkObject 스폰 완료 - NetworkObjectId: {networkObject.NetworkObjectId}");
+                        }
+                    }
+                    else
+                    {
+                        Debug.LogError("[BasicGameLifetimeScope] ObjectSpawner 프리팹에 ObjectManagerFacade 컴포넌트가 없습니다");
+                    }
+                }
 
-       // MapSpawnerFacade 등록
-       if (existingMapSpawner != null)
-       {
-           var mapSpawnerFacade = existingMapSpawner.GetComponent<MapSpawnerFacade>();
-           if (mapSpawnerFacade != null)
-           {
-               builder.RegisterInstance(mapSpawnerFacade);
-               Debug.Log("[BasicGameLifetimeScope] 기존 MapSpawnerFacade 재사용");
-           }
-       }
-       else
-       {
-               builder.RegisterComponentOnNewGameObject<MapSpawnerFacade>(
-               Lifetime.Singleton, 
-               "MapSpawner");
-           Debug.Log("[BasicGameLifetimeScope] 새로운 MapSpawnerFacade 생성");
-       }
+                                         
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[BasicGameLifetimeScope] 프리팹 인스턴스화 및 등록 중 오류 발생: {ex.Message}\n{ex.StackTrace}");
+            }
+        }
+       
+        // 씬 관련 컴포넌트 등록
+        _debugClassFacade?.LogInfo(GetType().Name, "BasicGameScene 등록 시도");
+        builder.RegisterComponentInHierarchy<BasicGameScene>();
+       
+        _debugClassFacade?.LogInfo(GetType().Name, "UI_BasicGame 등록 시도");
+        builder.RegisterComponentInHierarchy<UI_BasicGame>();
 
-       // ObjectManagerFacade 등록
-       if (existingMonsterSpawner != null)
-       {
-           var objectManagerFacade = existingMonsterSpawner.GetComponent<ObjectManagerFacade>();
-           if (objectManagerFacade != null)
-           {
-               builder.RegisterInstance(objectManagerFacade);
-               Debug.Log("[BasicGameLifetimeScope] 기존 ObjectManagerFacade 재사용");
-           }
-       }
-       else
-       {
-              builder.RegisterComponentOnNewGameObject<ObjectManagerFacade>(
-               Lifetime.Singleton, 
-               "MonsterSpawner");
-           Debug.Log("[BasicGameLifetimeScope] 새로운 ObjectManagerFacade 생성");
-       }
-
-       // 오브젝트 생성 후 콜백을 등록하여 추가 처리
+        // 컨테이너 빌드 후 초기화를 수행하는 콜백 등록
         builder.RegisterBuildCallback(container => {
             try {
-                // NetUtils 가져오기
-                var netUtils = container.Resolve<NetUtils>();
+                Debug.Log("[BasicGameLifetimeScope] 의존성 객체 초기화 시작");
                 
-                // MapSpawnerFacade 초기화
-                var mapSpawnerFacade = container.Resolve<MapSpawnerFacade>();
-                GameObject mapSpawnerObject = mapSpawnerFacade.gameObject;
-                DontDestroyOnLoad(mapSpawnerObject);
+                // 필요한 매니저 클래스들 참조 및 로깅
+                var objectManager = container.Resolve<ObjectManager>();                
+                var mapManager = container.Resolve<MapManager>();
                 
-                // NetUtils를 사용하여 NetworkObject 초기화
-                netUtils.InitializeNetworkObject(mapSpawnerObject);
+                // MapSpawnerFacade 참조 및 초기화
+                try {
+                    var mapSpawnerFacadeRef = container.Resolve<MapSpawnerFacade>();
+                    mapSpawnerFacadeRef.Initialize();
+                }
+                catch (Exception e) {
+                    Debug.LogError($"[BasicGameLifetimeScope] MapSpawnerFacade 참조 또는 초기화 중 오류: {e.Message}");
+                }
                 
-                // ObjectManagerFacade 초기화
-                var objectManagerFacade = container.Resolve<ObjectManagerFacade>();
-                GameObject objectManagerObject = objectManagerFacade.gameObject;
-                DontDestroyOnLoad(objectManagerObject);
+
+
+                // ObjectManagerFacade 참조, ObjectManager 설정 및 초기화
+                try {
+                    var objectManagerFacadeRef = container.Resolve<ObjectManagerFacade>();
+                    
+                    objectManagerFacadeRef._objectManager = objectManager;
+                    objectManagerFacadeRef._netUtils = netUtils;
+                    objectManagerFacadeRef.Initialize();
+                }
+                catch (Exception e) {
+                    Debug.LogError($"[BasicGameLifetimeScope] ObjectManagerFacade 참조 또는 초기화 중 오류: {e.Message}");
+                }
                 
-                // NetUtils를 사용하여 NetworkObject 초기화
-                netUtils.InitializeNetworkObject(objectManagerObject);
+
+
+                // BasicGameState 참조 및 초기화
+                try {
+                    var basicGameState = container.Resolve<BasicGameState>();
+
+                    basicGameState.Initialize();
+                }
+                catch (Exception e) {
+                    Debug.LogError($"[BasicGameLifetimeScope] BasicGameState 참조 또는 초기화 중 오류: {e.Message}");
+                }
                 
-                Debug.Log("[BasicGameLifetimeScope] MapSpawnerFacade와 ObjectManagerFacade 초기화 완료");
-            }
-            catch (Exception e) {
-                Debug.LogError($"오브젝트 설정 중 오류 발생: {e.Message}\n{e.StackTrace}");
+                Debug.Log("[BasicGameLifetimeScope] 모든 컴포넌트 초기화 완료");
+            } 
+            catch (Exception ex) {
+                Debug.LogError($"[BasicGameLifetimeScope] 초기화 중 오류 발생: {ex.Message}\n{ex.StackTrace}");
             }
         });
-        builder.Register<MapManager>(Lifetime.Singleton);
-       
-       // ResourceManager 명시적 등록 (싱글톤)
-       Debug.Log("[BasicGameLifetimeScope] ResourceManager 참조 시도");
-       
-       // 부모 스코프에서 ResourceManager 참조 (새 인스턴스 생성 방지)
-       if (Parent != null && Parent.Container.Resolve<ResourceManager>() != null)
-       {
-           var resourceManager = Parent.Container.Resolve<ResourceManager>();
-           builder.RegisterInstance(resourceManager);
-           Debug.Log("[BasicGameLifetimeScope] 부모 스코프에서 ResourceManager 참조 성공");
-       }
-       else
-       {
-           // 부모 스코프에서 찾을 수 없는 경우에만 새로 생성
-           builder.Register<ResourceManager>(Lifetime.Singleton);
-           Debug.Log("[BasicGameLifetimeScope] 새 ResourceManager 인스턴스 생성");
-       }
-       
 
-
-       Debug.Log("[BasicGameLifetimeScope] ResourceManager 등록 완료");
-              // MainMenu 씬에서만 사용할 컴포넌트 등록
-       _debugClassFacade?.LogInfo(GetType().Name, "BasicGameScene  등록 시도");
-       builder.RegisterComponentInHierarchy<BasicGameScene>();
-       
-       _debugClassFacade?.LogInfo(GetType().Name, "UI_BasicGame 등록 시도");
-       builder.RegisterComponentInHierarchy<UI_BasicGame>();
-
-       _debugClassFacade?.LogInfo(GetType().Name, "BasicGameState 등록 시도");
-       builder.RegisterComponentInHierarchy<BasicGameState>();
-
-       _debugClassFacade?.LogInfo(GetType().Name, "BasicGameLifetimeScope Configure 완료");
+        _debugClassFacade?.LogInfo(GetType().Name, "BasicGameLifetimeScope Configure 완료");
     }
-
-
-    
 }

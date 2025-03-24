@@ -5,44 +5,128 @@ using VContainer;
 using Unity.Assets.Scripts.Objects;
 using Unity.Netcode;
 using System;
+using Unity.Assets.Scripts.Resource;
+using Unity.Assets.Scripts.Scene;
 
 /// <summary>
 /// 스폰 및 그리드 관리 기능을 제공하는 클래스입니다.
 /// </summary>
 public class ObjectManagerFacade : NetworkBehaviour
 {   
-    [Inject] private ObjectManager _objectManager;
-    [Inject] private MapSpawnerFacade _mapSpawnerFacade;
+    // protected로 되어 있지만 외부에서 직접 설정할 수 있도록 유지
+    [Inject] public ObjectManager _objectManager;
+    public MapSpawnerFacade _mapSpawnerFacade;
     [Inject] private NetworkManager _networkManager;
-    [Inject] private NetUtils _netUtils;
+    [Inject] public NetUtils _netUtils;
     [Inject] private INetworkMediator _networkMediator;
+    [Inject] public ResourceManager _resourceManager;
+    [Inject] private VContainer.IObjectResolver _container;
 
     private Coroutine _spawnMonsterCoroutine;
+    private GameObject _ObjectSpawner;
+    RateLimitCooldown m_RateLimitQuery;
 
+    // 기본 생성자 추가
+    public ObjectManagerFacade() 
+    {
+        Debug.Log("[ObjectManagerFacade] 기본 생성자 호출");
+    }
+
+    // 매개변수가 있는 생성자 유지
+    [Inject]
+    public ObjectManagerFacade(MapSpawnerFacade mapSpawnerFacade = null, ObjectManager objectManager = null, NetUtils netUtils = null)
+    {
+        _mapSpawnerFacade = mapSpawnerFacade;
+        _objectManager = objectManager;
+        _netUtils = netUtils;
+        Debug.Log($"[ObjectManagerFacade] 생성자 호출: MapSpawnerFacade {(_mapSpawnerFacade != null ? "주입됨" : "주입되지 않음")}, ObjectManager {(_objectManager != null ? "주입됨" : "주입되지 않음")}, NetUtils {(_netUtils != null ? "주입됨" : "주입되지 않음")}");
+    }
     public void Awake()
     {
-        _netUtils.InitializeNetworkObject(gameObject);
-        //스포된거 알리고 완료되면 client에서 처리
-        _networkMediator.RegisterHandler(NetworkEventType.NetworkSpawned, OnNetworkObjectSpawned);
+        Debug.Log("[ObjectManagerFacade] Awake 호출됨");
     }
-
-
-    private void OnDestroy()
+  
+    public void Initialize()
     {
-        StopSpawnCoroutine();
-    }
-
-
-
-    private void StopSpawnCoroutine()
-    {
-        if (_spawnMonsterCoroutine != null)
+        Debug.Log("[ObjectManagerFacade] Initialize 시작");
+        
+        // _mapSpawnerFacade가 null이고 컨테이너가 사용 가능한 경우에만 시도
+        if (_mapSpawnerFacade == null && _container != null)
         {
-            StopCoroutine(_spawnMonsterCoroutine);
-            _spawnMonsterCoroutine = null;
+            Debug.Log("[ObjectManagerFacade] Initialize에서 MapSpawnerFacade 해결 시도");
+            try
+            {
+                _mapSpawnerFacade = _container.Resolve<MapSpawnerFacade>();
+                if (_mapSpawnerFacade != null)
+                {
+                    Debug.Log("[ObjectManagerFacade] MapSpawnerFacade 해결 성공");
+                }
+                else
+                {
+                    Debug.LogError("[ObjectManagerFacade] MapSpawnerFacade 해결 실패: null 반환됨");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[ObjectManagerFacade] MapSpawnerFacade 해결 중 예외 발생: {ex.Message}");
+            }
         }
+        else
+        {
+            Debug.Log($"[ObjectManagerFacade] MapSpawnerFacade 상태: {(_mapSpawnerFacade != null ? "유효함" : "null")}");
+        }
+        
+        // RateLimitCooldown 초기화
+        if (m_RateLimitQuery == null)
+        {
+            m_RateLimitQuery = new RateLimitCooldown(3f);
+            Debug.Log("[ObjectManagerFacade] RateLimitCooldown 초기화 완료");
+        }
+        
+        Debug.Log("[ObjectManagerFacade] Initialize 완료");
+    }
+    
+    public void Load()
+    {
+        Debug.Log("[ObjectManagerFacade] Load 시작");
+        
+        // ResourceManager가 null인지 확인
+        if (_resourceManager == null)
+        {
+            Debug.LogWarning("[ObjectManagerFacade] ResourceManager가 null입니다.");
+        }
+        
+        // Network 이벤트 등록
+        if (_networkMediator != null)
+        {
+            _networkMediator.RegisterHandler(NetworkEventType.NetworkSpawned, OnNetworkObjectSpawned);
+            Debug.Log("[ObjectManagerFacade] NetworkSpawned 이벤트 핸들러 등록");
+        }
+        else
+        {
+            Debug.LogWarning("[ObjectManagerFacade] _networkMediator가 null입니다.");
+        }
+        
+        // _ObjectSpawner 설정
+        _ObjectSpawner = this.gameObject;
+        
+        // RateLimitCooldown 초기화 (아직 초기화되지 않은 경우)
+        if (m_RateLimitQuery == null)
+        {
+            m_RateLimitQuery = new RateLimitCooldown(3f);
+            Debug.Log("[ObjectManagerFacade] RateLimitCooldown 초기화 완료");
+        }
+        
+        Debug.Log("[ObjectManagerFacade] Load 완료");
+    }
+ 
+     private void OnDestroy()
+    {
     }
 
+
+
+   
 
     private void OnNetworkObjectSpawned(MonsterSpawnEventData data)
     {
@@ -70,34 +154,85 @@ public class ObjectManagerFacade : NetworkBehaviour
 
     public void Spawn_Monster(bool getBoss, int templateID)
     {
-        spawn_Monster_Coroutine = StartCoroutine( SpawnMonsterRoutine(false, templateID ));
+        // _mapSpawnerFacade 초기화 재시도
+        try
+        {
+            if (_mapSpawnerFacade == null && _container != null)
+            {
+                Debug.Log("[ObjectManagerFacade] _container를 통해 MapSpawnerFacade 재시도");
+                _mapSpawnerFacade = _container.Resolve<MapSpawnerFacade>();
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"[ObjectManagerFacade] MapSpawnerFacade 해결 중 오류: {ex.Message}");
+        }
+     
+        if (_objectManager == null || _mapSpawnerFacade == null || _netUtils == null)
+        {
+            if (_objectManager == null){
+                Debug.LogError("[ObjectManagerFacade] _objectManager가 null입니다.");
+            }
+            if (_mapSpawnerFacade == null)
+            {
+                Debug.LogError("[ObjectManagerFacade] _mapSpawnerFacade가 null입니다.");
+                // 마지막 방법으로 씬에서 직접 찾기 시도
+                _mapSpawnerFacade = GameObject.FindObjectOfType<MapSpawnerFacade>();
+                
+                if (_mapSpawnerFacade == null)
+                {
+                    Debug.LogError("[ObjectManagerFacade] MapSpawnerFacade를 찾을 수 없습니다. 몬스터 스폰을 중단합니다.");
+                    return; // 여기서 메서드 종료
+                }
+            }
+            else
+            {
+                Debug.Log("[ObjectManagerFacade] _mapSpawnerFacade가 이미 초기화되었습니다.");
+            }
+            if (_netUtils == null){
+                Debug.LogError("[ObjectManagerFacade] _netUtils가 null입니다.");
+            }
+            Debug.Log("[ObjectManagerFacade] 일부 의존성 객체가 null이지만 계속 진행합니다.");
+        }
+                // 의존성 직접 찾기
 
-        // Vector3 spawnPos = _mapSpawnerFacade.Player_move_list[0];
-        // Debug.Log($"<color=yellow>[ObjectManagerFacade] 위치: {spawnPos}</color>");
+        Debug.Log("[ObjectManagerFacade] Spawn_Monster 시작");
+        Debug.Log($"[ObjectManagerFacade] _mapSpawnerFacade.Player_move_list: {_mapSpawnerFacade.Player_move_list}");
         
-        // StopSpawnCoroutine();
-        // _spawnMonsterCoroutine = StartCoroutine(SpawnMonsterRoutine(getBoss, spawnPos, templateID));
+        // m_RateLimitQuery가 null이 아닌지 확인
+        if (m_RateLimitQuery == null)
+        {
+            Debug.LogError("[ObjectManagerFacade] m_RateLimitQuery가 null입니다.");
+            return;
+        }
+        
+        m_RateLimitQuery.PutOnCooldown();
+        Debug.Log("[ObjectManagerFacade] 스포너가 초기화되었습니다. 몬스터 스폰을 시작합니다.");
+        
+        // 이 객체가 활성화되었는지 확인
+        if (!isActiveAndEnabled)
+        {
+            Debug.LogError("[ObjectManagerFacade] 컴포넌트가 비활성화되었습니다.");
+            return;
+        }
+        
+        spawn_Monster_Coroutine = StartCoroutine(SpawnMonsterRoutine(getBoss, templateID));
     }
 
 
     private IEnumerator SpawnMonsterRoutine(bool getBoss, int templateID)
     {
+
+        Debug.Log("[ObjectManagerFacade] SpawnMonsterRoutine 시작");
         yield return new WaitForSeconds(getBoss == false ? 0.1f : 0.1f);
 
-        _netUtils.HostAndClientMethod(
-                () => ServerMonsterSpawnServerRpc(_netUtils.LocalID(), getBoss , templateID),
-                () => SpawnSingleMonster(_netUtils.LocalID(), getBoss, templateID ));
+        NetUtils.HostAndClientMethod(
+                () => ServerMonsterSpawnServerRpc(NetUtils.LocalID(), getBoss , templateID),
+                () => SpawnSingleMonster(NetUtils.LocalID(), getBoss, templateID));
 
-        if (getBoss) yield break;   
+        // if (getBoss) yield break;   
 
-        spawn_Monster_Coroutine =  StartCoroutine(SpawnMonsterRoutine(getBoss, templateID));
-
-
-        // while (!getBoss)
-        // {
-        //     yield return new WaitForSeconds(0.1f);
-        //     SpawnSingleMonster(spawnPos,  templateID);
-        // }
+        spawn_Monster_Coroutine = StartCoroutine(SpawnMonsterRoutine(getBoss, templateID));
     }
 
     [ServerRpc(RequireOwnership = false)]
@@ -112,7 +247,7 @@ public class ObjectManagerFacade : NetworkBehaviour
         try
         {
             // 클라이언트 ID에 따라 적절한 이동 경로 선택
-            var moveList = clientId == _netUtils.LocalID() 
+            var moveList = clientId == NetUtils.LocalID()
                 ? _mapSpawnerFacade.Player_move_list 
                 : _mapSpawnerFacade.Other_move_list;
 
@@ -147,7 +282,7 @@ public class ObjectManagerFacade : NetworkBehaviour
         }
     }
 
-    
+
     [ClientRpc]
     public void MonsterSetClientRpc(ulong networkObjectId, ulong clientId) 
     {
@@ -169,7 +304,7 @@ public class ObjectManagerFacade : NetworkBehaviour
             
             if (_netUtils.TryGetSpawnedObject(networkObjectId, out NetworkObject monsterNetworkObject)) 
             {
-                var moveList = clientId == _netUtils.LocalID() ? _mapSpawnerFacade.Player_move_list : _mapSpawnerFacade.Other_move_list;
+                var moveList = clientId == NetUtils.LocalID() ? _mapSpawnerFacade.Player_move_list : _mapSpawnerFacade.Other_move_list;
                 
                 if (moveList == null)
                 {
@@ -194,7 +329,7 @@ public class ObjectManagerFacade : NetworkBehaviour
                 }
                 else
                 {
-                    Debug.LogError($"[ObjectManagerFacade] 이동 경로 리스트가 비어 있습니다. ClientID: {clientId}, LocalID: {_netUtils.LocalID()}");
+                    Debug.LogError($"[ObjectManagerFacade] 이동 경로 리스트가 비어 있습니다. ClientID: {clientId}, LocalID: {NetUtils.LocalID()}");
                 }
             }
             else

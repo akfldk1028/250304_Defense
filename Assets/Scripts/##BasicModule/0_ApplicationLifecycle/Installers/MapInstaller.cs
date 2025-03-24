@@ -18,7 +18,7 @@ namespace Unity.Assets.Scripts.Module.ApplicationLifecycle.Installers
             // MapManager 등록 (싱글톤으로)
             builder.Register<MapManager>(Lifetime.Singleton);
             
-            // MapSpawnerFacade 컴포넌트 등록 (씬에서 찾을 수 있는 모든 MapSpawnerFacade 컴포넌트에 의존성 주입)
+            // MapSpawnerFacade는 BasicGameLifetimeScope에서 프리팹 인스턴스로 등록되므로 여기서는 제거
             // builder.Register<MapSpawnerFacade>(Lifetime.Singleton);
 
             _debugClassFacade?.LogInfo(GetType().Name, "맵 모듈 설치 완료");

@@ -16,7 +16,13 @@ MonoBehaviour:
   m_GUID: 51ef3520b2c78e24b95f17d68eb7a5ad
   m_SerializeEntries:
   - m_GUID: 13c5173840d7b2046ac945b9e324ebcb
-    m_Address: Spawner
+    m_Address: MapSpawner
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - PreLoad
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 26bfdfd8653f0c941a88067d994f69d7
+    m_Address: ObjectSpawner
     m_ReadOnly: 0
     m_SerializedLabels:
     - PreLoad

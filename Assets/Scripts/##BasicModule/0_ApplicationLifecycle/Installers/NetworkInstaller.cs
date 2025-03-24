@@ -50,6 +50,11 @@ namespace Unity.Assets.Scripts.Module.ApplicationLifecycle.Installers
             builder.Register<ProfileManager>(Lifetime.Singleton);
 
             builder.Register<NetUtils>(Lifetime.Singleton);
+            builder.Register<NetworkRegistryService>(Lifetime.Singleton);
+
+
+
+
             _debugClassFacade?.LogInfo(GetType().Name, "네트워크 모듈 설치 완료");
         }
     }

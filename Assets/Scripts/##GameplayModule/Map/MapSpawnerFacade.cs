@@ -24,58 +24,134 @@ public class MapSpawnerFacade : NetworkBehaviour
     [SerializeField] private string _mapPrefabName;
     
     private GameObject _mapInstance;
-
-    public List<Vector2> Player_move_list = new List<Vector2>();      // Host 이동 경로 포인트
-    public List<Vector2> Other_move_list = new List<Vector2>();    // Client 이동 경로 포인트
-    public List<Vector2> _hostSpawnPositions = new List<Vector2>();  // Host 스폰 위치
-    public List<Vector2> _clientSpawnPositions = new List<Vector2>(); // Client 스폰 위치
-    private List<bool> Player_spawn_list_Array = new List<bool>();         // Host 스폰 위치 사용 여부
-    private List<bool> Other_spawn_list_Array = new List<bool>();       // Client 스폰 위치 사용 여부
     
-
-
+    // 리스트를 모두 Public으로 변경
+    [SerializeField] public List<Vector2> Player_move_list = new List<Vector2>();      // Host 이동 경로 포인트
+    [SerializeField] public List<Vector2> Other_move_list = new List<Vector2>();    // Client 이동 경로 포인트
+    [SerializeField] public List<Vector2> _hostSpawnPositions = new List<Vector2>();  // Host 스폰 위치
+    [SerializeField] public List<Vector2> _clientSpawnPositions = new List<Vector2>(); // Client 스폰 위치
+    [SerializeField] public List<bool> Player_spawn_list_Array = new List<bool>();         // Host 스폰 위치 사용 여부
+    [SerializeField] public List<bool> Other_spawn_list_Array = new List<bool>();       // Client 스폰 위치 사용 여부
+    
     private int[] Host_Client_Value_Index = new int[2];
 
     public static float xValue, yValue;
 
     public static event Action GridSpawned;
 
+    private GameObject _mapSpawner;
+
+    RateLimitCooldown m_RateLimitQuery;
+    public void Awake(){}
+    
+
+ 
+
+    public void Initialize()
+    {
+        Debug.Log("[MapSpawnerFacade] Initialize 시작");
+        // 자신의 게임 오브젝트를 _mapSpawner로 설정
+        _mapSpawner = this.gameObject;
+        
+        // RateLimitCooldown 초기화
+        if (m_RateLimitQuery == null)
+        {
+            m_RateLimitQuery = new RateLimitCooldown(3f);
+            Debug.Log("[MapSpawnerFacade] RateLimitCooldown 초기화 완료");
+        }
+        
+        Debug.Log("[MapSpawnerFacade] Initialize 완료");
+    }
+    
+    public void Load()
+    {
+        Debug.Log("[MapSpawnerFacade] Load 시작");
+        
+        // ResourceManager가 필요한 경우에만 사용하도록 수정
+        if (_resourceManager == null)
+        {
+            Debug.LogWarning("[MapSpawnerFacade] ResourceManager가 null입니다.");
+        }
+        
+        // 이미 _mapSpawner가 설정되어 있는지 확인
+        if (_mapSpawner == null)
+        {
+            _mapSpawner = this.gameObject;
+            Debug.Log("[MapSpawnerFacade] _mapSpawner를 자신의 게임 오브젝트로 설정");
+        }
+        
+        Debug.Log("[MapSpawnerFacade] Load 완료");
+    }
+
+
+
+
     /// <summary>
     /// 맵을 로드하고 초기화합니다.
     /// </summary>
-    /// <param name="mapName">로드할 맵 이름</param>
-    public void LoadMap(string mapName)
-    {
-        GameObject mapPrefab = LoadMapPrefab(mapName);
-        // _netUtils.InitializeNetworkObject(gameObject);
-        InstantiateMap(mapPrefab, mapName);
+        /// <param name="mapName">로드할 맵 이름</param>
+    // public void LoadMap(string mapName)
+    // {
+ 
+        
+    //     // GameObject mapPrefab = LoadMapPrefab(mapName);
+    //     // InstantiateMap(mapPrefab, mapName);
+    //     InstantiateMap(mapSpawner, mapName);
 
+    // }
+    public void LoadMap()
+    {
+        Debug.Log("[MapSpawnerFacade] LoadMap 시작");
+        
+        // _mapSpawner가 null인 경우 현재 게임 오브젝트로 설정
+        if (_mapSpawner == null)
+        {
+            _mapSpawner = this.gameObject;
+            Debug.Log("[MapSpawnerFacade] _mapSpawner를 자신의 게임 오브젝트로 설정");
+        }
+        
+        // 그리드 시스템 초기화
+        InitializeGridSystem(_mapSpawner);
+        Debug.Log("[MapSpawnerFacade] LoadMap 완료");
     }
+
 
     private GameObject LoadMapPrefab(string mapName)
     {
+        if (_resourceManager == null)
+        {
+            Debug.LogError("[MapSpawnerFacade] ResourceManager가 null입니다.");
+            return null;
+        }
+        
         string resourceKey = mapName.EndsWith(".prefab") ? mapName.Replace(".prefab", "") : mapName;
+        Debug.Log($"[MapSpawnerFacade] 맵 프리팹 로드 시도: {resourceKey}");
+        
         return _resourceManager.Load<GameObject>(resourceKey);
     }
     
     private void InstantiateMap(GameObject mapPrefab, string mapName)
     {
-        Debug.Log($"[MapSpawnerFacade] 프리팹 로드 성공: {mapPrefab.name}, 인스턴스화 시도");
-        
         try
         {
-            _mapInstance = Instantiate(mapPrefab);
-            ConfigureMapInstance(mapName);
-            InitializeGridSystem(_mapInstance);
-            GridSpawned?.Invoke();
+            if (mapPrefab == null)
+            {
+                Debug.LogError("[MapSpawnerFacade] 맵 프리팹이 null입니다.");
+                return;
+            }
+            
+            Debug.Log($"[MapSpawnerFacade] InstantiateMap 시작: {mapName}");
+            
+            // 맵 인스턴스 설정
+            ConfigureMapInstance();
+            
+            Debug.Log("[MapSpawnerFacade] InstantiateMap 완료");
         }
         catch (Exception e)
         {
             Debug.LogError($"[MapSpawnerFacade] 맵 인스턴스화 중 예외 발생: {e.Message}\n{e.StackTrace}");
         }
     }
-
-
         #region 그리드 시스템
 
     private void InitializeGridSystem(GameObject mapInstance)
@@ -110,6 +186,8 @@ public class MapSpawnerFacade : NetworkBehaviour
         SetupMovePaths(monsterGroundHost, mosterGroundClient );
         
         Debug.Log("[ObjectManagerFacade] 그리드 설정 완료");
+        
+    
     }
     
     /// <summary>
@@ -152,29 +230,22 @@ public class MapSpawnerFacade : NetworkBehaviour
                 switch (isPlayer)
                 {
                     case true:
-                        _hostSpawnPositions.Add(new Vector2(
-                            xPos,
-                            yPos + gridTransform.localPosition.y - YCount));
+                        Vector2 hostPos = new Vector2(xPos, yPos + gridTransform.localPosition.y - YCount);
+                        _hostSpawnPositions.Add(hostPos);
                         Player_spawn_list_Array.Add(false);
                         break;
                     case false:
-                        _clientSpawnPositions.Add(new Vector2(
-                            xPos,
-                            yPos + gridTransform.localPosition.y));
+                        Vector2 clientPos = new Vector2(xPos, yPos + gridTransform.localPosition.y);
+                        _clientSpawnPositions.Add(clientPos);
                         Other_spawn_list_Array.Add(false);
                         break;
                 }
-
-                // if (IsServer)
-                // {
-                //     StartCoroutine(DelayHeroHolderSpawn(isPlayer));
-                // }
             }
         }
         Host_Client_Value_Index[0] = 0; //HOST
         Host_Client_Value_Index[1] = 0; //CLIENT
         
-        // Debug.Log($"[ObjectManagerFacade] {(isPlayer ? "Host" : "Client")} 스폰 포인트 {spawnList.Count}개 설정 완료");
+        Debug.Log($"[ObjectManagerFacade] {(isPlayer ? "Host" : "Client")} 스폰 포인트 {_hostSpawnPositions.Count}개 설정 완료");
     }
     
     /// <summary>
@@ -190,31 +261,57 @@ public class MapSpawnerFacade : NetworkBehaviour
         {
             Transform child = playerGridParent.GetChild(i);
             // Q_ 로 시작하는 오브젝트만 경로 포인트로 사용
-            Player_move_list.Add(child.position);
-            Debug.Log($"[ObjectManagerFacade] 호스트 이동 경로 추가: {child.name} at {child.position}");
+            Vector2 pos = child.position;
+            Player_move_list.Add(pos);
+            Debug.Log($"[MapSpawnerFacade] 호스트 이동 경로 추가: {child.name} at {child.position}");
         }
 
         for (int i = 0; i < enemyGridParent.childCount; i++)
         {
             Transform child = enemyGridParent.GetChild(i);
-            // Q_ 로 시작하는 오브젝트만 경로 포인트로 사용
-
-            Other_move_list.Add(child.position);
-            Debug.Log($"[ObjectManagerFacade] 클라이언트 이동 경로 추가: {child.name} at {child.position}");
+            Vector2 pos = child.position;
+            Other_move_list.Add(pos);
+            Debug.Log($"[MapSpawnerFacade] 클라이언트 이동 경로 추가: {child.name} at {child.position}");
         }
         
-        // 경로가 정상적으로 설정되었는지 확인하고 이벤트 발생
-        // if (Player_move_list.Count > 0 && Other_move_list.Count > 0)
-        // {
-        //    GridSpawned?.Invoke();
-        // }
-        // else
-        // {
-        //     Debug.LogError("[MapSpawnerFacade] ObjectManagerFacade가 유효하지 않습니다.");
-        // }
+        // 이동 경로 설정 상태 로깅
+        Debug.Log($"[MapSpawnerFacade] 호스트 이동 경로 {Player_move_list.Count}개, 클라이언트 이동 경로 {Other_move_list.Count}개 설정 완료");
         
-     }
+        // 쿨다운 체크 및 이벤트 발행
+        if (m_RateLimitQuery != null && !m_RateLimitQuery.CanCall)
+        {
+            Debug.Log("[MapSpawnerFacade] 속도 제한으로 인해 GridSpawned 이벤트 발행이 지연됩니다.");
+        }
+        else
+        {
+            if (m_RateLimitQuery != null)
+            {
+                m_RateLimitQuery.PutOnCooldown();
+            }
+            
+            Debug.Log("[MapSpawnerFacade] GridSpawned 이벤트 발행");
+            
+            // 약간의 지연 후 이벤트 발행 (의존성이 제대로 초기화될 시간 제공)
+            StartCoroutine(InvokeGridSpawnedDelayed());
+        }
+    }
     
+    private IEnumerator InvokeGridSpawnedDelayed()
+    {
+        // 약간의 지연 추가 (한 프레임 기다림)
+        yield return null;
+        
+        Debug.Log("[MapSpawnerFacade] GridSpawned 이벤트를 발행합니다.");
+        
+        if (GridSpawned != null)
+        {
+            GridSpawned.Invoke();
+        }
+        else
+        {
+            Debug.LogWarning("[MapSpawnerFacade] GridSpawned 이벤트에 구독자가 없습니다.");
+        }
+    }
 
 
     #endregion
@@ -222,12 +319,16 @@ public class MapSpawnerFacade : NetworkBehaviour
     /// <summary>
     /// 맵 인스턴스를 설정합니다.
     /// </summary>
-    private void ConfigureMapInstance(string mapName)
+    private void ConfigureMapInstance()
     {
-        _mapInstance.transform.localPosition = Vector3.zero;
-        _mapInstance.transform.localScale = new Vector3(1, 1, _mapInstance.transform.localScale.z);
-        _mapInstance.name = $"BasicGame_{mapName}";
-        Debug.Log($"[MapSpawnerFacade] 인스턴스화 성공: {_mapInstance.name}");
+        _mapSpawner.transform.localPosition = Vector3.zero;
+        _mapSpawner.transform.localScale = new Vector3(1, 1, _mapSpawner.transform.localScale.z);
+        Debug.Log($"[MapSpawnerFacade] 인스턴스화 성공: {_mapSpawner.name}");
+
+        
+        // _mapInstance.transform.localPosition = Vector3.zero;
+        // _mapInstance.transform.localScale = new Vector3(1, 1, _mapInstance.transform.localScale.z);
+        // Debug.Log($"[MapSpawnerFacade] 인스턴스화 성공: {_mapInstance.name}");
     }
   
     /// <summary>

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Unity.Assets.Scripts.Infrastructure;
 using Unity.Netcode;
 using UnityEngine;
@@ -8,13 +9,19 @@ public class NetUtils
 {
 
     [Inject] private NetworkManager _networkManager;
-    public ulong LocalID()
+    private readonly Dictionary<string, GameObject> _registeredPrefabs = new Dictionary<string, GameObject>();
+
+    public ulong LocalID_P()
     {
         return _networkManager.LocalClientId;
     }
+    public static ulong LocalID()
+    {
+        return NetworkManager.Singleton.LocalClientId;
+    }
 
 
-    public void HostAndClientMethod(Action clientAction, Action HostAction)
+    public void HostAndClientMethod_P(Action clientAction, Action HostAction)
     {
         if (_networkManager == null)
         {
@@ -25,6 +32,12 @@ public class NetUtils
         if (_networkManager.IsClient) clientAction?.Invoke();
         else if (_networkManager.IsServer) HostAction?.Invoke();
     }
+   public static void HostAndClientMethod(Action clientAction, Action HostAction)
+    {
+        if (NetworkManager.Singleton.IsClient) clientAction?.Invoke();
+        else if (NetworkManager.Singleton.IsServer) HostAction?.Invoke();
+    }
+
 
     public  bool TryGetSpawnedObject(ulong networkObjectId, out NetworkObject spawnedObject)
     {
@@ -51,70 +64,82 @@ public class NetUtils
         return false;
     }
 // NetUtils 클래스에 추가
-    public void InitializeNetworkObject(GameObject targetObject)
+    // 기존 InitializeNetworkObject 메소드 (현재 사용 중인)
+    public void InitializeNetworkObject(GameObject gameObject)
     {
-        if (targetObject == null)
+        if (gameObject == null)
         {
-            Debug.LogError("[NetUtils] 대상 GameObject가 null입니다!");
+            Debug.LogError("[NetUtils] 초기화할 게임 오브젝트가 null입니다.");
             return;
         }
-        
-        var netObj = targetObject.GetComponent<NetworkObject>() ?? targetObject.AddComponent<NetworkObject>();
-        
-        // 오브젝트 이름에 기반한 고유한 해시 코드 생성
-        string uniqueString = $"{targetObject.name}_{DateTime.Now.Ticks}_{UnityEngine.Random.Range(0, 10000)}";
-        int hashCode = uniqueString.GetHashCode();
-        uint uintHash = (uint)(hashCode & 0x7FFFFFFF); // 음수 제거
-        
-        // NetworkPrefabHandler에 등록 (씬 간 ID 충돌 방지)
-        if (_networkManager != null && _networkManager.PrefabHandler != null)
+
+        NetworkObject networkObject = gameObject.GetComponent<NetworkObject>();
+        if (networkObject == null)
         {
-            // 고유 ID를 가진 프리팹으로 등록
-            var prefabHandler = _networkManager.PrefabHandler;
-            Type handlerType = prefabHandler.GetType();
-            
-            // 리플렉션으로 RegisteredPrefabOverrideCount 속성 접근 시도
-            var countProperty = handlerType.GetProperty("RegisteredPrefabsCount", 
-                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | 
-                System.Reflection.BindingFlags.NonPublic);
-            
-            if (countProperty != null)
+            networkObject = gameObject.AddComponent<NetworkObject>();
+            Debug.Log($"[NetUtils] {gameObject.name}에 NetworkObject 컴포넌트를 추가했습니다.");
+        }
+
+
+        if ( _networkManager != null && _networkManager.IsServer && !networkObject.IsSpawned)
+        {
+            try
             {
-                int prefabCount = (int)countProperty.GetValue(prefabHandler);
-                uintHash = (uint)(prefabCount + 1) * 100; // 단순히 100의 배수로 증가하는 ID 생성
+                networkObject.Spawn();
+                Debug.Log($"[NetUtils] {gameObject.name}을 네트워크에 스폰했습니다.");
             }
-        }
-        
-        // NetworkObject 클래스가 GlobalObjectIdHash에 대한 setter를 제공하지 않으므로
-        // 리플렉션 사용
-        try
-        {
-            var field = typeof(NetworkObject).GetField("GlobalObjectIdHash", 
-                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-                
-            if (field != null)
+            catch (Exception ex)
             {
-                field.SetValue(netObj, uintHash);
-                Debug.Log($"[NetUtils] {targetObject.name}에 ID 할당됨: {uintHash}");
+                Debug.LogError($"[NetUtils] {gameObject.name} 스폰 중 오류 발생: {ex.Message}");
             }
-        }
-        catch (Exception ex)
-        {
-            Debug.LogError($"[NetUtils] ID 할당 중 오류: {ex.Message}");
-        }
-        
-        // 서버인 경우에만 스폰
-        if (_networkManager != null && _networkManager.IsServer && !netObj.IsSpawned)
-        {
-            netObj.Spawn();
-            Debug.Log($"[NetUtils] {targetObject.name}의 네트워크 오브젝트 스폰 완료 (서버)");
-        }
-        else
-        {
-            Debug.Log($"[NetUtils] {targetObject.name}의 네트워크 오브젝트 설정 완료 (클라이언트)");
         }
     }
 
+    // 런타임에 NetworkManager에 프리팹 등록
+    public void RegisterNetworkPrefabRuntime(GameObject gameObject)
+    {
+        if (_networkManager == null || gameObject == null) return;
+
+        string prefabName = gameObject.name;
+        
+        // 이미 등록된 프리팹인지 확인
+        if (_registeredPrefabs.ContainsKey(prefabName))
+        {
+            Debug.Log($"[NetUtils] {prefabName}은 이미 NetworkManager에 등록되어 있습니다.");
+            return;
+        }
+
+        try
+        {
+            // NetworkPrefab 생성 및 등록
+            NetworkObject netObj = gameObject.GetComponent<NetworkObject>();
+            if (netObj != null)
+            {
+                // 직접 NetworkConfig.Prefabs 목록에 추가
+                NetworkPrefab networkPrefab = new NetworkPrefab
+                {
+                    Prefab = gameObject
+                };
+
+                // NetworkManager.PrefabHandler.AddHandler 사용하기
+                NetworkPrefab newPrefab = new NetworkPrefab { Prefab = gameObject };
+                
+                _networkManager.NetworkConfig.Prefabs.Add(networkPrefab);
+                _registeredPrefabs.Add(prefabName, gameObject);
+            }
+            else
+            {
+                Debug.LogWarning($"[NetUtils] {prefabName}에는 NetworkObject 컴포넌트가 없습니다.");
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[NetUtils] 프리팹 등록 중 오류: {e.Message}\n{e.StackTrace}");
+        }
+    }
+}
+
+// 동적으로 생성된 오브젝트를 위한 커스텀 PrefabInstanceHandler
     // public static string RarityColor(Rarity rarity)
     // {
     //     switch (rarity)
@@ -128,4 +153,4 @@ public class NetUtils
     //     }
     //     return "";
     // }
-}
+// }
