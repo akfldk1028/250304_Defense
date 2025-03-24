@@ -85,11 +85,59 @@ namespace Unity.Assets.Scripts.Objects
             CreatureType = CharacterTypeEnum.Monster;
         }
 
-        private void Update()
+        // private void Update()
+        // {
+        //     if (IsServer)
+        //     {
+        //         HandleMovement();
+        //     }
+        // }
+        public NetworkVariable<Vector3> NetworkPosition = new NetworkVariable<Vector3>();
+        private bool positionInitialized = false;
+
+        // FixedUpdate 메소드 수정
+        private void FixedUpdate()
         {
-            HandleMovement();
+            if (IsServer)
+            {
+                HandleServerMovement();
+            }
+            else if (IsClient)
+            {
+                HandleClientMovement();
+            }
         }
 
+        private void HandleServerMovement()
+        {
+            if (_moveList.Count == 0 || target_Value >= _moveList.Count) return;
+
+            transform.position = Vector2.MoveTowards(transform.position, _moveList[target_Value], Time.deltaTime * MoveSpeed.Value);
+            NetworkPosition.Value = transform.position; // 위치 업데이트
+
+            if (Vector2.Distance(transform.position, _moveList[target_Value]) <= 0.0f)
+            {
+                target_Value++;
+                if (target_Value >= 4) // 하드코딩된 4 사용
+                {
+                    target_Value = 0;
+                }
+            }
+        }
+
+        private void HandleClientMovement()
+        {
+            if (!positionInitialized && NetworkPosition.Value != Vector3.zero)
+            {
+                positionInitialized = true;
+            }
+
+            if (positionInitialized)
+            {
+                // 위치 강제 설정 (보간 없이)
+                transform.position = NetworkPosition.Value;
+            }
+}
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
@@ -129,12 +177,24 @@ namespace Unity.Assets.Scripts.Objects
         #region Movement
         private void HandleMovement()
         {
+            // ClientMonster처럼 간단한 체크
             if (_moveList.Count == 0 || target_Value >= _moveList.Count) return;
 
+            // ClientMonster와 유사한 이동 방식 사용
             transform.position = Vector2.MoveTowards(transform.position, _moveList[target_Value], Time.deltaTime * MoveSpeed.Value);
+            
             if (Vector2.Distance(transform.position, _moveList[target_Value]) <= 0.0f)
             {
                 target_Value++;
+                
+                // ClientMonster와 유사한 스프라이트 flip 처리
+                // SpriteRenderer spriteRenderer = GetComponent<SpriteRenderer>();
+                // if (spriteRenderer != null)
+                // {
+                //     spriteRenderer.flipX = target_Value >= 3;
+                // }
+                
+                // ClientMonster와 유사한 경로 순환 처리 (하드코딩된 4 사용)
                 if (target_Value >= 4)
                 {
                     target_Value = 0;
@@ -144,16 +204,21 @@ namespace Unity.Assets.Scripts.Objects
 
         public void SetMoveList(List<Vector2> moveList)
         {
-            _moveList.Clear();
-            foreach (var pos in moveList)
+            if (moveList == null || moveList.Count == 0)
             {
-                _moveList.Add(new Vector2(pos.x, pos.y));
+                Debug.LogError($"[ServerMonster:{MonsterId.Value}] SetMoveList: 유효하지 않은 경로 데이터");
+                return;
             }
             
-            Debug.Log($"[ServerMonster] 이동 경로 설정됨: {_moveList.Count}개 포인트");
+            // ClientMonster처럼 직접 할당 (깊은 복사 없이)
+            _moveList = moveList;
+            
+            // 항상 첫 번째 포인트부터 시작
             target_Value = 0;
+            
+            Debug.Log($"[ServerMonster:{MonsterId.Value}] 새 경로 설정 완료: 포인트 수={_moveList.Count}, 시작 인덱스={target_Value}");
         }
-        #endregion
+                #endregion
 
      
 

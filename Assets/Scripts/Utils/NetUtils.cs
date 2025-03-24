@@ -38,6 +38,12 @@ public class NetUtils
         else if (NetworkManager.Singleton.IsServer) HostAction?.Invoke();
     }
 
+    public  bool TryGetSpawnedObject_P(ulong networkObjectId, out NetworkObject spawnedObject)
+    {
+        spawnedObject = null;
+        
+        return _networkManager.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out spawnedObject);
+    }
 
     public static bool TryGetSpawnedObject(ulong networkObjectId, out NetworkObject spawnedObject)
     {

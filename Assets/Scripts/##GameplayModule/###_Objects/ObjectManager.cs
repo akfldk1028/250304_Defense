@@ -192,7 +192,7 @@ public class ObjectManager
 		return go;
 	}
 
-	public T Spawn<T>(ulong clientId, int templateID, string prefabName) where T : BaseObject
+	public T Spawn<T>(ulong clientId, int templateID, string prefabName, GameObject parent) where T : BaseObject
 	{
 		// 기본 위치 (0,0,0)으로 스폰
 		Vector3Int cellPos = new Vector3Int(0, 0, 0);
@@ -200,20 +200,21 @@ public class ObjectManager
 		return Spawn<T>(cellPos, clientId, templateID, prefabName);
 	}
 
-	public T Spawn<T>(Vector3Int cellPos, ulong clientId = 0, int templateID = 0, string prefabName = "") where T : BaseObject
+	public T Spawn<T>(Vector3Int cellPos, ulong clientId = 0, int templateID = 0, string prefabName = "", GameObject parent= null) where T : BaseObject
 	{
 		Vector3 spawnPos = new Vector3(cellPos.x, cellPos.y, 0);
 		return Spawn<T>(spawnPos, clientId, templateID, prefabName);
 	}
 	public event Action<ulong, ulong> OnMonsterSpawned; // (networkObjectId, clientId)
 
-	public T Spawn<T>(Vector3 position, ulong clientID = 0, int templateID = 0, string prefabName = "") where T : BaseObject
+	public T Spawn<T>(Vector3 position, ulong clientID = 0, int templateID = 0, string prefabName = "", GameObject parent = null) where T : BaseObject
 	{
 		Debug.Log($"[ObjectManager] Spawn<T> 호출: {prefabName}");
 		Debug.Log($"[ObjectManager] Spawn<T> 호출: {position}");
 
 		prefabName = typeof(T).Name;
-
+		// childTransform.setChild
+//  mapInstance.transform.Find("Spawner_Client");
 		// 풀링 시스템을 통해 오브젝트 생성
 		GameObject go = _resourceManager.Instantiate(prefabName, pooling: true, position: position);
 		if (go == null)
@@ -222,15 +223,6 @@ public class ObjectManager
 			return null;
 		}
 		go.name = prefabName;
-		
-		// 타입에 따라 적절한 부모 오브젝트 설정
-
-		// 다른 타입의 경우 여기에 추가
-		// else if (typeof(T) == typeof(Hero))
-		// {
-		//     go.transform.SetParent(HeroRoot);
-		// }
-		
 		BaseObject obj = go.GetComponent<BaseObject>();
 		if (obj == null)
 		{
@@ -273,8 +265,6 @@ public class ObjectManager
 
 			if (creature.CreatureType == CharacterTypeEnum.Monster)
 			{
-    			MonsterRoot.SetParent(obj.transform, false);
-
 
 				CreatureData = DataLoader.instance.MonsterDic[templateID];
 				

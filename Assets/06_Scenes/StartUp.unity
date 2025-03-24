@@ -723,7 +723,7 @@ Transform:
   m_GameObject: {fileID: 881987299}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 447.72812, y: 307.7716, z: -2.1982026}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1473,7 +1473,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5281051099969801277, guid: 722667b0f44632f48a9e041379de3974, type: 3}
       propertyPath: MaxConnectedPlayers
-      value: 1
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 5555671412201182599, guid: 722667b0f44632f48a9e041379de3974, type: 3}
       propertyPath: m_Name

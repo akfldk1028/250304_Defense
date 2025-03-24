@@ -1,5 +1,4 @@
-﻿
-using System;
+﻿using System;
 using Unity.Netcode;
 using UnityEngine;
 using VContainer;
@@ -29,6 +28,7 @@ class HostingState : OnlineState
     // 연결 상태 체크 코루틴
     private Coroutine m_ConnectionStatusCheckCoroutine;
     private float lastSceneLoadAttemptTime = 0f;
+    private bool _isSceneLoaded = false;
 
     public override void Enter()
     {
@@ -82,14 +82,14 @@ class HostingState : OnlineState
             
             Debug.Log($"[HostingState] 플레이어 상태 체크: 로비 유저={currentPlayerCount}, 연결된 클라이언트={connectedClientCount}");
             
-            // 충분한 플레이어가 있고, 마지막 씬 로드 시도 후 5초가 지났고, 모든 클라이언트가 연결됐는지 확인
-            if (currentPlayerCount >= m_ConnectionManager.MaxConnectedPlayers && 
-                connectedClientCount >= currentPlayerCount &&  // 이 부분이 핵심: 모든 클라이언트가 연결됐는지 확인
-                Time.time - lastSceneLoadAttemptTime > 5f)
+            // 씬이 아직 로드되지 않았고, 충분한 플레이어가 있고, 모든 클라이언트가 연결됐는지 확인
+            if (!_isSceneLoaded && 
+                currentPlayerCount >= m_ConnectionManager.MaxConnectedPlayers && 
+                connectedClientCount >= currentPlayerCount)
             {
                 Debug.Log("[HostingState] 모든 클라이언트 연결 확인됨 - 게임 씬으로 전환");
-                lastSceneLoadAttemptTime = Time.time;
                 _sceneManagerEx.LoadScene(EScene.BasicGame.ToString(), useNetworkSceneManager: true);
+                _isSceneLoaded = true;
             }
             
             yield return new WaitForSeconds(2.0f);
@@ -105,6 +105,8 @@ class HostingState : OnlineState
             m_ConnectionManager.StopCoroutine(m_ConnectionStatusCheckCoroutine);
             m_ConnectionStatusCheckCoroutine = null;
         }
+        
+        _isSceneLoaded = false;
         
         // 세션 정리
         SessionManager<SessionPlayerData>.Instance.OnServerEnded();
