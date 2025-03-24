@@ -8,8 +8,6 @@ using System;
 using Unity.Assets.Scripts.Objects;
 using Unity.Netcode;
 using Unity.Assets.Scripts.Data;
-// ServerMonsterFactory는 Unity.Assets.Scripts.Objects 네임스페이스에 있습니다.
-// using Unity.Assets.Scripts.Factories;
 
 public class BasicGameLifetimeScope : LifetimeScope
 {
@@ -42,8 +40,13 @@ public class BasicGameLifetimeScope : LifetimeScope
         // 기본 매니저 등록
         builder.Register<ObjectManager>(Lifetime.Singleton);
         builder.Register<MapManager>(Lifetime.Singleton);
-        builder.Register<BasicGameState>(Lifetime.Singleton);
-       
+
+
+
+        builder.RegisterComponentInHierarchy<BasicGameState>();
+
+
+
         // 프리팹을 로드하고 인스턴스화하여 등록 (ResourceManager가 있는 경우)
         MapSpawnerFacade mapSpawnerFacade = null;
         ObjectManagerFacade objectManagerFacade = null;
@@ -68,11 +71,21 @@ public class BasicGameLifetimeScope : LifetimeScope
                         
                         // DontDestroyOnLoad 설정
                         DontDestroyOnLoad(mapSpawnerInstance);
+                        
+                        // NetworkObject 스폰 로직 수정 - 서버일 때만 스폰
                         NetworkObject networkObject = mapSpawnerInstance.GetComponent<NetworkObject>();
-                        if (!networkObject.IsSpawned)
+                        if (networkObject != null && !networkObject.IsSpawned)
                         {
-                        networkObject.Spawn();
-                            Debug.Log($"[BasicGameLifetimeScope] ObjectManagerFacade NetworkObject 스폰 완료 - NetworkObjectId: {networkObject.NetworkObjectId}");
+                            // 서버일 때만 스폰
+                            if (NetworkManager.Singleton.IsServer)
+                            {
+                                networkObject.Spawn();
+                                Debug.Log($"[BasicGameLifetimeScope] MapSpawnerFacade NetworkObject 스폰 완료 - NetworkObjectId: {networkObject.NetworkObjectId}");
+                            }
+                            else
+                            {
+                                Debug.Log("[BasicGameLifetimeScope] 클라이언트에서는 NetworkObject를 스폰하지 않습니다 (MapSpawnerFacade)");
+                            }
                         }
                     }
                     else
@@ -104,11 +117,21 @@ public class BasicGameLifetimeScope : LifetimeScope
                             objectManagerFacade._mapSpawnerFacade = mapSpawnerFacade;
                             Debug.Log("[BasicGameLifetimeScope] ObjectManagerFacade에 MapSpawnerFacade 직접 설정");
                         }
+                        
+                        // NetworkObject 스폰 로직 수정 - 서버일 때만 스폰
                         NetworkObject networkObject = objectSpawnerInstance.GetComponent<NetworkObject>();
-                        if (!networkObject.IsSpawned)
+                        if (networkObject != null && !networkObject.IsSpawned)
                         {
-                        networkObject.Spawn();
-                            Debug.Log($"[BasicGameLifetimeScope] ObjectManagerFacade NetworkObject 스폰 완료 - NetworkObjectId: {networkObject.NetworkObjectId}");
+                            // 서버일 때만 스폰
+                            if (NetworkManager.Singleton.IsServer)
+                            {
+                                networkObject.Spawn();
+                                Debug.Log($"[BasicGameLifetimeScope] ObjectManagerFacade NetworkObject 스폰 완료 - NetworkObjectId: {networkObject.NetworkObjectId}");
+                            }
+                            else
+                            {
+                                Debug.Log("[BasicGameLifetimeScope] 클라이언트에서는 NetworkObject를 스폰하지 않습니다 (ObjectManagerFacade)");
+                            }
                         }
                     }
                     else
@@ -116,8 +139,6 @@ public class BasicGameLifetimeScope : LifetimeScope
                         Debug.LogError("[BasicGameLifetimeScope] ObjectSpawner 프리팹에 ObjectManagerFacade 컴포넌트가 없습니다");
                     }
                 }
-
-                                         
             }
             catch (Exception ex)
             {
@@ -150,8 +171,6 @@ public class BasicGameLifetimeScope : LifetimeScope
                     Debug.LogError($"[BasicGameLifetimeScope] MapSpawnerFacade 참조 또는 초기화 중 오류: {e.Message}");
                 }
                 
-
-
                 // ObjectManagerFacade 참조, ObjectManager 설정 및 초기화
                 try {
                     var objectManagerFacadeRef = container.Resolve<ObjectManagerFacade>();
@@ -164,12 +183,9 @@ public class BasicGameLifetimeScope : LifetimeScope
                     Debug.LogError($"[BasicGameLifetimeScope] ObjectManagerFacade 참조 또는 초기화 중 오류: {e.Message}");
                 }
                 
-
-
                 // BasicGameState 참조 및 초기화
                 try {
                     var basicGameState = container.Resolve<BasicGameState>();
-
                     basicGameState.Initialize();
                 }
                 catch (Exception e) {

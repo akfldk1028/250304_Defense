@@ -245,7 +245,7 @@ public class ObjectManager
 
 		try 
 		{
-			if (!networkObject.IsSpawned)
+			if (!networkObject.IsSpawned && NetworkManager.Singleton.IsServer)
 			{
 				networkObject.Spawn();
 				Debug.Log($"[ObjectManager] NetworkObject 스폰 완료: {networkObject.NetworkObjectId}");

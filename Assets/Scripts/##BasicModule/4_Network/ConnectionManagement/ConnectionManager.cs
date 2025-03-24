@@ -385,52 +385,61 @@ namespace Unity.Assets.Scripts.Network
         {
             m_CurrentState.OnUserRequestedShutdown();
         }
-        
+
         [ClientRpc]
         public void LoadSceneClientRpc(string sceneName)
         {
             m_DebugClassFacade?.LogInfo(GetType().Name, $"[ConnectionManager] 씬 전환 RPC 수신: {sceneName}");
             
-            if (m_NetworkManager != null && m_NetworkManager.SceneManager != null)
-            {
-                try
-                {
-                    m_DebugClassFacade?.LogInfo(GetType().Name, $"[ConnectionManager] NetworkSceneManager를 통해 {sceneName} 씬 로드 시작");
-                    m_NetworkManager.SceneManager.LoadScene(sceneName, UnityEngine.SceneManagement.LoadSceneMode.Single);
-                    m_DebugClassFacade?.LogInfo(GetType().Name, $"[ConnectionManager] NetworkSceneManager 통한 씬 로드 요청 완료: {sceneName}");
-                }
-                catch (Exception e)
-                {
-                    m_DebugClassFacade?.LogError(GetType().Name, $"[ConnectionManager] NetworkSceneManager를 통한 씬 로드 실패: {e.Message}");
+            // 클라이언트는 이 RPC를 수신만 하고 직접 씬을 로드하지 않음
+            // 서버가 NetworkSceneManager를 통해 씬을 로드하면 자동으로 클라이언트에도 적용됨
+            m_DebugClassFacade?.LogInfo(GetType().Name, $"[ConnectionManager] 씬 전환 RPC 수신 완료. 서버의 NetworkSceneManager 씬 전환을 기다립니다.");
+        }        
+        // [ClientRpc]
+        // public void LoadSceneClientRpc(string sceneName)
+        // {
+        //     m_DebugClassFacade?.LogInfo(GetType().Name, $"[ConnectionManager] 씬 전환 RPC 수신: {sceneName}");
+            
+        //     if (m_NetworkManager != null && m_NetworkManager.SceneManager != null)
+        //     {
+        //         try
+        //         {
+        //             m_DebugClassFacade?.LogInfo(GetType().Name, $"[ConnectionManager] NetworkSceneManager를 통해 {sceneName} 씬 로드 시작");
+        //             m_NetworkManager.SceneManager.LoadScene(sceneName, UnityEngine.SceneManagement.LoadSceneMode.Single);
+        //             m_DebugClassFacade?.LogInfo(GetType().Name, $"[ConnectionManager] NetworkSceneManager 통한 씬 로드 요청 완료: {sceneName}");
+        //         }
+        //         catch (Exception e)
+        //         {
+        //             m_DebugClassFacade?.LogError(GetType().Name, $"[ConnectionManager] NetworkSceneManager를 통한 씬 로드 실패: {e.Message}");
                     
-                    // 실패 시 직접 씬 로드 시도
-                    try
-                    {
-                        m_DebugClassFacade?.LogWarning(GetType().Name, $"[ConnectionManager] 직접 {sceneName} 씬 로드 시도");
-                        UnityEngine.SceneManagement.SceneManager.LoadScene(sceneName);
-                    }
-                    catch (Exception e2)
-                    {
-                        m_DebugClassFacade?.LogError(GetType().Name, $"[ConnectionManager] 직접 씬 로드도 실패: {e2.Message}");
-                    }
-                }
-            }
-            else
-            {
-                m_DebugClassFacade?.LogError(GetType().Name, "[ConnectionManager] NetworkManager 또는 SceneManager가 null입니다.");
+        //             // 실패 시 직접 씬 로드 시도
+        //             try
+        //             {
+        //                 m_DebugClassFacade?.LogWarning(GetType().Name, $"[ConnectionManager] 직접 {sceneName} 씬 로드 시도");
+        //                 UnityEngine.SceneManagement.SceneManager.LoadScene(sceneName);
+        //             }
+        //             catch (Exception e2)
+        //             {
+        //                 m_DebugClassFacade?.LogError(GetType().Name, $"[ConnectionManager] 직접 씬 로드도 실패: {e2.Message}");
+        //             }
+        //         }
+        //     }
+        //     else
+        //     {
+        //         m_DebugClassFacade?.LogError(GetType().Name, "[ConnectionManager] NetworkManager 또는 SceneManager가 null입니다.");
                 
-                // NetworkManager가 null이면 직접 씬 로드 시도
-                try
-                {
-                    m_DebugClassFacade?.LogWarning(GetType().Name, $"[ConnectionManager] NetworkManager가 null이므로 직접 {sceneName} 씬 로드 시도");
-                    UnityEngine.SceneManagement.SceneManager.LoadScene(sceneName);
-                }
-                catch (Exception e)
-                {
-                    m_DebugClassFacade?.LogError(GetType().Name, $"[ConnectionManager] 직접 씬 로드 실패: {e.Message}");
-                }
-            }
-        }
+        //         // NetworkManager가 null이면 직접 씬 로드 시도
+        //         try
+        //         {
+        //             m_DebugClassFacade?.LogWarning(GetType().Name, $"[ConnectionManager] NetworkManager가 null이므로 직접 {sceneName} 씬 로드 시도");
+        //             UnityEngine.SceneManagement.SceneManager.LoadScene(sceneName);
+        //         }
+        //         catch (Exception e)
+        //         {
+        //             m_DebugClassFacade?.LogError(GetType().Name, $"[ConnectionManager] 직접 씬 로드 실패: {e.Message}");
+        //         }
+        //     }
+        // }
 
         
     }

@@ -39,23 +39,23 @@ public class NetUtils
     }
 
 
-    public  bool TryGetSpawnedObject(ulong networkObjectId, out NetworkObject spawnedObject)
+    public static bool TryGetSpawnedObject(ulong networkObjectId, out NetworkObject spawnedObject)
     {
         spawnedObject = null;
         
-        if (_networkManager == null)
+        if (NetworkManager.Singleton == null)
         {
             Debug.LogError("[NetUtils] NetworkManager.Singleton이 null입니다!");
             return false;
         }
         
-        if (_networkManager.SpawnManager == null)
+        if (NetworkManager.Singleton.SpawnManager == null)
         {
             Debug.LogError("[NetUtils] NetworkManager.Singleton.SpawnManager가 null입니다!");
             return false;
         }
         
-        return _networkManager.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out spawnedObject);
+        return NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out spawnedObject);
     }
 
     public bool IsClientCheck(ulong clientId)

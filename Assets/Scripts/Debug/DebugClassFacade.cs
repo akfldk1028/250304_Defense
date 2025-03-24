@@ -50,7 +50,7 @@ public class DebugClassFacade
         EnableClass("StartingHostState", Color.magenta);
         EnableClass("HostingState", Color.magenta);
         EnableClass("ConnectionState", Color.magenta);
-
+        EnableClass("SceneManagerEx", Color.magenta);
         
             // s_instance.EnableClass(typeof(UIManager), Color.cyan);
         // 순환 참조 방지: 생성자에서 DebugManager.Instance를 직접 호출하지 않음

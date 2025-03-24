@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using static Define;
 using VContainer;
@@ -7,6 +8,7 @@ using Unity.Netcode;
 using System;
 using Unity.Assets.Scripts.Resource;
 using Unity.Assets.Scripts.Scene;
+using Unity.Netcode.Components;
 
 /// <summary>
 /// 스폰 및 그리드 관리 기능을 제공하는 클래스입니다.
@@ -44,6 +46,7 @@ public class ObjectManagerFacade : NetworkBehaviour
     public void Awake()
     {
         Debug.Log("[ObjectManagerFacade] Awake 호출됨");
+            //TODO ObjectSpwaner 에서 그냥 바로 하위객체로 하는게맞을듯듯 이름을 @Monster? 
     }
   
     public void Initialize()
@@ -79,7 +82,7 @@ public class ObjectManagerFacade : NetworkBehaviour
         // RateLimitCooldown 초기화
         if (m_RateLimitQuery == null)
         {
-            m_RateLimitQuery = new RateLimitCooldown(3f);
+            m_RateLimitQuery = new RateLimitCooldown(10f);
             Debug.Log("[ObjectManagerFacade] RateLimitCooldown 초기화 완료");
         }
         
@@ -132,11 +135,32 @@ public class ObjectManagerFacade : NetworkBehaviour
     {
         if (!_networkManager.IsServer) return;
 
-        if (_netUtils.TryGetSpawnedObject(data.NetworkObjectId, out NetworkObject monsterNetworkObject))
+        // Reacquire MapSpawnerFacade if needed
+        if (_mapSpawnerFacade == null)
+        {
+            Debug.LogWarning("[ObjectManagerFacade] _mapSpawnerFacade null in OnNetworkObjectSpawned, trying to resolve");
+            if (_container != null)
+            {
+                _mapSpawnerFacade = _container.Resolve<MapSpawnerFacade>();
+            }
+            
+            if (_mapSpawnerFacade == null)
+            {
+                _mapSpawnerFacade = GameObject.FindObjectOfType<MapSpawnerFacade>();
+                if (_mapSpawnerFacade == null)
+                {
+                    Debug.LogError("[ObjectManagerFacade] Could not find MapSpawnerFacade");
+                    return;
+                }
+            }
+        }
+
+        if (NetUtils.TryGetSpawnedObject(data.NetworkObjectId, out NetworkObject monsterNetworkObject))
         {
             SetupMonsterPosition(monsterNetworkObject);
         }
     }
+
 
     private void SetupMonsterPosition(NetworkObject monsterNetworkObject)
     {
@@ -221,10 +245,11 @@ public class ObjectManagerFacade : NetworkBehaviour
 
 
     private IEnumerator SpawnMonsterRoutine(bool getBoss, int templateID)
-    {
+    {   
 
+        m_RateLimitQuery.PutOnCooldown();
         Debug.Log("[ObjectManagerFacade] SpawnMonsterRoutine 시작");
-        yield return new WaitForSeconds(getBoss == false ? 0.1f : 0.1f);
+        yield return new WaitForSeconds(getBoss == false ? 0.5f : 0.5f );
 
         NetUtils.HostAndClientMethod(
                 () => ServerMonsterSpawnServerRpc(NetUtils.LocalID(), getBoss , templateID),
@@ -283,66 +308,81 @@ public class ObjectManagerFacade : NetworkBehaviour
     }
 
 
-    [ClientRpc]
-    public void MonsterSetClientRpc(ulong networkObjectId, ulong clientId) 
+[ClientRpc]
+public void MonsterSetClientRpc(ulong networkObjectId, ulong clientId) 
+{
+    try 
     {
-        try 
+        // MapSpawnerFacade 재확보
+        if (_mapSpawnerFacade == null)
         {
-            Debug.Log($"[ObjectManagerFacade] MonsterSetClientRpc 호출됨 - NetworkID: {networkObjectId}, ClientID: {clientId}");
-            
-            if (_netUtils == null)
-            {
-                Debug.LogError("[ObjectManagerFacade] _netUtils가 null입니다");
-                return;
-            }
+            Debug.LogWarning("[ObjectManagerFacade] _mapSpawnerFacade가 null입니다, 찾는 중");
+            _mapSpawnerFacade = GameObject.FindObjectOfType<MapSpawnerFacade>();
             
             if (_mapSpawnerFacade == null)
             {
-                Debug.LogError("[ObjectManagerFacade] _mapSpawnerFacade가 null입니다");
+                Debug.LogError("[ObjectManagerFacade] 씬에서 MapSpawnerFacade를 찾을 수 없습니다");
                 return;
             }
-            
-            if (_netUtils.TryGetSpawnedObject(networkObjectId, out NetworkObject monsterNetworkObject)) 
+        }
+
+        if (NetUtils.TryGetSpawnedObject(networkObjectId, out NetworkObject monsterNetworkObject)) 
+        {
+            var moveList = clientId == NetUtils.LocalID() ? 
+                _mapSpawnerFacade.Player_move_list : 
+                _mapSpawnerFacade.Other_move_list;
+
+            if (moveList == null)
             {
-                var moveList = clientId == NetUtils.LocalID() ? _mapSpawnerFacade.Player_move_list : _mapSpawnerFacade.Other_move_list;
-                
-                if (moveList == null)
+                Debug.LogError("[ObjectManagerFacade] moveList가 null입니다");
+                return;
+            }
+
+            if (moveList.Count > 0)
+            {
+                // 위치 설정 전에 NetworkTransform 조정
+                var networkTransform = monsterNetworkObject.GetComponent<NetworkTransform>();
+                if (networkTransform != null)
                 {
-                    Debug.LogError("[ObjectManagerFacade] moveList가 null입니다");
-                    return;
+                    // 보간 오류 방지를 위한 설정 추가
+                    networkTransform.PositionThreshold = 0.05f;  // 임계값 증가
                 }
                 
-                if (moveList.Count > 0)
+                // 위치를 부드럽게 변경
+                StartCoroutine(DelayedPositionUpdate(monsterNetworkObject, moveList[0], 0.02f));
+                
+                // 이동 경로 설정 로직 분리
+                var serverMonster = monsterNetworkObject.GetComponent<ServerMonster>();
+                if (serverMonster != null)
                 {
-                    monsterNetworkObject.transform.position = moveList[0];
-                    
-                    var serverMonster = monsterNetworkObject.GetComponent<ServerMonster>();
-                    if (serverMonster != null)
-                    {
-                        serverMonster.SetMoveList(moveList);
-                        Debug.Log($"[ObjectManagerFacade] 몬스터 이동 경로 설정 완료: {networkObjectId}");
-                    }
-                    else
-                    {
-                        Debug.LogError($"[ObjectManagerFacade] ServerMonster 컴포넌트를 찾을 수 없습니다: {networkObjectId}");
-                    }
-                }
-                else
-                {
-                    Debug.LogError($"[ObjectManagerFacade] 이동 경로 리스트가 비어 있습니다. ClientID: {clientId}, LocalID: {NetUtils.LocalID()}");
+                    serverMonster.SetMoveList(moveList);
                 }
             }
             else
             {
-                Debug.LogError($"[ObjectManagerFacade] NetworkObjectId {networkObjectId}에 해당하는 객체를 찾을 수 없습니다");
+                Debug.LogError($"[ObjectManagerFacade] 이동 경로 리스트가 비어 있습니다. ClientID: {clientId}, LocalID: {NetUtils.LocalID()}");
             }
         }
-        catch (Exception ex)
+        else
         {
-            Debug.LogError($"[ObjectManagerFacade] MonsterSetClientRpc 예외 발생: {ex.Message}\n{ex.StackTrace}");
+            Debug.LogError($"[ObjectManagerFacade] NetworkObjectId {networkObjectId}에 해당하는 객체를 찾을 수 없습니다");
         }
     }
+    catch (Exception ex)
+    {
+        Debug.LogError($"[ObjectManagerFacade] MonsterSetClientRpc 예외 발생: {ex.Message}\n{ex.StackTrace}");
+    }
+}
 
+// 위치 업데이트를 지연시키는 코루틴 추가
+private IEnumerator DelayedPositionUpdate(NetworkObject obj, Vector3 targetPosition, float delay)
+{
+    yield return new WaitForSeconds(delay);
+    if (obj != null && obj.IsSpawned)
+    {
+        obj.transform.position = targetPosition;
+    }
+}
 
     //    if (moveList.Count > 0)
     //         {

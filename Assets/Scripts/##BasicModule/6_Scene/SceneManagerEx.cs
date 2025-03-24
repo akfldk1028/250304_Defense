@@ -173,50 +173,28 @@ namespace Unity.Assets.Scripts.Scene
         {
             _debugClassFacade?.LogInfo(GetType().Name, $"LoadScene 호출: {sceneName}, 네트워크={useNetworkSceneManager}");
             
-            // 씬 전환 요청 중복 방지 (3초 안에 같은 씬 전환 요청 무시)
-            if (_isSceneTransitionInProgress || (Time.time - _lastSceneTransitionTime < 3f && _pendingSceneName == sceneName))
-            {
-                _debugClassFacade?.LogWarning(GetType().Name, $"씬 전환 요청 무시 - 이미 진행 중이거나 최근에 같은 요청이 있었음: {sceneName}");
-                return;
-            }
-
-            _isSceneTransitionInProgress = true;
-            _lastSceneTransitionTime = Time.time;
-            _pendingSceneName = sceneName;
-
             if (useNetworkSceneManager)
             {
                 if (_networkManager == null)
                 {
                     _debugClassFacade?.LogError(GetType().Name, "NetworkManager가 null입니다.");
-                    _isSceneTransitionInProgress = false;
                     return;
                 }
 
-                // 네트워크 상태 확인 및 출력
+                // 네트워크 상태 확인
                 bool isServer = _networkManager.IsServer;
-                bool isClient = _networkManager.IsClient;
-                bool isConnected = _networkManager.IsConnectedClient;
-                _debugClassFacade?.LogInfo(GetType().Name, $"네트워크 상태: Server={isServer}, Client={isClient}, Connected={isConnected}");
-
+                
                 if (isServer)
                 {
                     _debugClassFacade?.LogInfo(GetType().Name, $"서버: 씬 전환 시작: {sceneName}");
                     
-                    // 서버에서 직접 씬 전환 (모든 클라이언트에게 자동 전파)
+                    // 서버에서만 NetworkSceneManager 호출 (클라이언트는 자동으로 동기화됨)
                     if (_networkManager.SceneManager != null)
                     {
                         try
                         {
                             _networkManager.SceneManager.LoadScene(sceneName, loadSceneMode);
                             _debugClassFacade?.LogInfo(GetType().Name, $"서버: {sceneName} 씬 로드 요청 성공");
-
-                            // 추가: RPC를 통해 클라이언트에게 직접 알림 (중복 보장)
-                            if (_connectionManager != null)
-                            {
-                                _connectionManager.LoadSceneClientRpc(sceneName);
-                                _debugClassFacade?.LogInfo(GetType().Name, "서버: 추가적으로 RPC를 통해 클라이언트에게 씬 전환 명령 전송");
-                            }
                         }
                         catch (Exception e)
                         {
@@ -228,63 +206,13 @@ namespace Unity.Assets.Scripts.Scene
                         _debugClassFacade?.LogError(GetType().Name, "NetworkManager.SceneManager가 null입니다.");
                     }
                 }
-                else if (isClient && isConnected)
-                {
-                    _debugClassFacade?.LogInfo(GetType().Name, $"클라이언트: 씬 전환 요청 (서버에게 전달): {sceneName}");
-                    
-                    // 클라이언트에서는 로컬과 RPC 모두 시도
-                    if (_connectionManager != null)
-                    {
-                        _debugClassFacade?.LogInfo(GetType().Name, "클라이언트: ConnectionManager를 통해 씬 전환 요청");
-
-                        // 직접 로드 시도 (호스트에 의해 이미 씬 변경 이벤트가 오고 있을 수 있음)
-                        try
-                        {
-                            _debugClassFacade?.LogInfo(GetType().Name, $"클라이언트: 로컬에서 {sceneName} 씬 직접 로드 시도");
-                            SceneManager.LoadScene(sceneName);
-                        }
-                        catch (Exception e)
-                        {
-                            _debugClassFacade?.LogWarning(GetType().Name, $"클라이언트: 로컬 씬 로드 시도 중 오류 (무시 가능): {e.Message}");
-                        }
-                    }
-                    else
-                    {
-                        _debugClassFacade?.LogError(GetType().Name, "ConnectionManager가 null입니다.");
-                    }
-                }
                 else
                 {
-                    _debugClassFacade?.LogWarning(GetType().Name, $"네트워크 연결 상태가 유효하지 않음: Server={isServer}, Client={isClient}, Connected={isConnected}");
-                    
-                    // 네트워크 상태가 유효하지 않으면 로컬 씬 전환 시도
-                    try
-                    {
-                        _debugClassFacade?.LogInfo(GetType().Name, $"네트워크 없이 로컬에서 {sceneName} 씬 로드 시도");
-                        SceneManager.LoadScene(sceneName);
-                    }
-                    catch (Exception e)
-                    {
-                        _debugClassFacade?.LogError(GetType().Name, $"로컬 씬 로드 중 오류: {e.Message}");
-                    }
+                    _debugClassFacade?.LogInfo(GetType().Name, "클라이언트: 서버의 씬 전환 명령을 기다립니다.");
+                    // 클라이언트는 아무것도 하지 않고 서버의 씬 전환을 기다림
                 }
             }
-            else
-            {
-                // 일반 씬 로드 (비 네트워크)
-                _debugClassFacade?.LogInfo(GetType().Name, $"일반 씬 로드: {sceneName}");
-                try
-                {
-                    SceneManager.LoadScene(sceneName);
-                }
-                catch (Exception e)
-                {
-                    _debugClassFacade?.LogError(GetType().Name, $"일반 씬 로드 중 오류: {e.Message}");
-                }
-            }
-
-            // 씬 전환 요청 상태 리셋 (약간의 지연을 두고)
-            ResetSceneTransitionState();
+        
         }
 
         private void ResetSceneTransitionState()

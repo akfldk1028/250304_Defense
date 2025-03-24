@@ -30,6 +30,10 @@ public class BasicGameState : GameStateLifetimeScope
     [Inject] public ResourceManager _resourceManager;
     private GameObject _BasicGameLifetimeScope_Server;
 
+    [Inject] private ObjectManager _objectManager;
+    [Inject] private MapManager _mapManager;
+
+
     public override GameState ActiveState { get { return GameState.BasicGame; } }
     public void Awake()
     {            
@@ -37,14 +41,54 @@ public class BasicGameState : GameStateLifetimeScope
 
     }
 
-    public void Initialize(){}
-    
+    public void Initialize(){
+    Debug.Log("[BasicGameState] Initialize 호출됨");
+        
+        // 의존성 주입 확인
+        CheckDependencyInjection();
+        
+    }
+       private void CheckDependencyInjection()
+    {
+        // ResourceManager 주입 확인
+        if (_resourceManager != null)
+        {
+            Debug.Log("[BasicGameState] ResourceManager 의존성 주입 성공!");
+        }
+        else
+        {
+            Debug.LogError("[BasicGameState] ResourceManager 의존성 주입 실패!");
+        }
+        
+        // ObjectManager 주입 확인
+        if (_objectManager != null)
+        {
+            Debug.Log("[BasicGameState] ObjectManager 의존성 주입 성공!");
+        }
+        else
+        {
+            Debug.LogError("[BasicGameState] ObjectManager 의존성 주입 실패!");
+        }
+        
+        // MapManager 주입 확인
+        if (_mapManager != null)
+        {
+            Debug.Log("[BasicGameState] MapManager 의존성 주입 성공!");
+        }
+        else
+        {
+            Debug.LogError("[BasicGameState] MapManager 의존성 주입 실패!");
+        }
+        
+        // 인스턴스 식별을 위한 정보 출력
+        Debug.Log($"[BasicGameState] 인스턴스 ID: {GetInstanceID()}, GameObject 이름: {gameObject.name}");
+    }
     
     public void Load()
     {
-        GameObject BasicGameLifetimeScope_Server = _resourceManager.Load<GameObject>("BasicGameLifetimeScope_Server".EndsWith(".prefab") ? "BasicGameLifetimeScope_Server".Replace(".prefab", "") : "BasicGameLifetimeScope_Server");
+        // GameObject BasicGameLifetimeScope_Server = _resourceManager.Load<GameObject>("BasicGameLifetimeScope_Server".EndsWith(".prefab") ? "BasicGameLifetimeScope_Server".Replace(".prefab", "") : "BasicGameLifetimeScope_Server");
 
-        _BasicGameLifetimeScope_Server = Instantiate(BasicGameLifetimeScope_Server);  
+        // _BasicGameLifetimeScope_Server = Instantiate(BasicGameLifetimeScope_Server);  
     }
 
 
