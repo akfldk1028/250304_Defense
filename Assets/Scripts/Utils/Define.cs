@@ -4,6 +4,12 @@ using UnityEngine;
 
 public static class Define
 {
+
+	public enum EOrganizer
+	{
+		HOST,
+		CLIENT
+	}
     public enum EUIEvent
 	{
 		Click,

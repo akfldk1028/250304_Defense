@@ -64,6 +64,13 @@ namespace Unity.Assets.Scripts.Data
 	[Serializable]
 	public class HeroData : CreatureData
 	{
+		public string Rarity;
+		public int GachaSpawnWeight;
+		public int GachaWeight;
+		public int GachaExpCount;
+		public int AtkSpeed;
+		public int AtkTime;
+
 	}
 
 	[Serializable]

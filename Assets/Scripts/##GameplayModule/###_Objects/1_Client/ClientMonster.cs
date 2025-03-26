@@ -29,14 +29,14 @@ namespace Unity.Assets.Scripts.Objects
         
         private void Awake()
         {
-            Debug.Log("<color=green>ClientMonster Awake</color>");
+            // Debug.Log("<color=green>ClientMonster Awake</color>");
         }
         
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
             
-            Debug.Log("<color=green>ClientMonster Awake###########################</color>");
+            // Debug.Log("<color=green>ClientMonster Awake###########################</color>");
 
    
         }

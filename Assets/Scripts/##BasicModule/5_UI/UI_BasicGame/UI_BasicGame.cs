@@ -60,6 +60,8 @@ namespace Unity.Assets.Scripts.UI
         [Inject] private ObjectManager _objectManager;
 
         [Inject] private BasicGameState _basicGameState;
+
+        
         // [Inject] private BasicGameManager _basicGameManager;
         // [Inject] private MainMenuScene _MainMenuScene;
 
@@ -69,6 +71,7 @@ namespace Unity.Assets.Scripts.UI
 
         #region Properties
         
+        [SerializeField] public UI_Spawn_Holder Spawn_Holder;
 
         // private GameObject MatchingObject => GetObject((int)GameObjects.Matching);
         private GameObject MainObject => GetObject((int)GameObjects.Main);
@@ -126,6 +129,7 @@ namespace Unity.Assets.Scripts.UI
             GetText((int)Texts.MonsterCount_T).text = monsterCount.ToString() + "/" + MonsterLimitCount.ToString();
             GetImage((int)Images.Monster_Count_Fill).fillAmount = (float)monsterCount / MonsterLimitCount;
             GetText((int)Texts.Money_T).text = _basicGameState.Money.ToString();
+
             // GetText((int)Texts.Summon_T).text = _basicGameManager.SummonCount.ToString();
             // GetText((int)Texts.Upgrade_Money_T).text = _basicGameManager.UpgradeMoney.ToString();
             // GetText((int)Texts.Timer_T).text = _basicGameManager.GetBoss == false ? UpdateTimerText() : "In BOSS!";;
@@ -133,7 +137,7 @@ namespace Unity.Assets.Scripts.UI
         
 
        
-            Debug.Log($"monsterCount: {monsterCount}");
+            // Debug.Log($"monsterCount: {monsterCount}");
             // _elapsedTime += Time.deltaTime;
 
             // if (_elapsedTime >= _updateInterval)
@@ -166,9 +170,12 @@ namespace Unity.Assets.Scripts.UI
 
         }
 
+        public static event Action OnSummonButtonRequested;
+
         private void OnClickSummonButton(PointerEventData evt)
         {
-            Debug.Log("OnOnClickGoldPlusButton");
+            OnSummonButtonRequested?.Invoke();
+            Debug.Log("[UI_BasicGame] OnClickSummonButton");
         }
 
         protected override void OnDestroy()

@@ -18,6 +18,10 @@ using Unity.Netcode;
 namespace Unity.Assets.Scripts.UnityServices.Lobbies{
     public class LobbyServiceFacade : IDisposable, IStartable
     {
+
+        [Inject] private DebugClassFacade _debugClassFacade;
+
+
         [Inject] LifetimeScope m_ParentScope;
         [Inject] UpdateRunner m_UpdateRunner;
         [Inject] LocalLobby m_LocalLobby;

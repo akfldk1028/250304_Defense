@@ -4,6 +4,7 @@ using Unity.Assets.Scripts.Data;
 using UnityEditor.Animations;
 using Unity.Assets.Scripts.Resource;
 // using Unity.Assets.Scripts.Pooling;
+using Spine.Unity;
 
 
 namespace Unity.Assets.Scripts.Objects
@@ -18,12 +19,9 @@ namespace Unity.Assets.Scripts.Objects
         [Tooltip("생물체의 고유 ID (CreatureStatsSO의 DataId와 일치해야 함)")]
         [SerializeField] protected int dataId;
         
-   
-        
-
         
         [Tooltip("생물체의 대표 스프라이트")]
-        [SerializeField] protected Sprite creatureSprite;
+        [SerializeField] public Sprite creatureSprite;
         
         [Tooltip("생물체의 애니메이션 컨트롤러")]
         [SerializeField] protected AnimatorController animatorController;
@@ -39,6 +37,9 @@ namespace Unity.Assets.Scripts.Objects
         [Tooltip("생물체의 사망 이펙트")]
         [SerializeField] protected GameObject deathEffectPrefab;
         
+
+        [Tooltip("스켈레톤데이터")]
+        [SerializeField] public SkeletonAnimation skeletonAnim;
         /// <summary>
         /// 생물체의 고유 ID를 반환합니다.
         /// </summary>
@@ -75,11 +76,22 @@ namespace Unity.Assets.Scripts.Objects
         /// </summary>
         public GameObject DeathEffectPrefab => deathEffectPrefab;
         
+        public SkeletonAnimation SkeletonAnim => skeletonAnim;
+
         /// <summary>
         /// 생물체의 데이터 참조를 반환합니다.
         /// 하위 클래스에서 구현해야 합니다.
         /// </summary>
-        
+        public void SetSkeletonAnimation(SkeletonAnimation skeleton)
+        {
+            skeletonAnim = skeleton;
+            
+            #if UNITY_EDITOR
+            // 에디터에서 변경사항 저장
+            UnityEditor.EditorUtility.SetDirty(this);
+            UnityEditor.AssetDatabase.SaveAssets();
+            #endif
+        }
         /// <summary>
         /// 애니메이션 컨트롤러를 설정합니다.
         /// </summary>
@@ -140,22 +152,6 @@ namespace Unity.Assets.Scripts.Objects
             #endif
         }
         
-      
-    
-   
-        
-        /// <summary>
-        /// 유효성 검사를 수행합니다.
-        /// </summary>
-        // protected override void OnValidate()
-        // {
-        //     base.OnValidate();
-            
-        //     // 프리팹이 없는 경우 경고
-        //     if (creaturePrefab == null)
-        //     {
-        //         Debug.LogWarning($"Creature Prefab {name}의 Prefab이 설정되지 않았습니다!");
-        //     }
-        // }
+ 
     }
 }

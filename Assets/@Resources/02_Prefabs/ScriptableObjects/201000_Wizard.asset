@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fdf6c93b325a46c448f6a991566ce540, type: 3}
+  m_Name: 201000_Wizard
+  m_EditorClassIdentifier: 
+  m_Guid: 94ef95a6fa87194aabb1cd0ee69c19a4
+  guidString: a695ef94-87fa-4a19-abb1-cd0ee69c19a4
+  dataId: 201000
+  creatureSprite: {fileID: 0}
+  animatorController: {fileID: 0}
+  creatureSounds: []
+  spawnEffectPrefab: {fileID: 0}
+  deathEffectPrefab: {fileID: 0}
+  skeletonAnim: {fileID: 0}
+  attackEffectPrefab: {fileID: 0}
+  hitEffectPrefab: {fileID: 0}

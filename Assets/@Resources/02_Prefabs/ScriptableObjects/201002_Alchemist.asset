@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fdf6c93b325a46c448f6a991566ce540, type: 3}
+  m_Name: 201002_Alchemist
+  m_EditorClassIdentifier: 
+  m_Guid: a30337489d393d48a1ec46b7d34a6264
+  guidString: 483703a3-399d-483d-a1ec-46b7d34a6264
+  dataId: 201002
+  creatureSprite: {fileID: 0}
+  animatorController: {fileID: 0}
+  creatureSounds: []
+  spawnEffectPrefab: {fileID: 0}
+  deathEffectPrefab: {fileID: 0}
+  skeletonAnim: {fileID: 0}
+  attackEffectPrefab: {fileID: 0}
+  hitEffectPrefab: {fileID: 0}

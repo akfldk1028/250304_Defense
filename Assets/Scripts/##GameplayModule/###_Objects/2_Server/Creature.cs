@@ -1,4 +1,4 @@
-// using Spine.Unity;
+using Spine.Unity;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -110,10 +110,12 @@ public class Creature : BaseObject, ITargetable
 	// 		return baseValue;
 	// 	}
 	// }
+	
         protected void Awake()
         {
             ObjectType = EObjectType.Creature;
 			NetLifeState = GetComponent<NetworkLifeState>();
+		// SetSpineAnimation(CreatureData.SkeletonDataID, SortingLayers.CREATURE);
 
             // m_ServerActionPlayer = new ServerActionPlayer(this);
             // NetLifeState = GetComponent<NetworkLifeState>();
@@ -162,6 +164,13 @@ public class Creature : BaseObject, ITargetable
 
 	public virtual void SetInfo(int templateID, Data.CreatureData creatureData)
 	{
+
+		DataTemplateID = templateID;
+
+		// if (ObjectType == EObjectType.Hero)
+		// 	CreatureData = Managers.Data.HeroDic[templateID];
+		// else
+		// 	CreatureData = Managers.Data.MonsterDic[templateID];
 
 
 		MoveSpeed = new CreatureStat(creatureData.MoveSpeed);

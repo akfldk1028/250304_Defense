@@ -25,8 +25,10 @@ namespace Unity.Assets.Scripts.Objects
     {	
         // [Inject] private DataLoader _dataLoader;
 
+        [Inject] private DebugClassFacade _debugClassFacade;
 
         #region Singleton
+        protected MonsterData monsterData;
         private static ServerMonster instance;
         public static ServerMonster Instance
         {
@@ -49,13 +51,9 @@ namespace Unity.Assets.Scripts.Objects
         #region Fields
         [Header("===== 몬스터 설정 =====")]
         [Space(10)]
-        [SerializeField] 
-        private MonsterAvatarSO monsterAvatarSO;
-
-        [Header("===== 몬스터 특화 속성 (읽기 전용) =====")]
-        [Space(5)]
-        [SerializeField]
-        private int dropItemId;
+        [SerializeField] private MonsterAvatarSO monsterAvatarSO;
+        [SerializeField] private int dropItemId;
+        
 
         // 네트워크 변수
         public NetworkVariable<float> CurrentHp = new NetworkVariable<float>();
@@ -68,7 +66,7 @@ namespace Unity.Assets.Scripts.Objects
         public event Action<ServerMonster, bool> OnDataLoadComplete;
         
         // 몬스터 데이터
-        protected MonsterData monsterData;
+        
         public int DropItemId => dropItemId;
 	    public Data.CreatureData CreatureData { get; private set; }
 
@@ -137,7 +135,7 @@ namespace Unity.Assets.Scripts.Objects
                 // 위치 강제 설정 (보간 없이)
                 transform.position = NetworkPosition.Value;
             }
-}
+        }
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
@@ -155,16 +153,23 @@ namespace Unity.Assets.Scripts.Objects
 
         public override void SetInfo(int templateID, Data.CreatureData creatureData)
 	    {
-        base.SetInfo(templateID , creatureData);
+            base.SetInfo(templateID, creatureData);
 
-		DataTemplateID = templateID;
-        MonsterId.Value = templateID;
-        CreatureData = creatureData;
-        // CreatureData = DataLoader.instance.MonsterDic[templateID];
+            DataTemplateID = templateID;
+            MonsterId.Value = templateID;
+            CreatureData = creatureData;
+            
+            // CreatureData를 MonsterData로 캐스팅
+            if (CreatureData is MonsterData monsterData)
+            {
+                dropItemId = monsterData.DropItemId;
+            }
+            else
+            {
+                _debugClassFacade?.LogError(GetType().Name, $"[ServerMonster] CreatureData가 MonsterData 타입이 아닙니다! templateID: {templateID}");
+            }
 
-
-		
-		gameObject.name = $"{CreatureData.DataId}_{CreatureData.CharacterType}";
+            gameObject.name = $"{CreatureData.DataId}_{CreatureData.CharacterType}";
         }
 
         
@@ -206,7 +211,7 @@ namespace Unity.Assets.Scripts.Objects
         {
             if (moveList == null || moveList.Count == 0)
             {
-                Debug.LogError($"[ServerMonster:{MonsterId.Value}] SetMoveList: 유효하지 않은 경로 데이터");
+                _debugClassFacade?.LogError(GetType().Name, $"[ServerMonster:{MonsterId.Value}] SetMoveList: 유효하지 않은 경로 데이터");
                 return;
             }
             
@@ -216,7 +221,7 @@ namespace Unity.Assets.Scripts.Objects
             // 항상 첫 번째 포인트부터 시작
             target_Value = 0;
             
-            Debug.Log($"[ServerMonster:{MonsterId.Value}] 새 경로 설정 완료: 포인트 수={_moveList.Count}, 시작 인덱스={target_Value}");
+             _debugClassFacade?.LogInfo(GetType().Name, $"[ServerMonster:{MonsterId.Value}] 새 경로 설정 완료: 포인트 수={_moveList.Count}, 시작 인덱스={target_Value}");
         }
                 #endregion
 
@@ -244,7 +249,7 @@ namespace Unity.Assets.Scripts.Objects
         {
             if (!IsServer)
             {
-                Debug.LogWarning("TakeDamage는 서버에서만 호출해야 합니다!");
+                _debugClassFacade?.LogWarning(GetType().Name, "TakeDamage는 서버에서만 호출해야 합니다!");
                 return;
             }
             
@@ -274,15 +279,13 @@ namespace Unity.Assets.Scripts.Objects
         {
             if (avatarSO == null)
             {
-                Debug.LogError("[ServerMonster] 설정하려는 MonsterAvatarSO가 null입니다!");
+                _debugClassFacade?.LogError(GetType().Name, "[ServerMonster] 설정하려는 MonsterAvatarSO가 null입니다!");
                 OnDataLoadComplete?.Invoke(this, false);
                 return false;
             }
 
             monsterAvatarSO = avatarSO;
-
-     
-            Debug.Log($"[ServerMonster] MonsterAvatarSO '{monsterAvatarSO.name}'가 성공적으로 설정되었습니다.");
+            _debugClassFacade?.LogInfo(GetType().Name, $"[ServerMonster] MonsterAvatarSO '{monsterAvatarSO.name}'가 성공적으로 설정되었습니다.");
             return true;
         }
 
@@ -335,94 +338,5 @@ namespace Unity.Assets.Scripts.Objects
    
         #endregion
 
-        #region Editor Methods
-        private void OnValidate()
-        {
-            if (monsterAvatarSO == null) return;
-
-            if (Application.isPlaying)
-            {
-            }
-            else
-            {
-                // UpdateEditorValues();
-            }
-        }
-
-        // private void UpdateEditorValues()
-        // {
-        //     monsterStatsSO = monsterAvatarSO.MonsterData;
-        //     if (monsterStatsSO == null) return;
-
-        //     dropItemId = monsterStatsSO.DropItemId;
-            
-        //     MaxHp.SetBaseValue(monsterStatsSO.MaxHp);
-        //     Atk.SetBaseValue(monsterStatsSO.Atk);
-        //     AtkRange.SetBaseValue(monsterStatsSO.AtkRange);
-        //     AtkBonus.SetBaseValue(monsterStatsSO.AtkBonus);
-        //     CriRate.SetBaseValue(monsterStatsSO.CriRate);
-        //     CriDamage.SetBaseValue(monsterStatsSO.CriDamage);
-        //     MoveSpeed.SetBaseValue(monsterStatsSO.MoveSpeed);
-            
-        //     Hp = monsterStatsSO.MaxHp;
-            
-        //     Debug.Log($"[ServerMonster] 에디터 모드: monsterStatsSO가 업데이트되었습니다. ID={monsterStatsSO.DataId}");
-        // }
-
-        [ContextMenu("디버그 상태 출력")]
-        public void DebugPrintState()
-        {
-            if (!ValidateDebugState()) return;
-            
-            LogCreatureInfo();
-            LogMonsterSpecificInfo();
-            LogNetworkInfo();
-        }
-
-        private bool ValidateDebugState()
-        {
-            if (monsterAvatarSO == null)
-            {
-                Debug.Log("[ServerMonster] 디버그: monsterAvatarSO가 설정되지 않았습니다.");
-                return false;
-            }
-
-            return true;
-        }
-
-        private void LogCreatureInfo()
-        {
-            // string creatureInfo = $"[ServerMonster] 기본 속성 (Creature 클래스):\n" +
-            //                     $"- ID: {DataTemplateID}\n" +
-            //                     $"- HP: {Hp}\n" +
-            //                     $"- 최대 HP: {monsterStatsSO.MaxHp}\n" +
-            //                     $"- 공격력: {monsterStatsSO.Atk}\n" +
-            //                     $"- 공격 범위: {monsterStatsSO.AtkRange}\n" +
-            //                     $"- 공격 보너스: {monsterStatsSO.AtkBonus}\n" +
-            //                     $"- 이동 속도: {monsterStatsSO.MoveSpeed}\n" +
-            //                     $"- 치명타 확률: {monsterStatsSO.CriRate}\n" +
-            //                     $"- 치명타 데미지: {monsterStatsSO.CriDamage}\n" +
-            //                     $"- 생물체 타입: {CreatureType}";
-            
-            // Debug.Log(creatureInfo);
-        }
-
-        private void LogMonsterSpecificInfo()
-        {
-            Debug.Log($"[ServerMonster] 몬스터 특화 속성:\n" +
-                     $"- 드롭 아이템 ID: {dropItemId}\n" +
-                     $"- 현재 공격 중: {(Application.isPlaying ? IsAttacking.Value : false)}");
-        }
-
-        private void LogNetworkInfo()
-        {
-            if (!Application.isPlaying) return;
-            
-            Debug.Log($"[ServerMonster] 네트워크 변수:\n" +
-                     $"- 네트워크 HP: {CurrentHp.Value}\n" +
-                     $"- 네트워크 몬스터 ID: {MonsterId.Value}\n" +
-                     $"- 네트워크 공격 중: {IsAttacking.Value}");
-        }
-        #endregion
     }
 }

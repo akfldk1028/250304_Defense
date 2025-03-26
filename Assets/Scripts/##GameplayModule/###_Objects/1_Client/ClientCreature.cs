@@ -6,6 +6,7 @@ using System;
 // using Unity.Assets.Scripts.Utils;
 using Unity.Netcode;
 using UnityEngine;
+using Spine.Unity;
 
 namespace Unity.Assets.Scripts.Objects
 {
@@ -14,8 +15,10 @@ namespace Unity.Assets.Scripts.Objects
     /// </summary>
     public class ClientCreature : NetworkBehaviour
     {
-        [SerializeField]
-        Animator m_ClientVisualsAnimator;
+        [SerializeField] private HeroAvatarSO heroAvatarSO;
+        [SerializeField] Animator m_ClientVisualsAnimator;
+        
+        [SerializeField] private SkeletonAnimation skeletonAnim;
 
         // [SerializeField]
         // VisualizationConfiguration m_VisualizationConfiguration;
@@ -24,6 +27,18 @@ namespace Unity.Assets.Scripts.Objects
         /// Returns a reference to the active Animator for this visualization
         /// </summary>
         public Animator OurAnimator => m_ClientVisualsAnimator;
+        public SkeletonAnimation SkeletonAnim => skeletonAnim;
+
+
+        public virtual void SetAvatar(HeroAvatarSO avatarSO)
+        {
+            heroAvatarSO = avatarSO;
+            if (skeletonAnim != null)
+            {
+                skeletonAnim = heroAvatarSO.skeletonAnim;
+            }
+            //spirte 혹은 skelteonAnim 배치 해야하는데데
+        }
 
         /// <summary>
         /// Returns the targeting-reticule prefab for this character visualization

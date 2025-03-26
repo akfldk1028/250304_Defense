@@ -41,6 +41,7 @@ public class DebugClassFacade
         EnableClass("ResourceManager", Color.cyan);
         EnableClass("ConnectionManager", Color.green);
         EnableClass("NetworkManager", Color.magenta);
+        // ----------------------------------------------------
         EnableClass("ConnectionState", Color.magenta);
         EnableClass("OfflineState", Color.magenta);
         EnableClass("LobbyConnectingState", Color.magenta);
@@ -51,7 +52,17 @@ public class DebugClassFacade
         EnableClass("HostingState", Color.magenta);
         EnableClass("ConnectionState", Color.magenta);
         EnableClass("SceneManagerEx", Color.magenta);
-        
+
+
+        // -----------------------------------------------------
+        EnableClass("ObjectManagerFacade", Color.magenta);
+        EnableClass("MapSpawnerFacade", Color.magenta);
+        EnableClass("ObjectManager", Color.gray);
+        // -----------------------------------------------------
+        EnableClass("ServerMonster", Color.green);
+
+        // -----------------------------------------------------
+        EnableClass("LobbyUIMediator", Color.red);
             // s_instance.EnableClass(typeof(UIManager), Color.cyan);
         // 순환 참조 방지: 생성자에서 DebugManager.Instance를 직접 호출하지 않음
         // _debugManager는 나중에 SetDebugManager 메서드를 통해 설정됨

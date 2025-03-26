@@ -90,7 +90,7 @@ namespace Unity.Assets.Scripts.Data
             
  
             MonsterDic = LoadJsonToResoureManager<Data.MonsterDataLoader, int, Data.MonsterData>("MonsterData").MakeDict();
-
+            HeroDic = LoadJsonToResoureManager<Data.HeroDataLoader, int, Data.HeroData>("HeroData").MakeDict();
             _isInitialized = true;
             
             // 초기화 완료 이벤트 발생

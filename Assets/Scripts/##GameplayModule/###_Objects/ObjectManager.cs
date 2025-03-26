@@ -145,6 +145,7 @@ public class ObjectManager
     [Inject] private ResourceManager _resourceManager;
     [Inject] private INetworkMediator _spawnMediator;
 	public CreatureData CreatureData { get; private set; }
+    [Inject] private DebugClassFacade _debugClassFacade;
 
 	// public HashSet<Hero> Heroes { get; } = new HashSet<Hero>();
 
@@ -155,6 +156,7 @@ public class ObjectManager
 // fruits.Add("사과");  // 중복된 요소는 추가되지 않음
 
 	public HashSet<ServerMonster> Monsters { get; } = new HashSet<ServerMonster>();
+	public HashSet<ServerHero> Heroes { get; } = new HashSet<ServerHero>();
 	// public HashSet<Projectile> Projectiles { get; } = new HashSet<Projectile>();
 	// public HashSet<Env> Envs { get; } = new HashSet<Env>();
 	// public HashSet<EffectBase> Effects { get; } = new HashSet<EffectBase>();
@@ -196,7 +198,7 @@ public class ObjectManager
 	{
 		// 기본 위치 (0,0,0)으로 스폰
 		Vector3Int cellPos = new Vector3Int(0, 0, 0);
-		Debug.Log($"[ObjectManager] Spawn<T> 호출: {prefabName}");
+		_debugClassFacade?.LogInfo(GetType().Name, $"[ObjectManager] Spawn<T> 호출: {prefabName}");
 		return Spawn<T>(cellPos, clientId, templateID, prefabName);
 	}
 
@@ -208,77 +210,59 @@ public class ObjectManager
 	public event Action<ulong, ulong> OnMonsterSpawned; // (networkObjectId, clientId)
 
 	public T Spawn<T>(Vector3 position, ulong clientID = 0, int templateID = 0, string prefabName = "", GameObject parent = null) where T : BaseObject
-	{
-		Debug.Log($"[ObjectManager] Spawn<T> 호출: {prefabName}");
-		Debug.Log($"[ObjectManager] Spawn<T> 호출: {position}");
+	{	
+		_debugClassFacade?.LogInfo(GetType().Name, $"[ObjectManager] Spawn<T> 호출: {prefabName}");		
+		_debugClassFacade?.LogInfo(GetType().Name, $"[ObjectManager] Spawn<T> 호출: {position}");
 
 		prefabName = typeof(T).Name;
-		// childTransform.setChild
-//  mapInstance.transform.Find("Spawner_Client");
-		// 풀링 시스템을 통해 오브젝트 생성
+
 		GameObject go = _resourceManager.Instantiate(prefabName, pooling: true, position: position);
 		if (go == null)
 		{
-			Debug.LogError($"[ObjectManager] '{prefabName}' 프리팹을 인스턴스화하지 못했습니다.");
+			_debugClassFacade?.LogError(GetType().Name, $"[ObjectManager] '{prefabName}' 프리팹을 인스턴스화하지 못했습니다.");
 			return null;
 		}
 		go.name = prefabName;
 		BaseObject obj = go.GetComponent<BaseObject>();
 		if (obj == null)
 		{
-			Debug.LogError($"[ObjectManager] '{prefabName}' 오브젝트에 BaseObject 컴포넌트가 없습니다.");
+			_debugClassFacade?.LogError(GetType().Name, $"[ObjectManager] '{prefabName}' 오브젝트에 BaseObject 컴포넌트가 없습니다.");
 			_resourceManager.Destroy(go);
 			return null;
 		}
 		
 
-		// NetworkObject 처리
-		NetworkObject networkObject = go.GetComponent<NetworkObject>();
-
-		try 
-		{
-			if (!networkObject.IsSpawned && NetworkManager.Singleton.IsServer)
-			{
-				networkObject.Spawn();
-				Debug.Log($"[ObjectManager] NetworkObject 스폰 완료: {networkObject.NetworkObjectId}");
-			}
-
-			var eventData = new MonsterSpawnEventData(go, prefabName, position, clientID);
-			eventData.NetworkObjectId = networkObject.NetworkObjectId;
-			
-			// 네트워크 스폰 완료 이벤트 발생
-			_spawnMediator.Notify(NetworkEventType.NetworkSpawned, eventData);
-		}
-		catch (Exception e)
-		{
-			Debug.LogError($"[ObjectManager] NetworkObject 스폰 중 오류 발생: {e.Message}");
-			_resourceManager.Destroy(go);
-			return null;
-		}
-
-
-
 
 		if (obj.ObjectType == EObjectType.Creature)
 		{
 			Creature creature = obj.GetComponent<Creature>();
-
-			if (creature.CreatureType == CharacterTypeEnum.Monster)
+			switch (creature.CreatureType)
 			{
-
+			case CharacterTypeEnum.Monster:
 				CreatureData = DataLoader.instance.MonsterDic[templateID];
 				
 				ClientMonster clientMonster = go.GetComponent<ClientMonster>();
-				MonsterAvatarSO clientAvatar = _resourceManager.Load<MonsterAvatarSO>(CreatureData.ClientAvatar);
-				clientMonster.SetAvatar(clientAvatar);
+				MonsterAvatarSO clientMonsterAvatar = _resourceManager.Load<MonsterAvatarSO>(CreatureData.ClientAvatar);
+				clientMonster.SetAvatar(clientMonsterAvatar);
 
 				ServerMonster monster = go.GetComponent<ServerMonster>();
 				monster.SetInfo(templateID, CreatureData);
 				Monsters.Add(monster);
+				break;
+			
+			case CharacterTypeEnum.Hero:
+				CreatureData = DataLoader.instance.HeroDic[templateID];
 
+				ClientHero clientHero = go.GetComponent<ClientHero>();
+				HeroAvatarSO clientHeroAvatar = _resourceManager.Load<HeroAvatarSO>(CreatureData.ClientAvatar);
+				clientHero.SetAvatar(clientHeroAvatar);
+
+				ServerHero serverHero = go.GetComponent<ServerHero>();
+				serverHero.SetInfo(templateID, CreatureData);
+				Heroes.Add(serverHero);
+				break;
 			}
-
-
+		}
 			// Creature creature = go.GetComponent<Creature>();
 			// switch (creature.CreatureType)
 			// {
@@ -294,29 +278,55 @@ public class ObjectManager
 			// 		Debug.Log($"[ObjectManager] Monsters 추가: {monster.MonsterId}");
 			// 		break;
 			// }
-		}
-		else if (obj.ObjectType == EObjectType.Projectile)
-		{
-			obj.transform.parent = ProjectileRoot;
+		// }
+		// else if (obj.ObjectType == EObjectType.Projectile)
+		// {
+		// 	obj.transform.parent = ProjectileRoot;
 
 			// Projectile projectile = go.GetComponent<Projectile>();
 			// Projectiles.Add(projectile);
 
 		// 	// projectile.SetInfo(templateID);
-		}
-		else if (obj.ObjectType == EObjectType.Env)
-		{
-			obj.transform.parent = EnvRoot;
+		// }
+		// else if (obj.ObjectType == EObjectType.Env)
+		// {
+			// obj.transform.parent = EnvRoot;
 
 			// Env env = go.GetComponent<Env>();
 			// Envs.Add(env);
 
 			// env.SetInfo(templateID);
-		}
-		else if (obj.ObjectType == EObjectType.HeroCamp)
+		// }
+		// else if (obj.ObjectType == EObjectType.HeroCamp)
+		// {
+		// 	// Camp = go.GetComponent<HeroCamp>();
+		// }
+
+				// NetworkObject 처리
+		NetworkObject networkObject = go.GetComponent<NetworkObject>();
+
+		try 
 		{
-			// Camp = go.GetComponent<HeroCamp>();
+			if (!networkObject.IsSpawned && NetworkManager.Singleton.IsServer)
+			{
+				networkObject.Spawn();
+				_debugClassFacade?.LogInfo(GetType().Name, $"[ObjectManager] NetworkObject 스폰 완료: {networkObject.NetworkObjectId}");
+			}
+
+			var eventData = new MonsterSpawnEventData(go, prefabName, position, clientID);
+			eventData.NetworkObjectId = networkObject.NetworkObjectId;
+			
+			// 네트워크 스폰 완료 이벤트 발생
+			_spawnMediator.Notify(NetworkEventType.NetworkSpawned, eventData);
 		}
+		catch (Exception e)
+		{
+			_debugClassFacade?.LogError(GetType().Name, $"[ObjectManager] NetworkObject 스폰 중 오류 발생: {e.Message}");
+			_resourceManager.Destroy(go);
+			return null;
+		}
+
+
 		return obj as T;
 	}
 

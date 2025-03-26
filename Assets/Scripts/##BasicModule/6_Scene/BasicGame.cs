@@ -92,22 +92,27 @@ public class BasicGameScene : BaseScene
     private void SubscribeEvents()
     {
         // 이미 구독되어 있는지 확인하기 위해 먼저 해제
-
+        UI_BasicGame.OnSummonButtonRequested += OnSummonButtonRequested;
         MapSpawnerFacade.GridSpawned += OnGridSpawned;
     }
 
     private void UnsubscribeEvents()
     {
+        UI_BasicGame.OnSummonButtonRequested -= OnSummonButtonRequested;
         MapSpawnerFacade.GridSpawned -= OnGridSpawned;
-        Debug.Log("[BasicGameScene] 이벤트 구독 해제#####################################");
     }
 
+    private void OnSummonButtonRequested()
+    {   
+        _objectManagerFacade.Summon();
+        Debug.Log("[BasicGameScene] OnSummonButtonRequested");
+    }
 
     private void OnGridSpawned()
     {
    
         
-        _objectManagerFacade.Spawn_Monster(false, 202001);
+        // _objectManagerFacade.Spawn_Monster(false, 202001);
     }
 
 

@@ -6,23 +6,21 @@ using VContainer;
 using Unity.Assets.Scripts.Resource;
 using Unity.Netcode;
 using Unity.Assets.Scripts.Objects;
+using static Define;
 
 /// <summary>
 /// 맵 로드 및 초기화를 담당하는 클래스입니다.
 /// </summary>
 public class MapSpawnerFacade : NetworkBehaviour
 {
+    
     [Inject] public ResourceManager _resourceManager;
     [Inject] private NetUtils _netUtils; // NetUtils 추가
-
     [Inject] private NetworkManager _networkManager;
-    // MapManager는 더 이상 사용하지 않으므로 주입 제거
-    // [Inject] private MapManager _mapManager;
-    // [Inject] private ObjectManagerFacade _objectManagerFacade;
-    // [Inject] private ObjectManagerFacade _objectManagerFacade;
 
-    [SerializeField] private string _mapPrefabName;
-    
+
+    [SerializeField] private UI_Spawn_Holder _spawn_Holder;
+
     private GameObject _mapInstance;
     
     // 리스트를 모두 Public으로 변경
@@ -33,7 +31,8 @@ public class MapSpawnerFacade : NetworkBehaviour
     [SerializeField] public List<bool> Player_spawn_list_Array = new List<bool>();         // Host 스폰 위치 사용 여부
     [SerializeField] public List<bool> Other_spawn_list_Array = new List<bool>();       // Client 스폰 위치 사용 여부
     
-    private int[] Host_Client_Value_Index = new int[2];
+    public Dictionary<string, UI_Spawn_Holder> Hero_Holders = new Dictionary<string, UI_Spawn_Holder>();
+    public int[] Host_Client_Value_Index = new int[2];
 
     public static float xValue, yValue;
 
@@ -50,7 +49,6 @@ public class MapSpawnerFacade : NetworkBehaviour
     public void Initialize()
     {
         Debug.Log("[MapSpawnerFacade] Initialize 시작");
-        // 자신의 게임 오브젝트를 _mapSpawner로 설정
     
     }
     
@@ -62,34 +60,15 @@ public class MapSpawnerFacade : NetworkBehaviour
 
 
 
-
-    /// <summary>
-    /// 맵을 로드하고 초기화합니다.
-    /// </summary>
-        /// <param name="mapName">로드할 맵 이름</param>
-    // public void LoadMap(string mapName)
-    // {
- 
-        
-    //     // GameObject mapPrefab = LoadMapPrefab(mapName);
-    //     // InstantiateMap(mapPrefab, mapName);
-    //     InstantiateMap(mapSpawner, mapName);
-
-    // }
     public void LoadMap()
     {
         Debug.Log("[MapSpawnerFacade] LoadMap 시작");
-        
-        // _mapSpawner가 null인 경우 현재 게임 오브젝트로 설정
         if (_mapSpawner == null)
         {
             _mapSpawner = this.gameObject;
-            Debug.Log("[MapSpawnerFacade] _mapSpawner를 자신의 게임 오브젝트로 설정");
         }
         
-        // 그리드 시스템 초기화
         InitializeGridSystem(_mapSpawner);
-        Debug.Log("[MapSpawnerFacade] LoadMap 완료");
     }
 
 
@@ -103,21 +82,15 @@ public class MapSpawnerFacade : NetworkBehaviour
                 Debug.LogError("[MapSpawnerFacade] 맵 프리팹이 null입니다.");
                 return;
             }
-            
-            Debug.Log($"[MapSpawnerFacade] InstantiateMap 시작: {mapName}");
-            
-            // 맵 인스턴스 설정
             ConfigureMapInstance();
-            
-            Debug.Log("[MapSpawnerFacade] InstantiateMap 완료");
         }
         catch (Exception e)
         {
             Debug.LogError($"[MapSpawnerFacade] 맵 인스턴스화 중 예외 발생: {e.Message}\n{e.StackTrace}");
         }
     }
-        #region 그리드 시스템
 
+    #region 그리드 시스템
     private void InitializeGridSystem(GameObject mapInstance)
     {
         SetupSpawnGrids(mapInstance);
@@ -131,7 +104,6 @@ public class MapSpawnerFacade : NetworkBehaviour
         // 스폰 그리드 부모 찾기
         Transform playerGridParent = mapInstance.transform.Find("Spawner_Host");
         Transform enemyGridParent = mapInstance.transform.Find("Spawner_Client");
-
 
         if (playerGridParent == null || enemyGridParent == null)
         {
@@ -150,11 +122,9 @@ public class MapSpawnerFacade : NetworkBehaviour
         SetupMovePaths(monsterGroundHost, mosterGroundClient );
         
         Debug.Log("[ObjectManagerFacade] 그리드 설정 완료");
-        
-        
-
-    }
+      }
     
+
     /// <summary>
     /// 스폰 그리드를 생성합니다.
     /// </summary>
@@ -208,20 +178,99 @@ public class MapSpawnerFacade : NetworkBehaviour
                         break;
                 }
 
-                // if (IsServer)
-                // {
-                //     StartCoroutine(DelayHeroHolderSpawn(isPlayer));
-                // }
+                if (_networkManager.IsServer) //_networkManager.IsServer 이렇게 해야 먹힘 왜지?
+                {
+                    StartCoroutine(DelayHeroHolderSpawn(isPlayer));
+                }
             }
         }
         Host_Client_Value_Index[0] = 0; //HOST
         Host_Client_Value_Index[1] = 0; //CLIENT
-        GridSpawned?.Invoke();
         Debug.Log($"[ObjectManagerFacade] {(isPlayer ? "Host" : "Client")} 스폰 포인트 {_hostSpawnPositions.Count}개 설정 완료");
+
+        GridSpawned?.Invoke();
         
     }
     
-    
+
+    /// <summary>
+    /// @param Player 지금 2인 전용임 True False 둘중 하나임
+    /// Host_Client_Value_Index: 10, 0 각각 좌표표
+    /// </summary>
+
+    IEnumerator DelayHeroHolderSpawn(bool Player)
+    {
+        // Player = 지금 2인 전용임 True False 둘중 하나임
+        Debug.Log($"<color=yellow>[MapSpawnerFacade] DelayHeroHolderSpawn: {Player}</color>"); //[MapSpawnerFacade] DelayHeroHolderSpawn: True
+        Debug.Log($"<color=yellow>[MapSpawnerFacade] Host_Client_Value_Index: {Host_Client_Value_Index[0]}, {Host_Client_Value_Index[1]}</color>"); //[MapSpawnerFacade] Host_Client_Value_Index: 10, 0
+        
+        var go = Instantiate(_spawn_Holder);
+        NetworkObject networkObject = go.GetComponent<NetworkObject>();
+        networkObject.Spawn();
+
+        string temp = Player == true ? EOrganizer.HOST.ToString() :  EOrganizer.CLIENT.ToString();
+        int value = Player == true ? 0 : 1;
+        string Organizers = temp + Host_Client_Value_Index[value].ToString();
+        Debug.Log($"<color=yellow>[MapSpawnerFacade] Organizers: {Organizers}</color>"); //[MapSpawnerFacade] Organizers: HOST7
+        Host_Client_Value_Index[value]++;
+
+        yield return new WaitForSeconds(0.5f);
+
+        SpawnGridClientRpc(networkObject.NetworkObjectId, Organizers);
+    }
+
+    [ClientRpc]
+    private void SpawnGridClientRpc(ulong networkID, string Organizers)
+    {
+        // Player = 지금 2인 전용임 True False 둘중 하나임
+
+        Debug.Log($"<color=green>[MapSpawnerFacade] SpawnGridClientRpc: {networkID}, {Organizers}</color>");
+        if (_netUtils.TryGetSpawnedObject_P(networkID, out NetworkObject holderNetworkObject))
+        {
+            bool isPlayer;
+
+            if (Organizers.Contains("HOST"))
+            {
+                isPlayer = _netUtils.LocalID_P() == 0 ? true :false;
+            }
+            else isPlayer = _netUtils.LocalID_P() == 0? false : true;
+
+
+            UI_Spawn_Holder goHolder = holderNetworkObject.GetComponent<UI_Spawn_Holder>();
+
+            SetPositionHero( holderNetworkObject,
+                isPlayer ? _hostSpawnPositions : _clientSpawnPositions,
+                isPlayer ? Player_spawn_list_Array : Other_spawn_list_Array);
+
+            Hero_Holders.Add(Organizers, goHolder);
+            Debug.Log($"<color=green>[MapSpawnerFacade] Hero_Holders 딕셔너리 내용:</color>");
+            foreach (var holder in Hero_Holders)
+            {
+                Debug.Log($"<color=green>  - Key: {holder.Key}</color>");
+                Debug.Log($"<color=green>    - Holder_Part_Name: {holder.Value.Holder_Part_Name}</color>");
+            }
+            goHolder.Holder_Part_Name = Organizers;
+
+        }
+    }
+
+    private void SetPositionHero(NetworkObject obj, List<Vector2> spawnList, List<bool> spawnArrayList)
+        {
+
+            int position_value = spawnArrayList.IndexOf(false);
+            Debug.Log(spawnArrayList.Count);
+
+            if (position_value != -1) 
+            {
+                spawnArrayList[position_value] = true;
+                obj.transform.position = spawnList[position_value];
+            
+            }
+            UI_Spawn_Holder holder = obj.GetComponent<UI_Spawn_Holder>();
+            holder.index = position_value;
+            Debug.Log(spawnList[position_value] + " : " + obj.transform.position);
+        }
+
     /// <summary>
     /// 이동 경로를 설정합니다.
     /// </summary>
@@ -230,11 +279,9 @@ public class MapSpawnerFacade : NetworkBehaviour
         Player_move_list.Clear();
         Other_move_list.Clear();
         
-        // 자식 오브젝트들이 "Q_"로 시작하는지 확인하고 로깅
         for (int i = 0; i < playerGridParent.childCount; i++)
         {
             Transform child = playerGridParent.GetChild(i);
-            // Q_ 로 시작하는 오브젝트만 경로 포인트로 사용
             Player_move_list.Add(child.position);
             Debug.Log($"[ObjectManagerFacade] 호스트 이동 경로 추가: {child.name} at {child.position}");
         }
@@ -244,18 +291,7 @@ public class MapSpawnerFacade : NetworkBehaviour
             Transform child = enemyGridParent.GetChild(i);
             Other_move_list.Add(child.position);
             Debug.Log($"[ObjectManagerFacade] 클라이언트 이동 경로 추가: {child.name} at {child.position}");
-        }
-        
-        // 경로가 정상적으로 설정되었는지 확인하고 이벤트 발생
-        // if (Player_move_list.Count > 0 && Other_move_list.Count > 0)
-        // {
-        //    GridSpawned?.Invoke();
-        // }
-        // else
-        // {
-        //     Debug.LogError("[MapSpawnerFacade] ObjectManagerFacade가 유효하지 않습니다.");
-        // }
-        
+        }      
      }
     
     
@@ -263,22 +299,56 @@ public class MapSpawnerFacade : NetworkBehaviour
 
     #endregion
 
-    /// <summary>
-    /// 맵 인스턴스를 설정합니다.
-    /// </summary>
     private void ConfigureMapInstance()
     {
         _mapSpawner.transform.localPosition = Vector3.zero;
         _mapSpawner.transform.localScale = new Vector3(1, 1, _mapSpawner.transform.localScale.z);
-        Debug.Log($"[MapSpawnerFacade] 인스턴스화 성공: {_mapSpawner.name}");
-
     }
   
-    /// <summary>
-    /// 맵 인스턴스를 반환합니다.
-    /// </summary>
+
     public GameObject GetMapInstance()
     {
         return _mapInstance;
     }
+
+    /// <summary>
+    /// 맵 인스턴스를 반환합니다.///////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /// </summary>
+    public void Holder_Position_Set(string Value01, string Value02)
+    {
+        NetUtils.HostAndClientMethod(
+            () => GetPositionSetServerRpc(Value01, Value02),
+            () => GetPositionSet(Value01, Value02));
+
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void GetPositionSetServerRpc(string Value01, string Value02)
+    {
+        GetPositionSet(Value01, Value02);
+    }
+
+    private void GetPositionSet(string Value01, string Value02)
+    {
+
+        GetPositionSetClientRpc(Value01, Value02);
+    }
+
+    [ClientRpc]
+    private void GetPositionSetClientRpc(string Value01, string Value02)
+    {
+        UI_Spawn_Holder holder01 = Hero_Holders[Value01];
+        UI_Spawn_Holder holder02 = Hero_Holders[Value02];
+
+        holder01.HeroChange(holder02);
+        holder02.HeroChange(holder01);
+
+        (holder01.Holder_Name, holder02.Holder_Name) = (holder02.Holder_Name, holder01.Holder_Name);
+        (holder01.m_Heroes, holder02.m_Heroes) = (new List<ServerHero>(holder02.m_Heroes), new List<ServerHero>(holder01.m_Heroes));
+        // (holder01.m_Data, holder02.m_Data) = (holder02.m_Data, holder01.m_Data);
+
+    }
+
+
 }
+

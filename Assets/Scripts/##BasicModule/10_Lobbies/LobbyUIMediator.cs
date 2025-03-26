@@ -26,7 +26,7 @@ public class LobbyUIMediator : MonoBehaviour
         ConnectionManager m_ConnectionManager;
         ISubscriber<ConnectStatus> m_ConnectStatusSubscriber;
 
-        [Inject] DebugClassFacade m_DebugClassFacade;
+        [Inject] DebugClassFacade m_debugClassFacade;
 
         [Inject] SceneManagerEx _sceneManagerEx;
         const string k_DefaultLobbyName = "no-name";
@@ -52,7 +52,7 @@ public class LobbyUIMediator : MonoBehaviour
             RegenerateName();
             m_ConnectStatusSubscriber.Subscribe(OnConnectStatus);
             _sceneManagerEx = sceneManagerEx;
-            m_DebugClassFacade = debugClassFacade;
+            m_debugClassFacade = debugClassFacade;
         }
 
         void OnConnectStatus(ConnectStatus status)
@@ -123,7 +123,7 @@ public class LobbyUIMediator : MonoBehaviour
                 m_LocalUser.IsHost = true;
                 m_LobbyServiceFacade.SetRemoteLobby(lobbyCreationAttempt.Lobby);
 
-                Debug.Log($"Created lobby with ID: {m_LocalLobby.LobbyID} and code {m_LocalLobby.LobbyCode}");
+                m_debugClassFacade.LogInfo(GetType().Name, $"Created lobby with ID: {m_LocalLobby.LobbyID} and code {m_LocalLobby.LobbyCode}");
                 m_ConnectionManager.StartHostLobby(m_LocalUser.DisplayName);
                 
                 // 로비 생성 완료 이벤트 발생
@@ -137,10 +137,10 @@ public class LobbyUIMediator : MonoBehaviour
 
         public async Task<(bool Success, Unity.Services.Lobbies.Models.Lobby Lobby)> QueryLobbiesRequest(bool blockUI)
         {
-            Debug.Log($"[LobbyUIMediator] 로비 검색 요청 - UI 블록: {blockUI}");
+            m_debugClassFacade.LogInfo(GetType().Name, $"로비 검색 요청 - UI 블록: {blockUI}");
             if (Unity.Services.Core.UnityServices.State != ServicesInitializationState.Initialized)
             {
-                Debug.LogWarning("[LobbyUIMediator] Unity Services가 초기화되지 않음");
+                m_debugClassFacade.LogWarning(GetType().Name, $"Unity Services가 초기화되지 않음");
                 return (false, null);
             }
 
@@ -150,13 +150,13 @@ public class LobbyUIMediator : MonoBehaviour
 
             if (blockUI && !playerIsAuthorized)
             {
-                Debug.LogWarning("[LobbyUIMediator] 플레이어 인증 실패");
+                m_debugClassFacade.LogWarning(GetType().Name, $"플레이어 인증 실패");
                 UnblockUIAfterLoadingIsComplete();
                 return (false, null);
             }
 
             var (success, lobby) = await m_LobbyServiceFacade.FindAvailableLobby();
-            Debug.Log($"[LobbyUIMediator] 로비 검색 완료 - 성공: {success}");
+            m_debugClassFacade.LogInfo(GetType().Name, $"로비 검색 완료 - 성공: {success}");
 
 
             return (success, lobby);
@@ -167,17 +167,18 @@ public class LobbyUIMediator : MonoBehaviour
             BlockUIWhileLoadingIsInProgress();
 
             bool playerIsAuthorized = await m_AuthManager.EnsurePlayerIsAuthorized();
-            Debug.Log($"[LobbyUIMediator] 플레이어 인증 결과: {playerIsAuthorized}#####################################");
+            m_debugClassFacade.LogInfo(GetType().Name, $"JoinLobbyWithCodeRequest 요청 - 플레이어 인증 결과: {playerIsAuthorized}");
+            m_debugClassFacade.LogInfo(GetType().Name, $"JoinLobbyWithCodeRequest 요청 - 로비 코드: {lobbyCode}");  
             if (!playerIsAuthorized)
             {
                 UnblockUIAfterLoadingIsComplete();
                 return;
             }
-            Debug.Log($"[LobbyUIMediator] 로비 참가 요청 - 로비 코드: {lobbyCode}");
+            
+            m_debugClassFacade.LogInfo(GetType().Name, $"로비 참가 요청 - 로비 코드: {lobbyCode}");
             var (success, lobby) = await m_LobbyServiceFacade.TryJoinLobbyAsync(null, lobbyCode);
-            Debug.Log($"[LobbyUIMediator] 로비 참가 요청 결과 - 성공: {success}");
-
-            m_DebugClassFacade.LogInfo(GetType().Name, $"JoinLobbyWithCodeRequest 요청 - 로비 코드@!@@@@: {lobbyCode}");
+            m_debugClassFacade.LogInfo(GetType().Name, $"로비 참가 요청 결과 - 성공: {success}");
+            m_debugClassFacade.LogInfo(GetType().Name, $"JoinLobbyWithCodeRequest 요청 - 로비 코드: {lobbyCode}");
 
             if (success == true && lobby != null)
             {
@@ -218,7 +219,7 @@ public class LobbyUIMediator : MonoBehaviour
             BlockUIWhileLoadingIsInProgress();
 
             bool playerIsAuthorized = await m_AuthManager.EnsurePlayerIsAuthorized();
-            Debug.Log($"[LobbyUIMediator] 플레이어 인증 결과: {playerIsAuthorized}아 시방방");
+            m_debugClassFacade.LogInfo(GetType().Name, $"플레이어 인증 결과: {playerIsAuthorized}아 시방방");
             if (!playerIsAuthorized)
             {
                 UnblockUIAfterLoadingIsComplete();
@@ -226,7 +227,7 @@ public class LobbyUIMediator : MonoBehaviour
             }
 
             var result = await m_LobbyServiceFacade.TryQuickJoinLobbyAsync();
-            Debug.Log($"[LobbyUIMediator] QuickJoinRequest() 로비 참가 요청 결과 - 성공: {result.Success}");
+            m_debugClassFacade.LogInfo(GetType().Name, $"QuickJoinRequest() 로비 참가 요청 결과 - 성공: {result.Success}");
             if (result.Success)
             {
                 OnJoinedLobby(result.Lobby);
@@ -240,7 +241,7 @@ public class LobbyUIMediator : MonoBehaviour
         void OnJoinedLobby(Unity.Services.Lobbies.Models.Lobby remoteLobby)
         {
             m_LobbyServiceFacade.SetRemoteLobby(remoteLobby);
-            Debug.Log($"[LobbyUIMediator]  Joined lobby with code: {m_LocalLobby.LobbyCode}");
+            m_debugClassFacade.LogInfo(GetType().Name, $" Joined lobby with code: {m_LocalLobby.LobbyCode}");
             
             // 로비 참가 완료 이벤트 발생
             OnLobbyJoined?.Invoke();
@@ -283,19 +284,19 @@ public class LobbyUIMediator : MonoBehaviour
             // 네트워크 연결이 완료될 때까지 대기
             while (m_ConnectionManager.NetworkManager != null && !m_ConnectionManager.NetworkManager.IsConnectedClient)
             {
-                Debug.Log("[LobbyUIMediator] 네트워크 연결 대기 중...");
+                m_debugClassFacade.LogInfo(GetType().Name, $"네트워크 연결 대기 중...");
                 yield return new WaitForSeconds(0.5f);
             }
             
             // 네트워크 연결이 실패하거나 타임아웃된 경우 처리
             if (m_ConnectionManager.NetworkManager == null || !m_ConnectionManager.NetworkManager.IsConnectedClient)
             {
-                Debug.LogWarning("[LobbyUIMediator] 네트워크 연결 실패 또는 타임아웃");
+                m_debugClassFacade.LogWarning(GetType().Name, $"네트워크 연결 실패 또는 타임아웃");
                 UnblockUIAfterLoadingIsComplete();
             }
             else
             {
-                Debug.Log("[LobbyUIMediator] 네트워크 연결 완료");
+                m_debugClassFacade.LogInfo(GetType().Name, $"네트워크 연결 완료");
                 // 연결이 완료된 후에도 UI는 차단된 상태로 유지
                 // 실제 작업(로비 생성/참가 등)이 완료된 후 UnblockUIAfterLoadingIsComplete()가 호출될 것임
             }

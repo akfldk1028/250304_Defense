@@ -9,6 +9,7 @@ using System;
 using System.Reflection;
 using System.Collections;
 using System.ComponentModel;
+using Unity.VisualScripting;
 
 public class DataTransformer : EditorWindow
 {
@@ -17,7 +18,7 @@ public class DataTransformer : EditorWindow
 	public static void ParseExcelDataToJson()
 	{
 		ParseExcelDataToJson<MonsterDataLoader, MonsterData>("Monster");
-		// ParseExcelDataToJson<HeroDataLoader, HeroData>("Hero");
+		ParseExcelDataToJson<HeroDataLoader, HeroData>("Hero");
 		// ParseExcelDataToJson<SkillDataLoader, SkillData>("Skill");
 		// ParseExcelDataToJson<ProjectileDataLoader, ProjectileData>("Projectile");
 		// ParseExcelDataToJson<EnvDataLoader, EnvData>("Env");
@@ -35,7 +36,7 @@ public class DataTransformer : EditorWindow
 		field.SetValue(loader, ParseExcelDataToList<LoaderData>(filename));
 
 		string jsonStr = JsonConvert.SerializeObject(loader, Formatting.Indented);
-		File.WriteAllText($"{Application.dataPath}/Resources/Data/JsonData/{filename}Data.json", jsonStr);
+		File.WriteAllText($"{Application.dataPath}/@Resources/04_Data/JsonData/{filename}Data.json", jsonStr);
 		AssetDatabase.Refresh();
 	}
 
@@ -43,7 +44,7 @@ public class DataTransformer : EditorWindow
 	{
 		List<LoaderData> loaderDatas = new List<LoaderData>();
 
-		string[] lines = File.ReadAllText($"{Application.dataPath}/Resources/Data/ExcelData/{filename}Data.csv").Split("\n");
+		string[] lines = File.ReadAllText($"{Application.dataPath}/@Resources/04_Data/ExcelData/{filename}Data.csv").Split("\n");
 
 		for (int l = 1; l < lines.Length; l++)
 		{
@@ -60,6 +61,9 @@ public class DataTransformer : EditorWindow
 			{
 				FieldInfo field = loaderData.GetType().GetField(fields[f].Name);
 				Type type = field.FieldType;
+
+				if (field.HasAttribute(typeof(NonSerializedAttribute)))
+					continue;
 
 				if (type.IsGenericType)
 				{

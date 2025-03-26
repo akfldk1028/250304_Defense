@@ -164,11 +164,11 @@ namespace Unity.Assets.Scripts.Objects
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
-            Debug.Log($"<color=red>[BaseObject] OnNetworkSpawn: {gameObject.name}</color>");
         }
 
         public override void OnNetworkDespawn()
         {
+            base.OnNetworkDespawn();
             // if (IsServer)
             // {
             //     NetLifeState.LifeState.OnValueChanged -= OnLifeStateChanged;

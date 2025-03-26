@@ -48,13 +48,13 @@ namespace Unity.Assets.Scripts.Resource
 
         public T Load<T>(string key) where T : Object
         {
-            Debug.Log($"<color=yellow>[ResourceManager] Load<{typeof(T).Name}> 호출: 키 '{key}'</color>");
+            _debugClassFacade?.LogInfo(GetType().Name, $"[ResourceManager] Load<{typeof(T).Name}> 호출: 키 '{key}");
             
             // 1. 원래 키로 먼저 시도
             if (_resources.TryGetValue(key, out Object resource))
             {
                 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.Log($"[ResourceManager] 원래 키로 리소스 찾음: '{key}'");
+                _debugClassFacade?.LogInfo(GetType().Name, $"[ResourceManager] 원래 키로 리소스 찾음: '{key}'");
                 #endif
                 return resource as T;
             }
@@ -64,7 +64,7 @@ namespace Unity.Assets.Scripts.Resource
             if (_resources.TryGetValue(typeKey, out resource))
             {
                 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.Log($"[ResourceManager] 타입 키로 리소스 찾음: '{typeKey}'");
+                _debugClassFacade?.LogInfo(GetType().Name, $"[ResourceManager] 타입 키로 리소스 찾음: '{typeKey}'");
                 #endif
                 return resource as T;
             }
@@ -75,7 +75,7 @@ namespace Unity.Assets.Scripts.Resource
                 if (_resources.TryGetValue($"{key}.sprite", out resource))
                 {
                     #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.Log($"[ResourceManager] 스프라이트 특수 처리로 리소스 찾음: '{key}.sprite'");
+                    _debugClassFacade?.LogInfo(GetType().Name, $"[ResourceManager] 스프라이트 특수 처리로 리소스 찾음: '{key}.sprite'");
                     #endif
                     return resource as T;
                 }
@@ -219,7 +219,7 @@ namespace Unity.Assets.Scripts.Resource
                             }
                             else
                             {
-                                Debug.LogError($"[ResourceManager] 에셋 로드 실패: {key}, 오류: {obj.OperationException?.Message}");
+                                _debugClassFacade?.LogError(GetType().Name, $"[ResourceManager] 에셋 로드 실패: {key}, 오류: {obj.OperationException?.Message}");
                                 
                                 // 실패해도 로드 카운트는 증가시켜야 함
                                 callback?.Invoke(key, loadedCount, totalCount);
@@ -269,7 +269,7 @@ namespace Unity.Assets.Scripts.Resource
         // 디버그용 메서드: 로드된 모든 에셋 출력
         public void Clear()
         {
-            Debug.Log($"[ResourceManager] Clear 시작: {_resources.Count}개 리소스, {_handles.Count}개 핸들");
+            _debugClassFacade?.LogInfo(GetType().Name, $"[ResourceManager] Clear 시작: {_resources.Count}개 리소스, {_handles.Count}개 핸들");
             
             // ScriptableObject 초기화
             
@@ -292,23 +292,23 @@ namespace Unity.Assets.Scripts.Resource
                     }
                     else
                     {
-                        Debug.LogWarning($"[ResourceManager] 유효하지 않은 핸들 무시: {key}");
+                        _debugClassFacade?.LogWarning(GetType().Name, $"[ResourceManager] 유효하지 않은 핸들 무시: {key}");
                     }
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogWarning($"[ResourceManager] 핸들 해제 중 오류 발생: {ex.Message}");
+                    _debugClassFacade?.LogWarning(GetType().Name, $"[ResourceManager] 핸들 해제 중 오류 발생: {ex.Message}");
                     errorCount++;
                 }
             }
             
-            Debug.Log($"[ResourceManager] 핸들 해제 완료: 성공 {releasedCount}개, 오류 {errorCount}개");
+            _debugClassFacade?.LogInfo(GetType().Name, $"[ResourceManager] 핸들 해제 완료: 성공 {releasedCount}개, 오류 {errorCount}개");
             
             // 컬렉션 초기화
             _resources.Clear();
             _handles.Clear();
             
-            Debug.Log("[ResourceManager] Clear 완료");
+            _debugClassFacade?.LogInfo(GetType().Name, "[ResourceManager] Clear 완료");
         }
         
 
@@ -325,19 +325,19 @@ namespace Unity.Assets.Scripts.Resource
                 .ToList();
             
             // 타입별 통계 출력
-            Debug.Log($"[ResourceManager] 타입별 통계:");
+            _debugClassFacade?.LogInfo(GetType().Name, $"[ResourceManager] 타입별 통계:");
             foreach (var stat in typeStats)
             {
-                Debug.Log($"- {stat.Type}: {stat.Count}개");
+                _debugClassFacade?.LogInfo(GetType().Name, $"- {stat.Type}: {stat.Count}개");
             }
             
             // 키 패턴 출력
-            Debug.Log($"[ResourceManager] 키 패턴 샘플 (최대 10개):");
+            _debugClassFacade?.LogInfo(GetType().Name, $"[ResourceManager] 키 패턴 샘플 (최대 10개):");
             var sampleKeys = _resources.Keys.Take(10).ToList();
             foreach (var key in sampleKeys)
             {
                 var value = _resources[key];
-                Debug.Log($"- {key} => {value.name} ({value.GetType().Name})");
+                _debugClassFacade?.LogInfo(GetType().Name, $"- {key} => {value.name} ({value.GetType().Name})");
             }
             
         }

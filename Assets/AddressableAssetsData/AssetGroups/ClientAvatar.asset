@@ -15,6 +15,42 @@ MonoBehaviour:
   m_GroupName: ClientAvatar
   m_GUID: 0b0812a5026230941ab3156cbe1ec484
   m_SerializeEntries:
+  - m_GUID: 04273f469efd9844686b73604c66c634
+    m_Address: 201003_Lion
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - PreLoad
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 51d252c8d90ed0a40a5cc62217fe16bd
+    m_Address: 201000_Wizard
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - PreLoad
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 775ca3ad60f7ae747bfb1ef2db1e285c
+    m_Address: 201004_Vampire
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - PreLoad
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 88ad0b2fd356fad4dafa0d98e5f8c335
+    m_Address: 201020_Vampire
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - PreLoad
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cacf850646460744bbc2a54ee8508527
+    m_Address: 201001_Hero
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - PreLoad
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d9a099dda84c2d843be78af696e77a18
+    m_Address: 201002_Alchemist
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - PreLoad
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: fe985de850dabe34c802ea8e99a0b27a
     m_Address: 202001_greenSlime
     m_ReadOnly: 0
