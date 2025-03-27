@@ -14,6 +14,7 @@ public class UIManager
 
 	[Inject] private DebugClassFacade _debugFacade;
 	[Inject] private ResourceManager _resourceManager;
+	[Inject] public IObjectResolver _container;
 
 	// 싱글톤 인스턴스
 	// private static UIManager s_Instance;
@@ -165,8 +166,11 @@ public class UIManager
 
 		GameObject go = _resourceManager.Instantiate(name);
 		T popup = Util.GetOrAddComponent<T>(go);
+		
+		// VContainer를 통해 의존성 주입
+		_container.Inject(popup);
+		
 		_popupStack.Push(popup);
-
 		go.transform.SetParent(Root.transform);
 
 		return popup;
@@ -212,4 +216,42 @@ public class UIManager
 		CloseAllPopupUI();
 		_sceneUI = null;
 	}
+
+
+	// UIManager 클래스에 아래 메서드 추가
+	public T FindPopup<T>() where T : UI_Popup
+	{
+		// Stack은 직접 순회가 불가능하므로 배열로 변환
+		UI_Popup[] popups = _popupStack.ToArray();
+		
+		// 열려있는 모든 팝업 중에서 T 타입의 팝업 찾기
+		foreach (UI_Popup popup in popups)
+		{
+			if (popup is T typedPopup)
+			{
+				return typedPopup;
+			}
+		}
+		
+		return null;
+	}
+
+	// FindPopup 메서드의 오버로드 버전 - 이름으로 찾기
+	public UI_Popup FindPopupByName(string popupName)
+	{
+		// Stack은 직접 순회가 불가능하므로 배열로 변환
+		UI_Popup[] popups = _popupStack.ToArray();
+		
+		// 열려있는 모든 팝업 중에서 이름이 일치하는 팝업 찾기
+		foreach (UI_Popup popup in popups)
+		{
+			if (popup.gameObject.name.Contains(popupName))
+			{
+				return popup;
+			}
+		}
+		
+		return null;
+	}
+
 }

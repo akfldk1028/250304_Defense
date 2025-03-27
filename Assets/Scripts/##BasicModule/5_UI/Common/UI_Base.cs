@@ -14,6 +14,15 @@ public class UI_Base : InitBase
 
 	protected Dictionary<Type, UnityEngine.Object[]> _objects = new Dictionary<Type, UnityEngine.Object[]>();
 
+	public override bool Init()
+	{
+		if (base.Init() == false)
+			return false;
+
+		// 의존성 주입이 완료된 후에 이벤트 구독
+		SubscribeEvents();
+		return true;
+	}
 
 	protected void Bind<T>(Type type) where T : UnityEngine.Object
 	{
@@ -60,8 +69,10 @@ public class UI_Base : InitBase
 
     protected virtual void SubscribeEvents()
     {
+        if (uiManager == null)
+            return;
+            
         uiManager.SubscribeEvents();
-
     }
     
     /// <summary>
@@ -69,8 +80,10 @@ public class UI_Base : InitBase
     /// </summary>
     protected virtual void UnsubscribeEvents()
     {
+        if (uiManager == null)
+            return;
+            
         uiManager.UnsubscribeEvents();
-
     }
 
     protected virtual void OnDestroy()

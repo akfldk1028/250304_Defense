@@ -255,9 +255,6 @@ public class LobbyUIMediator : MonoBehaviour
                 m_ConnectionManager.StartClientLobby(m_LocalUser.DisplayName);
             }
 
-            
-            // 모든 플레이어가 준비되면 씬 전환
-            //m_LobbyServiceFacade.SceneLoad();
         }
 
  

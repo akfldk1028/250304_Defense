@@ -35,12 +35,14 @@ public class BasicGameLifetimeScope : LifetimeScope
             builder.RegisterInstance(netUtils);
             Debug.Log("[BasicGameLifetimeScope] 부모 스코프에서 NetUtils 참조 성공");
         }
-  
+
+        // UIManager 등록
+        builder.Register<UIManager>(Lifetime.Singleton);
+        Debug.Log("[BasicGameLifetimeScope] UIManager 등록 완료");
+
         // 기본 매니저 등록
         builder.Register<ObjectManager>(Lifetime.Singleton);
         builder.Register<MapManager>(Lifetime.Singleton);
-
-
 
         builder.RegisterComponentInHierarchy<BasicGameState>();
 

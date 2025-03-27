@@ -50,7 +50,8 @@ namespace Unity.Assets.Scripts.UI
 
         enum Buttons
         {
-            Summon_B
+            Summon_B,
+            Upgrade_B
         }
 
 
@@ -58,9 +59,7 @@ namespace Unity.Assets.Scripts.UI
 
 
         [Inject] private ObjectManager _objectManager;
-
         [Inject] private BasicGameState _basicGameState;
-
         
         // [Inject] private BasicGameManager _basicGameManager;
         // [Inject] private MainMenuScene _MainMenuScene;
@@ -72,6 +71,7 @@ namespace Unity.Assets.Scripts.UI
         #region Properties
         
         [SerializeField] public UI_Spawn_Holder Spawn_Holder;
+
 
         // private GameObject MatchingObject => GetObject((int)GameObjects.Matching);
         private GameObject MainObject => GetObject((int)GameObjects.Main);
@@ -98,6 +98,8 @@ namespace Unity.Assets.Scripts.UI
             BindButtons(typeof(Buttons));
 
             GetButton((int)Buttons.Summon_B).gameObject.BindEvent(OnClickSummonButton);
+            GetButton((int)Buttons.Upgrade_B).gameObject.BindEvent(OnClickUpgradeButton);
+
             // GetButton((int)Buttons.DiaPlusButton).gameObject.BindEvent(OnClickDiaPlusButton);
             // GetButton((int)Buttons.HeroesListButton).gameObject.BindEvent(OnClickHeroesListButton);
             // GetButton((int)Buttons.SetHeroesButton).gameObject.BindEvent(OnClickSetHeroesButton);
@@ -176,6 +178,21 @@ namespace Unity.Assets.Scripts.UI
         {
             OnSummonButtonRequested?.Invoke();
             Debug.Log("[UI_BasicGame] OnClickSummonButton");
+        }
+
+        private void OnClickUpgradeButton(PointerEventData evt)
+        {
+            Debug.Log("[UI_BasicGame] OnClickUpgradeButton");
+            UI_Upgrade_Popup existingPopup = uiManager.FindPopup<UI_Upgrade_Popup>();
+            if (existingPopup == null)
+            {
+                UI_Upgrade_Popup popup = uiManager.ShowPopupUI<UI_Upgrade_Popup>();
+                popup.SetInfo();
+            }
+            else
+            {
+                Debug.Log("[UI_BasicGame] Upgrade popup is already open");
+            }
         }
 
         protected override void OnDestroy()

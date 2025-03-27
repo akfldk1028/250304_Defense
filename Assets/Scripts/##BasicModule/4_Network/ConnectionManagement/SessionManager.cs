@@ -25,8 +25,10 @@ using UnityEngine;
     {
         SessionManager()
         {
+            Debug.Log("<color=cyan>[SessionManager] 인스턴스 생성</color>");
             m_ClientData = new Dictionary<string, T>();
             m_ClientIDToPlayerId = new Dictionary<ulong, string>();
+            Debug.Log("<color=cyan>[SessionManager] 인스턴스 생성 완료</color>");
         }
 
         public static SessionManager<T> Instance
@@ -116,7 +118,7 @@ using UnityEngine;
                 Debug.LogError($"Player ID {playerId} already exists. This is a duplicate connection. Rejecting this session data.");
                 return;
             }
-
+            Debug.Log("<color=cyan>[SessionManager] SetupConnectingPlayerSessionData 시작</color>");
             // If another client exists with the same playerId
             if (m_ClientData.ContainsKey(playerId))
             {
@@ -127,7 +129,7 @@ using UnityEngine;
                 }
 
             }
-
+            Debug.Log("<color=cyan>[SessionManager] SetupConnectingPlayerSessionData 완료</color>");
             // Reconnecting. Give data from old player to new player
             if (isReconnecting)
             {
@@ -136,7 +138,7 @@ using UnityEngine;
                 sessionPlayerData.ClientID = clientId;
                 sessionPlayerData.IsConnected = true;
             }
-
+            Debug.Log("<color=cyan>[SessionManager] SetupConnectingPlayerSessionData 완료</color>");
             //Populate our dictionaries with the SessionPlayerData
             m_ClientIDToPlayerId[clientId] = playerId;
             m_ClientData[playerId] = sessionPlayerData;

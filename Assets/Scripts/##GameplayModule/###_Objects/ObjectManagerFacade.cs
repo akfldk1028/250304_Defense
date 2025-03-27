@@ -174,12 +174,7 @@ public class ObjectManagerFacade : NetworkBehaviour
 
     public void Summon()
     {
-        //TODO Random 선택
-        // data = scriptData;
-        // if(scriptData == null)
-        // {
-        //    data = Data(Rarity);
-        // }
+ 
         NetUtils.HostAndClientMethod(
             () => ServerSpawnHeroServerRpc(NetUtils.LocalID()),
             () => HeroSpawn(NetUtils.LocalID()));
@@ -300,36 +295,6 @@ public class ObjectManagerFacade : NetworkBehaviour
     {
         _debugClassFacade?.LogError(GetType().Name, "<color=red>[ObjectManagerFacade] 영웅 선택 실패</color>");
     }
-    // if (selectedHero != null)
-    // {
-    //     _debugClassFacade?.LogInfo(GetType().Name, $"<color=green>[ObjectManagerFacade] 최종 선택된 영웅: {selectedHero.DescriptionTextID} ({selectedHero.Rarity})</color>");
-    //     _debugClassFacade?.LogInfo(GetType().Name, $"<color=green>  - DataId: {selectedHero.DataId}</color>");
-    //      var existingHolder = GetExistingHolder(Organizers, selectedHero.DataId);
-
-  
-    //     try
-    //     {
-    //         if (_networkManager.IsServer && existingHolder != null)
-    //         {
-    //             Vector3 spawnPosition = existingHolder.transform.position;
-    //             var hero = _objectManager.Spawn<ServerHero>(spawnPosition, clientId, selectedHero.DataId);
-    //             HeroSpawnClientRpc(hero.NetworkObject.NetworkObjectId, networkObject.NetworkObjectId, clientId, selectedHero.DataId);
-    //         }
-    //         else 
-    //         {
-    //             HeroSpawnClientRpc(NetworkObject.NetworkObjectId, networkObject.NetworkObjectId, clientId, selectedHero.DataId);
-    //         }
-
-    //     }
-    //     catch (Exception ex)
-    //     {
-    //         _debugClassFacade?.LogError(GetType().Name, $"<color=red>[ObjectManagerFacade] 영웅 스폰 중 예외 발생: {ex.Message}\n{ex.StackTrace}</color>");
-    //     }
-    // }
-    // else
-    // {
-    //     _debugClassFacade?.LogError(GetType().Name, "<color=red>[ObjectManagerFacade] 영웅 선택 실패</color>");
-    // }
 }
 
 private UI_Spawn_Holder GetExistingHolder(string clientKey, int heroId)
@@ -415,24 +380,6 @@ private void HeroSpawnClientRpc(ulong heroNetworkId, ulong holderNetworkId, ulon
         _debugClassFacade?.LogError(GetType().Name, $"<color=red>[ObjectManagerFacade] HeroSpawnClientRpc 예외 발생: {ex.Message}</color>");
     }
 }
-    // private ClientHero_Holder GetExistingHolder(string clientKey, string heroName)
-    // {
-    //     foreach (var holder in Hero_Holders)
-    //     {
-    //       if(holder.Key.Contains(clientKey) && holder.Value.m_Heroes.Count < 3 && holder.Value.Holder_Name == heroName)
-    //         {
-    //             return holder.Value;    
-    //         }
-    //     }
-    //     return null;
-    // }
 
-    //    if (moveList.Count > 0)
-    //         {
-    //             monsterNetworkObject.transform.position = moveList[0];
-    //             monsterNetworkObject.GetComponent<ServerMonster>().SetMoveList(moveList);
-    //         }
-    //         else
-    //         {
               
 }
