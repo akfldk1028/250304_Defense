@@ -3,6 +3,7 @@ using VContainer;
 // using Unity.Assets.Scripts.Utils;
 // using  Unity.Assets.Scripts.Pooling;
 using Unity.Assets.Scripts.Objects;
+using Unity.Assets.Scripts.Resource;
 
 namespace Unity.Assets.Scripts.Module.ApplicationLifecycle.Installers
 {
@@ -15,7 +16,7 @@ namespace Unity.Assets.Scripts.Module.ApplicationLifecycle.Installers
         {
             _debugClassFacade?.LogInfo(GetType().Name, "오브젝트 모듈 설치 시작");
 
-
+            // 기본 매니저들 등록
             builder.Register<ObjectManager>(Lifetime.Singleton);
             // builder.Register<ObjectManagerFacade>(Lifetime.Singleton);
 

@@ -1,12 +1,12 @@
 using System;
-// using Unity.Assets.Scripts.CameraUtils;
-// using Unity.Assets.Scripts.Gameplay.UserInput;
-// using Unity.Assets.Scripts.Gameplay.Configuration;
-// using Unity.Assets.Scripts.Gameplay.Actions;
-// using Unity.Assets.Scripts.Utils;
 using Unity.Netcode;
 using UnityEngine;
 using Spine.Unity;
+using Unity.Assets.Scripts.Data;
+using VContainer;
+using Unity.Assets.Scripts.Resource;
+using Spine;
+using UnityEngine.Rendering;
 
 namespace Unity.Assets.Scripts.Objects
 {
@@ -18,8 +18,9 @@ namespace Unity.Assets.Scripts.Objects
         [SerializeField] private HeroAvatarSO heroAvatarSO;
         [SerializeField] Animator m_ClientVisualsAnimator;
         
-        [SerializeField] private SkeletonAnimation skeletonAnim;
+        [SerializeField] private SkeletonDataAsset m_skeletonDataAsset;
 
+        [Inject] private ResourceManager _resourceManager;
         // [SerializeField]
         // VisualizationConfiguration m_VisualizationConfiguration;
 
@@ -27,18 +28,149 @@ namespace Unity.Assets.Scripts.Objects
         /// Returns a reference to the active Animator for this visualization
         /// </summary>
         public Animator OurAnimator => m_ClientVisualsAnimator;
-        public SkeletonAnimation SkeletonAnim => skeletonAnim;
+        public SkeletonDataAsset SkeletonDataAsset => m_skeletonDataAsset;
+
+	    public SkeletonAnimation SkeletonAnim { get; private set; }
+
+        // 수동으로 ResourceManager를 설정할 수 있는 속성 추가
+        public ResourceManager ResourceManager 
+        { 
+            get { return _resourceManager; }
+            set 
+            { 
+                if (_resourceManager == null)
+                {
+                    _resourceManager = value;
+                    Debug.Log("[ClientCreature] ResourceManager가 수동으로 설정되었습니다.");
+                }
+            } 
+        }
 
 
-        public virtual void SetAvatar(HeroAvatarSO avatarSO)
+        public virtual void SetAvatar(HeroAvatarSO avatarSO , string SkeletonDataID)
         {
             heroAvatarSO = avatarSO;
-            if (skeletonAnim != null)
+
+            if(SkeletonDataID == "" || SkeletonDataID == null)
             {
-                skeletonAnim = heroAvatarSO.skeletonAnim;
+                Debug.Log("SPRITE RENDERER 추가");
+                SpriteRenderer spriteRenderer = GetComponent<SpriteRenderer>();
+                if (spriteRenderer == null)
+                {
+                    spriteRenderer = gameObject.AddComponent<SpriteRenderer>();
+                    // Set해야함 avatar에서 꺼내서
+                }
+
+                // 애니메이션 컨트롤러 추가
+                Animator animator = GetComponent<Animator>();
+                if (animator == null)
+                {
+                    Debug.Log("Animator 추가");
+                    animator = gameObject.AddComponent<Animator>();
+                    // 필요시 애니메이션 컨트롤러 설정
+                }
             }
-            //spirte 혹은 skelteonAnim 배치 해야하는데데
+            else
+            {
+                SkeletonAnim = GetComponent<SkeletonAnimation>();
+                if (SkeletonAnim == null)
+                {
+                    Debug.Log("SkeletonAnimation 추가");
+                    SkeletonAnim = gameObject.AddComponent<SkeletonAnimation>();    
+                    if (_resourceManager == null)
+                    {
+                        Debug.LogError("[ClientCreature] ResourceManager가 주입되지 않았습니다. VContainer 설정을 확인해주세요.");
+                        // 이 경우 SetSpineAnimation 호출이 실패할 가능성이 높습니다.
+                        // 실제 프로젝트에서는 ResourceManager를 올바르게 주입하도록 구현해야 합니다.
+                        return;
+                    }
+                    SetSpineAnimation(SkeletonDataID, SortingLayers.CREATURE);
+                }
+            }
+          
+            
         }
+
+        // ResourceManager를 전달받는 오버로드 추가
+        public virtual void SetAvatar(HeroAvatarSO avatarSO, string SkeletonDataID, ResourceManager resourceManager)
+        {
+            // 리소스 매니저 설정
+            if (_resourceManager == null && resourceManager != null)
+            {
+                _resourceManager = resourceManager;
+                Debug.Log("[ClientCreature] ResourceManager가 SetAvatar 호출에서 설정되었습니다.");
+            }
+            
+            // 기존 메서드 호출
+            SetAvatar(avatarSO, SkeletonDataID);
+        }
+
+        #region Spine
+        protected virtual void SetSpineAnimation(string dataLabel, int sortingOrder)
+        {
+            if (_resourceManager == null)
+            {
+                Debug.LogError("ResourceManager가 null입니다!");
+                return;
+            }
+
+            SkeletonAnim.skeletonDataAsset = _resourceManager.Load<SkeletonDataAsset>(dataLabel);
+            SkeletonAnim.Initialize(true);
+
+            // Register AnimEvent
+            if (SkeletonAnim.AnimationState != null)
+            {
+                SkeletonAnim.AnimationState.Event -= OnAnimEventHandler;
+                SkeletonAnim.AnimationState.Event += OnAnimEventHandler;
+            }
+
+            // Spine SkeletonAnimation은 SpriteRenderer 를 사용하지 않고 MeshRenderer을 사용함
+            // 그렇기떄문에 2D Sort Axis가 안먹히게 되는데 SortingGroup을 SpriteRenderer,MeshRenderer을 같이 계산함.
+            SortingGroup sg = Util.GetOrAddComponent<SortingGroup>(gameObject);
+            sg.sortingOrder = sortingOrder;
+        }
+
+        protected virtual void UpdateAnimation()
+        {
+        }
+
+        public TrackEntry PlayAnimation(int trackIndex, string animName, bool loop)
+        {
+            if (SkeletonAnim == null)
+                return null;
+
+            TrackEntry entry = SkeletonAnim.AnimationState.SetAnimation(trackIndex, animName, loop);
+
+            if (animName == AnimName.DEAD)
+                entry.MixDuration = 0;
+            else
+                entry.MixDuration = 0.2f;
+
+            return entry;
+        }
+
+        public void AddAnimation(int trackIndex, string AnimName, bool loop, float delay)
+        {
+            if (SkeletonAnim == null)
+                return;
+
+            SkeletonAnim.AnimationState.AddAnimation(trackIndex, AnimName, loop, delay);
+        }
+
+        public void Flip(bool flag)
+        {
+            if (SkeletonAnim == null)
+                return;
+
+            SkeletonAnim.Skeleton.ScaleX = flag ? -1 : 1;
+        }
+
+        public virtual void OnAnimEventHandler(TrackEntry trackEntry, Spine.Event e)
+        {
+            Debug.Log("OnAnimEventHandler");
+        }
+        #endregion
+
 
         /// <summary>
         /// Returns the targeting-reticule prefab for this character visualization
@@ -119,10 +251,6 @@ namespace Unity.Assets.Scripts.Objects
         //     m_ClientActionViz.OnStoppedChargingUp(percentCharged);
         // }
 
-        void Awake()
-        {
-            enabled = false;
-        }
 
         public override void OnNetworkSpawn()
         {
@@ -133,55 +261,18 @@ namespace Unity.Assets.Scripts.Objects
 
             enabled = true;
 
+            // ResourceManager가 주입되었는지 확인
+            if (_resourceManager == null)
+            {
+                Debug.LogError("[ClientCreature] ResourceManager가 주입되지 않았습니다. VContainer 설정을 확인해주세요.");
+                // 이 경우 SetSpineAnimation 호출이 실패할 가능성이 높습니다.
+                // 실제 프로젝트에서는 ResourceManager를 올바르게 주입하도록 구현해야 합니다.
+            }
+
             // m_ClientActionViz = new ClientActionPlayer(this);
-
-            // m_ServerCharacter = GetComponentInParent<ServerCharacter>();
-
-            // m_ServerCharacter.IsStealthy.OnValueChanged += OnStealthyChanged;
-            // m_ServerCharacter.MovementStatus.OnValueChanged += OnMovementStatusChanged;
-            // OnMovementStatusChanged(MovementStatus.Normal, m_ServerCharacter.MovementStatus.Value);
-
-            // sync our visualization position & rotation to the most up to date version received from server
-            // transform.SetPositionAndRotation(serverCharacter.physicsWrapper.Transform.position,
-            //     serverCharacter.physicsWrapper.Transform.rotation);
-            // m_LerpedPosition = transform.position;
-            // m_LerpedRotation = transform.rotation;
-
-            // similarly, initialize start position and rotation for smooth lerping purposes
-            // m_PositionLerper = new PositionLerper(serverCharacter.physicsWrapper.Transform.position, k_LerpTime);
-            // m_RotationLerper = new RotationLerper(serverCharacter.physicsWrapper.Transform.rotation, k_LerpTime);
-
-            // if (!m_ServerCharacter.IsNpc)
-            // {
-            //     name = "AvatarGraphics" + m_ServerCharacter.OwnerClientId;
-
-            //     if (m_ServerCharacter.TryGetComponent(out ClientPlayerAvatarNetworkAnimator characterNetworkAnimator))
-            //     {
-            //         m_ClientVisualsAnimator = characterNetworkAnimator.Animator;
-            //     }
-
-            //     m_CharacterSwapper = GetComponentInChildren<CharacterSwap>();
-
-            //     // ...and visualize the current char-select value that we know about
-            //     SetAppearanceSwap();
-
-            //     if (m_ServerCharacter.IsOwner)
-            //     {
-            //         ActionRequestData data = new ActionRequestData { ActionID = GameDataSource.Instance.GeneralTargetActionPrototype.ActionID };
-            //         m_ClientActionViz.PlayAction(ref data);
-            //         gameObject.AddComponent<CameraController>();
-
-            //         if (m_ServerCharacter.TryGetComponent(out ClientInputSender inputSender))
-            //         {
-            //             // anticipated actions will only be played on non-host, owning clients
-            //             if (!IsServer)
-            //             {
-            //                 inputSender.ActionInputEvent += OnActionInput;
-            //             }
-            //             inputSender.ClientMoveEvent += OnMoveInput;
-            //         }
-            //     }
-            // }
+            
+            // 나머지 기존 코드
+            // ... existing code ...
         }
 
         public override void OnNetworkDespawn()

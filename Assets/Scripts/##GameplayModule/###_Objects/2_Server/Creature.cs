@@ -7,6 +7,7 @@ using UnityEngine.Rendering;
 using static Define;
 using VContainer;
 using Unity.Assets.Scripts.Data;
+using Unity.Netcode;
 
 namespace Unity.Assets.Scripts.Objects
 {
@@ -82,11 +83,33 @@ public class Creature : BaseObject, ITargetable
 
 	public NetworkLifeState NetLifeState { get; private set; }
 
+ 	//ECreatureState 와 LifeState 통합해야함
 	public LifeState LifeState
         {
             get => NetLifeState.LifeState.Value;
             private set => NetLifeState.LifeState.Value = value;
         }
+
+	protected NetworkVariable<ECreatureState> _creatureState = new NetworkVariable<ECreatureState>(ECreatureState.None);
+
+	public NetworkVariable<ECreatureState> NetworkCreatureState => _creatureState;
+
+	public virtual ECreatureState CreatureState
+	{
+		get { return _creatureState.Value; }
+		set
+		{
+			if (_creatureState.Value != value)
+			{
+				_creatureState.Value = value;
+				if (IsServer)
+				{
+					// 서버에서는 상태 변경만 처리
+					OnCreatureStateChanged(_creatureState.Value);
+				}
+			}
+		}
+	}	
 	// [SerializeField] // 인스펙터에서 표시되도록 SerializeField 추가
 	// public CreatureStat LifeStealRate = new CreatureStat(0);
 	
@@ -115,16 +138,7 @@ public class Creature : BaseObject, ITargetable
         {
             ObjectType = EObjectType.Creature;
 			NetLifeState = GetComponent<NetworkLifeState>();
-		// SetSpineAnimation(CreatureData.SkeletonDataID, SortingLayers.CREATURE);
-
-            // m_ServerActionPlayer = new ServerActionPlayer(this);
-            // NetLifeState = GetComponent<NetworkLifeState>();
-            // NetHealthState = GetComponent<NetworkHealthState>();
-            // m_State = GetComponent<NetworkAvatarGuidState>();
-
-            // CreatureStatsSO는 SetCreatureGuid에서 찾기 때문에 여기서는 호출하지 않음
-            // FindCreatureStatsSO();
-            // Init();
+	
         }
 
 	        public override void OnNetworkDespawn()
@@ -136,24 +150,9 @@ public class Creature : BaseObject, ITargetable
             //     m_DamageReceiver.CollisionEntered -= CollisionEntered;
             // }
         }
-        public void AddAnimation(int trackIndex, string AnimName, bool loop, float delay)
-        {
+     
 
-        }
 
-	protected ECreatureState _creatureState = ECreatureState.None;
-	public virtual ECreatureState CreatureState
-	{
-		get { return _creatureState; }
-		set
-		{
-			if (_creatureState != value)
-			{
-				_creatureState = value;
-				UpdateAnimation();
-			}
-		}
-	}
 
 	public override bool Init()
 	{
@@ -166,18 +165,9 @@ public class Creature : BaseObject, ITargetable
 	{
 
 		DataTemplateID = templateID;
-
-		// if (ObjectType == EObjectType.Hero)
-		// 	CreatureData = Managers.Data.HeroDic[templateID];
-		// else
-		// 	CreatureData = Managers.Data.MonsterDic[templateID];
-
-
 		MoveSpeed = new CreatureStat(creatureData.MoveSpeed);
 
-		// CreatureData = _dataLoader.MonsterDic[templateID];
 		
-		// gameObject.name = $"{CreatureData.DataId}_{CreatureData.DescriptionTextID}";
 
 		// Collider 추가
 		// Collider.offset = new Vector2(CreatureData.ColliderOffsetX, CreatureData.ColliderOffsetY);
@@ -222,30 +212,14 @@ public class Creature : BaseObject, ITargetable
 		CreatureState = ECreatureState.Idle;
 	}
 
-	protected override void UpdateAnimation()
+	protected virtual void OnCreatureStateChanged(ECreatureState newState)
 	{
-		switch (CreatureState)
-		{
-			case ECreatureState.Idle:
-				// PlayAnimation(0, AnimName.IDLE, true);
-				break;
-			case ECreatureState.Skill:
-				//PlayAnimation(0, AnimName.ATTACK_A, true);
-				break;
-			case ECreatureState.Move:
-				// PlayAnimation(0, AnimName.MOVE, true);
-				break;
-			case ECreatureState.OnDamaged:
-				// PlayAnimation(0, AnimName.IDLE, true);
-				// Skills.CurrentSkill.CancelSkill();
-				break;
-			case ECreatureState.Dead:
-				// PlayAnimation(0, AnimName.DEAD, true);
-				RigidBody.simulated = false;
-				break;
-			default:
-				break;
-		}
+		// 서버에서 상태 변경 시 필요한 로직
+	}
+
+	protected virtual void UpdateAnimation()
+	{
+		// 기본 구현은 비어있음
 	}
 
 	// #region AI

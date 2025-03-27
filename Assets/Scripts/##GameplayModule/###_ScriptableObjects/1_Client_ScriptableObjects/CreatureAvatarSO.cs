@@ -39,7 +39,7 @@ namespace Unity.Assets.Scripts.Objects
         
 
         [Tooltip("스켈레톤데이터")]
-        [SerializeField] public SkeletonAnimation skeletonAnim;
+        [SerializeField] public SkeletonDataAsset skeletonAnim;
         /// <summary>
         /// 생물체의 고유 ID를 반환합니다.
         /// </summary>
@@ -76,13 +76,13 @@ namespace Unity.Assets.Scripts.Objects
         /// </summary>
         public GameObject DeathEffectPrefab => deathEffectPrefab;
         
-        public SkeletonAnimation SkeletonAnim => skeletonAnim;
+        public SkeletonDataAsset SkeletonAnim => skeletonAnim;
 
         /// <summary>
         /// 생물체의 데이터 참조를 반환합니다.
         /// 하위 클래스에서 구현해야 합니다.
         /// </summary>
-        public void SetSkeletonAnimation(SkeletonAnimation skeleton)
+        public void SetSkeletonAnimation(SkeletonDataAsset skeleton)
         {
             skeletonAnim = skeleton;
             

@@ -83,13 +83,7 @@ namespace Unity.Assets.Scripts.Objects
             CreatureType = CharacterTypeEnum.Monster;
         }
 
-        // private void Update()
-        // {
-        //     if (IsServer)
-        //     {
-        //         HandleMovement();
-        //     }
-        // }
+     
         public NetworkVariable<Vector3> NetworkPosition = new NetworkVariable<Vector3>();
         private bool positionInitialized = false;
 
@@ -227,20 +221,6 @@ namespace Unity.Assets.Scripts.Objects
 
      
 
-        // private void SetupMonsterData()
-        // {
-        //     dropItemId = monsterStatsSO.DropItemId;
-        //     MonsterId.Value = monsterStatsSO.DataId;
-
-        //     if (Application.isPlaying)
-        //     {
-        //         SetInfo(monsterStatsSO.DataId);
-        //         CurrentHp.Value = monsterStatsSO.MaxHp;
-        //     }
-
-        //     Debug.Log($"[ServerMonster] 몬스터 데이터 로드 완료: ID={MonsterId.Value}, MaxHP={monsterStatsSO.MaxHp}, ATK={monsterStatsSO.Atk}");
-        //     OnDataLoadComplete?.Invoke(this, true);
-        // }
 
  
 
@@ -291,49 +271,7 @@ namespace Unity.Assets.Scripts.Objects
 
      
 
-        // public static bool SetupServerMonsterInPrefab(GameObject prefab, int monsterId, MonsterAvatarList monsterAvatarList)
-        // {
-        //     if (!ValidateSetupParameters(prefab, monsterId, monsterAvatarList)) return false;
-
-        //     ServerMonster serverMonster = GetServerMonsterComponent(prefab);
-        //     if (serverMonster == null) return false;
-
-        //     MonsterAvatarSO avatarSO = monsterAvatarList.GetAvatarById(monsterId);
-        //     if (avatarSO == null)
-        //     {
-        //         Debug.LogError($"[ServerMonster] ID {monsterId}에 해당하는 몬스터 아바타를 찾을 수 없습니다!");
-        //         return false;
-        //     }
-
-        //     serverMonster.monsterAvatarSO = avatarSO;
-        //     serverMonster.LoadMonsterDataFromAvatarSO();
-            
-        //     Debug.Log($"[ServerMonster] 프리팹 '{prefab.name}'의 ServerMonster 컴포넌트에 몬스터 ID {monsterId}와 아바타 '{avatarSO.name}'을(를) 성공적으로 할당했습니다.");
-        //     return true;
-        // }
-
-        // private static bool ValidateSetupParameters(GameObject prefab, int monsterId, MonsterAvatarList monsterAvatarList)
-        // {
-        //     if (prefab == null)
-        //     {
-        //         Debug.LogError("[ServerMonster] 설정할 프리팹이 null입니다!");
-        //         return false;
-        //     }
-            
-        //     if (monsterId <= 0)
-        //     {
-        //         Debug.LogError($"[ServerMonster] 유효하지 않은 몬스터 ID: {monsterId}");
-        //         return false;
-        //     }
-            
-        //     if (monsterAvatarList == null)
-        //     {
-        //         Debug.LogError("[ServerMonster] monsterAvatarList가 null입니다!");
-        //         return false;
-        //     }
-
-        //     return true;
-        // }
+   
 
    
         #endregion

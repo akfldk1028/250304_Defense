@@ -172,12 +172,28 @@ public class ObjectManagerFacade : NetworkBehaviour
         }
     }
 
+    // public void Summon()
+    // {
+ 
+    //     NetUtils.HostAndClientMethod(
+    //         () => ServerSpawnHeroServerRpc(NetUtils.LocalID()),
+    //         () => HeroSpawn(NetUtils.LocalID()));
+    // }
     public void Summon()
     {
- 
-        NetUtils.HostAndClientMethod(
-            () => ServerSpawnHeroServerRpc(NetUtils.LocalID()),
-            () => HeroSpawn(NetUtils.LocalID()));
+        // 기존 HostAndClientMethod를 사용하지 않고 직접 구현
+        if (IsServer)
+        {
+            // 서버에서는 직접 HeroSpawn 호출
+            _debugClassFacade?.LogInfo(GetType().Name, $"<color=cyan>[ObjectManagerFacade] 서버에서 직접 영웅 소환 시작</color>");
+            HeroSpawn(_netUtils.LocalID_P());
+        }
+        else if (IsClient)
+        {
+            // 클라이언트에서는 서버에 요청만 전송
+            _debugClassFacade?.LogInfo(GetType().Name, $"<color=cyan>[ObjectManagerFacade] 클라이언트에서 서버에 영웅 소환 요청</color>");
+            ServerSpawnHeroServerRpc(_netUtils.LocalID_P());
+        }
     }
 
     [ServerRpc(RequireOwnership = false)]
@@ -255,7 +271,6 @@ public class ObjectManagerFacade : NetworkBehaviour
             break;
         }
     }
-
     if (selectedHero != null)
     {
         _debugClassFacade?.LogInfo(GetType().Name, $"<color=green>[ObjectManagerFacade] 최종 선택된 영웅: {selectedHero.DescriptionTextID} ({selectedHero.Rarity})</color>");
@@ -272,6 +287,12 @@ public class ObjectManagerFacade : NetworkBehaviour
                 Vector3 spawnPosition = existingHolder.transform.position;
                 var hero = _objectManager.Spawn<ServerHero>(spawnPosition, clientId, selectedHero.DataId);
                 
+                // 서버에서 부모-자식 관계 설정 (중요!)
+                if (IsServer)
+                {
+                    hero.NetworkObject.transform.SetParent(existingHolder.GetComponent<NetworkObject>().transform);
+                }
+                
                 // 홀더에게 영웅 스폰 알림
                 HeroSpawnClientRpc(hero.NetworkObject.NetworkObjectId, existingHolder.GetComponent<NetworkObject>().NetworkObjectId, clientId, selectedHero.DataId);
             }
@@ -281,6 +302,12 @@ public class ObjectManagerFacade : NetworkBehaviour
                 Vector3 spawnPosition = targetHolder.transform.position;
                 targetHolder.Holder_Name = selectedHero.DataId;
                 var hero = _objectManager.Spawn<ServerHero>(spawnPosition, clientId, selectedHero.DataId);
+                
+                // 서버에서 부모-자식 관계 설정 (중요!)
+                if (IsServer)
+                {
+                    hero.NetworkObject.transform.SetParent(networkObject.transform);
+                }
                 
                 // 클라이언트에 알림
                 HeroSpawnClientRpc(hero.NetworkObject.NetworkObjectId, networkObject.NetworkObjectId, clientId, selectedHero.DataId);
@@ -296,6 +323,8 @@ public class ObjectManagerFacade : NetworkBehaviour
         _debugClassFacade?.LogError(GetType().Name, "<color=red>[ObjectManagerFacade] 영웅 선택 실패</color>");
     }
 }
+
+
 
 private UI_Spawn_Holder GetExistingHolder(string clientKey, int heroId)
 {
@@ -334,52 +363,46 @@ private void HeroSpawnClientRpc(ulong heroNetworkId, ulong holderNetworkId, ulon
 {
     try
     {
-        // 영웅 NetworkObject 찾기
-        if (!NetUtils.TryGetSpawnedObject(heroNetworkId, out NetworkObject heroNetworkObject))
+        // 1. 네트워크 오브젝트 찾기
+        if (!NetUtils.TryGetSpawnedObject(heroNetworkId, out NetworkObject heroObj) || 
+            !NetUtils.TryGetSpawnedObject(holderNetworkId, out NetworkObject holderObj))
         {
-            _debugClassFacade?.LogError(GetType().Name, $"<color=red>[ObjectManagerFacade] 영웅 NetworkObject를 찾을 수 없음: {heroNetworkId}</color>");
+            _debugClassFacade?.LogError(GetType().Name, $"<color=red>[ObjectManagerFacade] 네트워크 오브젝트를 찾을 수 없음</color>");
             return;
         }
         
-        // 홀더 NetworkObject 찾기
-        if (!NetUtils.TryGetSpawnedObject(holderNetworkId, out NetworkObject holderNetworkObject))
-        {
-            _debugClassFacade?.LogError(GetType().Name, $"<color=red>[ObjectManagerFacade] 홀더 NetworkObject를 찾을 수 없음: {holderNetworkId}</color>");
+        // 2. 컴포넌트 가져오기
+        UI_Spawn_Holder holder = holderObj.GetComponent<UI_Spawn_Holder>();
+        ServerHero serverHero = heroObj.GetComponent<ServerHero>();
+        ClientHero clientHero = heroObj.GetComponent<ClientHero>();
+        
+        if (serverHero == null || holder == null)
             return;
-        }
         
-        // 홀더 컴포넌트 가져오기
-        UI_Spawn_Holder holder = holderNetworkObject.GetComponent<UI_Spawn_Holder>();
-        
-        // 영웅 컴포넌트 가져오기
-        ServerHero hero = heroNetworkObject.GetComponent<ServerHero>();
-        
-        // 영웅을 홀더의 자식으로 설정 (중요!)
-        heroNetworkObject.transform.SetParent(holderNetworkObject.transform);
-        
-        // 영웅 위치를 홀더 위치로 초기화
-        heroNetworkObject.transform.position = holderNetworkObject.transform.position;
-        
-        // 홀더의 Heroes 리스트에 영웅 추가
-        holder.m_Heroes.Add(hero);
-        _debugClassFacade?.LogInfo(GetType().Name, $"<color=green>[ObjectManagerFacade] 홀더({holder.Holder_Part_Name})에 영웅 추가 성공</color>");
-        
-        // HeroData 가져오기
-        if (DataLoader.instance.HeroDic.TryGetValue(heroDataId, out HeroData heroData))
+        // 3. 클라이언트 영웅 시각적 요소 초기화 (핵심 부분)
+        if (clientHero != null && DataLoader.instance.HeroDic.TryGetValue(heroDataId, out HeroData heroData))
         {
-            // 홀더 이름 설정
+            HeroAvatarSO avatar = _resourceManager.Load<HeroAvatarSO>(heroData.ClientAvatar);
+            if (avatar != null)
+                clientHero.SetAvatar(avatar, heroData.SkeletonDataID, _resourceManager);
+                
             holder.Holder_Name = heroData.DataId;
-            _debugClassFacade?.LogInfo(GetType().Name, $"<color=green>[ObjectManagerFacade] 홀더 이름 설정: {holder.Holder_Name}</color>");
         }
         
-        // 홀더 내 영웅 위치 조정
+        // 4. 위치 및 상태 설정
+        heroObj.transform.position = holderObj.transform.position;
+        heroObj.gameObject.SetActive(true);
+        
+        // 5. 홀더에 영웅 추가 (중복 방지)
+        if (!holder.m_Heroes.Contains(serverHero))
+            holder.m_Heroes.Add(serverHero);
+        
+        // 6. 홀더 내 영웅 위치 조정
         holder.CheckGetPosition();
     }
     catch (Exception ex)
     {
-        _debugClassFacade?.LogError(GetType().Name, $"<color=red>[ObjectManagerFacade] HeroSpawnClientRpc 예외 발생: {ex.Message}</color>");
+        _debugClassFacade?.LogError(GetType().Name, $"<color=red>[ObjectManagerFacade] 예외 발생: {ex.Message}</color>");
     }
-}
-
-              
+}       
 }

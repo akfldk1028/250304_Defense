@@ -27,6 +27,12 @@ public class BasicGameLifetimeScope : LifetimeScope
             builder.RegisterInstance(resourceManager);
             Debug.Log("[BasicGameLifetimeScope] 부모 스코프에서 ResourceManager 참조 성공");
         }
+        else
+        {
+            // 부모 스코프에서 ResourceManager를 찾을 수 없는 경우 새로 생성
+            Debug.LogWarning("[BasicGameLifetimeScope] 부모 스코프에서 ResourceManager를 찾을 수 없어 새로 생성합니다.");
+            builder.Register<ResourceManager>(Lifetime.Singleton);
+        }
 
         NetUtils netUtils = null;
         if (Parent != null && Parent.Container.Resolve<NetUtils>() != null)

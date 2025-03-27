@@ -10,6 +10,8 @@ using Unity.Assets.Scripts.UI;
 using Unity.Assets.Scripts.Objects;
 using VContainer.Unity;
 using System;
+using static Define;
+
 
 namespace Unity.Assets.Scripts.Scene
 {
@@ -112,7 +114,7 @@ public class BasicGameScene : BaseScene
     {
    
         
-        // _objectManagerFacade.Spawn_Monster(false, 202001);
+        // _objectManagerFacade.Spawn_Monster(false, MONSTER_SLIME_ID);
     }
 
 

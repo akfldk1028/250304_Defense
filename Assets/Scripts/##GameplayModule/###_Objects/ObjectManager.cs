@@ -255,7 +255,7 @@ public class ObjectManager
 
 				ClientHero clientHero = go.GetComponent<ClientHero>();
 				HeroAvatarSO clientHeroAvatar = _resourceManager.Load<HeroAvatarSO>(CreatureData.ClientAvatar);
-				clientHero.SetAvatar(clientHeroAvatar);
+				clientHero.SetAvatar(clientHeroAvatar,  CreatureData.SkeletonDataID, _resourceManager);
 
 				ServerHero serverHero = go.GetComponent<ServerHero>();
 				serverHero.SetInfo(templateID, CreatureData);

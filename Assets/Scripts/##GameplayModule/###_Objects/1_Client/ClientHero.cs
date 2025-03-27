@@ -1,5 +1,8 @@
 // using Unity.Assets.Scripts.Gameplay.GameplayObjects.Character;
+using System;
 using System.Collections.Generic;
+using Unity.Assets.Scripts.Data;
+using Unity.Assets.Scripts.Resource;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -23,7 +26,37 @@ namespace Unity.Assets.Scripts.Objects
         
 
         // 이전 방향 저장 (스프라이트 뒤집기용)
-        
+
+
+
+        protected override void UpdateAnimation()
+        {
+            var creature = GetComponent<Creature>();
+            if (creature == null) return;
+
+            switch (creature.CreatureState)
+            {
+                case ECreatureState.Idle:
+                    PlayAnimation(0, AnimName.IDLE, true);
+                    break;
+                case ECreatureState.Skill:
+                    PlayAnimation(0, AnimName.ATTACK_A, true);
+                    break;
+                case ECreatureState.Move:
+                    PlayAnimation(0, AnimName.MOVE, true);
+                    break;
+                case ECreatureState.OnDamaged:
+                    PlayAnimation(0, AnimName.IDLE, true);
+                    break;
+                case ECreatureState.Dead:
+                    PlayAnimation(0, AnimName.DEAD, true);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+
         private void Awake()
         {
         }
@@ -31,22 +64,42 @@ namespace Unity.Assets.Scripts.Objects
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
-   
+            
+            // CreatureState 변경 감지
+            var creature = GetComponent<Creature>();
+            if (creature != null)
+            {
+                creature.NetworkCreatureState.OnValueChanged += OnCreatureStateChanged;
+            }
         }
         
         public override void OnNetworkDespawn()
         {
             base.OnNetworkDespawn();
-
+            
+            var creature = GetComponent<Creature>();
+            if (creature != null)
+            {
+                creature.NetworkCreatureState.OnValueChanged -= OnCreatureStateChanged;
+            }
         }
         
-        public override void SetAvatar(HeroAvatarSO avatarSO)
+        private void OnCreatureStateChanged(ECreatureState previousValue, ECreatureState newValue)
         {
-            base.SetAvatar(avatarSO);
-       
+            UpdateAnimation();
         }
-  
         
+        public override void SetAvatar(HeroAvatarSO avatarSO, string skeletonDataID)
+        {
+            base.SetAvatar(avatarSO, skeletonDataID);
+        }
+        
+        // ResourceManager를 전달받는 오버로드 추가
+        public override void SetAvatar(HeroAvatarSO avatarSO, string skeletonDataID, ResourceManager resourceManager)
+        {
+            base.SetAvatar(avatarSO, skeletonDataID, resourceManager);
+        }
 
+   
     }
 }
