@@ -27,7 +27,6 @@ namespace Unity.Assets.Scripts.Objects
         [Inject] private DebugClassFacade _debugClassFacade;
         protected HeroData heroData;
 
-
         #region Singleton
         private static ServerHero instance;
         public static ServerHero Instance
@@ -73,6 +72,7 @@ namespace Unity.Assets.Scripts.Objects
          public int GachaExpCount => gachaExpCount;
          public int AtkSpeed => atkSpeed;
          public int AtkTime => atkTime;
+        public bool NeedArrange { get; set; }
 
         // 네트워크 변수
         public NetworkVariable<bool> IsAttacking = new NetworkVariable<bool>();
@@ -86,19 +86,51 @@ namespace Unity.Assets.Scripts.Objects
 	    public Data.CreatureData CreatureData { get; private set; }
 
         // 이동 관련
-        private int target_Value = 0;
         #endregion
 
         #region Unity Lifecycle
-        private void Awake()
+       private void Awake()
         {
             base.Awake();
             Instance = this;
             CreatureType = CharacterTypeEnum.Hero;
         }
 
- 
-        public NetworkVariable<Vector3> NetworkPosition = new NetworkVariable<Vector3>();
+
+        EHeroMoveState _heroMoveState = EHeroMoveState.None;
+        public EHeroMoveState HeroMoveState
+        {
+            get { return _heroMoveState; }
+            private set
+            {
+                _heroMoveState = value;
+                switch (value)
+                {
+
+                    case EHeroMoveState.TargetMonster:
+                        NeedArrange = true;
+                        break;
+                    case EHeroMoveState.ForceMove:
+                        NeedArrange = true;
+                        break;
+                }
+            }
+        }
+
+
+        public override bool Init()
+	    {
+            if (base.Init() == false)
+                return false;
+                    ObjectType = EObjectType.Hero;
+
+
+
+            // StartCoroutine(CoUpdateAI());
+
+            return true;
+        }
+
     
 
         // FixedUpdate 메소드 수정
@@ -138,13 +170,47 @@ namespace Unity.Assets.Scripts.Objects
 		gameObject.name = $"{CreatureData.DataId}_{CreatureData.CharacterType}";
         }
 
-        
+
         #endregion
 
-   
-   
+        protected override void UpdateIdle()
+        {
+            if (_objectManager == null) 
+            {
+                Debug.LogError("[ServerHero] _objectManager가 null입니다!");
 
- 
+                return; 
+            }
+            // 0. 이동 상태라면 강제 변경
+            if (HeroMoveState == EHeroMoveState.ForceMove)
+            {
+                CreatureState = ECreatureState.Move;
+                return;
+            }
+
+            // 1. 몬스터
+            //Creature creature = FindClosestInRange(HERO_SEARCH_DISTANCE, Managers.Object.Monsters) as Creature;
+            //if (creature != null)
+            //{
+            //    Target = creature;
+            //    CreatureState = ECreatureState.Move;
+            //    HeroMoveState = EHeroMoveState.TargetMonster;
+            //    return;
+            //}
+
+
+
+            //// 3. Camp 주변으로 모이기
+            //if (NeedArrange)
+            //{
+            //    CreatureState = ECreatureState.Move;
+            //    HeroMoveState = EHeroMoveState.ReturnToCamp;
+            //    return;
+            //}
+        }
+
+
+
 
         public bool SetHeroAvatarSO(HeroAvatarSO avatarSO)
         {

@@ -25,7 +25,8 @@ public static class Define
 		Projectile,
 		Env,
 		Effect,
-		Monster
+		Monster,
+		Hero
 	}
 		public enum ECreatureState
 	{
@@ -76,6 +77,19 @@ public static class Define
 		OnDamaged,
 		Dead
 	}
+
+	public enum EHeroMoveState
+	{
+		None,
+		TargetMonster,
+		CollectEnv,
+		ReturnToCamp,
+		ForceMove,
+		ForcePath
+	}
+
+
+
 public static class SortingLayers
 {
 	public const int SPELL_INDICATOR = 200;

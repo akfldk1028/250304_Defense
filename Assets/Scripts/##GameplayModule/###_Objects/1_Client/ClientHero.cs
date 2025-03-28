@@ -29,32 +29,6 @@ namespace Unity.Assets.Scripts.Objects
 
 
 
-        protected override void UpdateAnimation()
-        {
-            var creature = GetComponent<Creature>();
-            if (creature == null) return;
-
-            switch (creature.CreatureState)
-            {
-                case ECreatureState.Idle:
-                    PlayAnimation(0, AnimName.IDLE, true);
-                    break;
-                case ECreatureState.Skill:
-                    PlayAnimation(0, AnimName.ATTACK_A, true);
-                    break;
-                case ECreatureState.Move:
-                    PlayAnimation(0, AnimName.MOVE, true);
-                    break;
-                case ECreatureState.OnDamaged:
-                    PlayAnimation(0, AnimName.IDLE, true);
-                    break;
-                case ECreatureState.Dead:
-                    PlayAnimation(0, AnimName.DEAD, true);
-                    break;
-                default:
-                    break;
-            }
-        }
 
 
         private void Awake()
@@ -88,7 +62,33 @@ namespace Unity.Assets.Scripts.Objects
         {
             UpdateAnimation();
         }
-        
+        protected override void UpdateAnimation()
+        {
+            var creature = GetComponent<Creature>();
+            if (creature == null) return;
+
+            switch (creature.CreatureState)
+            {
+                case ECreatureState.Idle:
+                    PlayAnimation(0, AnimName.IDLE, true);
+                    break;
+                case ECreatureState.Skill:
+                    PlayAnimation(0, AnimName.ATTACK_A, true);
+                    break;
+                case ECreatureState.Move:
+                    PlayAnimation(0, AnimName.MOVE, true);
+                    break;
+                case ECreatureState.OnDamaged:
+                    PlayAnimation(0, AnimName.IDLE, true);
+                    break;
+                case ECreatureState.Dead:
+                    PlayAnimation(0, AnimName.DEAD, true);
+                    break;
+                default:
+                    break;
+            }
+        }
+
         public override void SetAvatar(HeroAvatarSO avatarSO, string skeletonDataID)
         {
             base.SetAvatar(avatarSO, skeletonDataID);

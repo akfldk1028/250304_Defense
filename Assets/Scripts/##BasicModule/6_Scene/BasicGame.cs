@@ -114,7 +114,7 @@ public class BasicGameScene : BaseScene
     {
    
         
-        // _objectManagerFacade.Spawn_Monster(false, MONSTER_SLIME_ID);
+         _objectManagerFacade.Spawn_Monster(false, 202001);
     }
 
 

@@ -152,12 +152,31 @@ public class ObjectManagerFacade : NetworkBehaviour
                     _mapSpawnerFacade.Player_move_list : 
                     _mapSpawnerFacade.Other_move_list;
 
+                //if (moveList != null && moveList.Count > 0)
+                //{
+                //    // 위치를 명시적으로 설정 - 이 부분이 중요합니다
+                //    Debug.Log($"[ObjectManagerFacade] 몬스터 위치 설정: {moveList[0]}, NetworkID={networkObjectId}");
+                //    monsterNetworkObject.transform.position = moveList[0];
+
+                //    ServerMonster monster = monsterNetworkObject.GetComponent<ServerMonster>();
+
+
+                //    if (monster != null)
+                //    {
+                //        monster.SetMoveList(moveList);
+                //    }
+                //}
                 if (moveList != null && moveList.Count > 0)
                 {
-                    // 위치를 명시적으로 설정 - 이 부분이 중요합니다
-                    Debug.Log($"[ObjectManagerFacade] 몬스터 위치 설정: {moveList[0]}, NetworkID={networkObjectId}");
+                    // Add logging to verify the path
+                    Debug.Log($"[ObjectManagerFacade] Setting movement path with {moveList.Count} points for monster {networkObjectId}");
+                    for (int i = 0; i < moveList.Count; i++)
+                    {
+                        Debug.Log($"[ObjectManagerFacade] Path point {i}: {moveList[i]}");
+                    }
+
                     monsterNetworkObject.transform.position = moveList[0];
-                    
+
                     ServerMonster monster = monsterNetworkObject.GetComponent<ServerMonster>();
                     if (monster != null)
                     {
@@ -172,13 +191,7 @@ public class ObjectManagerFacade : NetworkBehaviour
         }
     }
 
-    // public void Summon()
-    // {
- 
-    //     NetUtils.HostAndClientMethod(
-    //         () => ServerSpawnHeroServerRpc(NetUtils.LocalID()),
-    //         () => HeroSpawn(NetUtils.LocalID()));
-    // }
+
     public void Summon()
     {
         // 기존 HostAndClientMethod를 사용하지 않고 직접 구현

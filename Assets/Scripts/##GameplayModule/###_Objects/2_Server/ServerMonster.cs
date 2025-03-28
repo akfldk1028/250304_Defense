@@ -73,6 +73,10 @@ namespace Unity.Assets.Scripts.Objects
         // 이동 관련
         private int target_Value = 0;
         private List<Vector2> _moveList = new List<Vector2>();
+
+        
+        public NetworkVariable<Vector3> NetworkPosition = new NetworkVariable<Vector3>();
+        private bool positionInitialized = false;
         #endregion
 
         #region Unity Lifecycle
@@ -80,12 +84,21 @@ namespace Unity.Assets.Scripts.Objects
         {
             base.Awake();
             Instance = this;
-            CreatureType = CharacterTypeEnum.Monster;
         }
 
-     
-        public NetworkVariable<Vector3> NetworkPosition = new NetworkVariable<Vector3>();
-        private bool positionInitialized = false;
+     	public override bool Init()
+	    {
+            if (base.Init() == false)
+                return false;
+                CreatureType = CharacterTypeEnum.Monster;
+
+
+            // StartCoroutine(CoUpdateAI());
+
+            return true;
+        }
+
+        
 
         // FixedUpdate 메소드 수정
         private void FixedUpdate()
@@ -104,13 +117,22 @@ namespace Unity.Assets.Scripts.Objects
         {
             if (_moveList.Count == 0 || target_Value >= _moveList.Count) return;
 
-            transform.position = Vector2.MoveTowards(transform.position, _moveList[target_Value], Time.deltaTime * MoveSpeed.Value);
-            NetworkPosition.Value = transform.position; // 위치 업데이트
+            // Calculate new position with movement speed
+            Vector3 newPosition = Vector2.MoveTowards(transform.position, _moveList[target_Value], Time.deltaTime * 1);
 
-            if (Vector2.Distance(transform.position, _moveList[target_Value]) <= 0.0f)
+            transform.position = newPosition;
+
+            // Update network position (critical for clients)
+            NetworkPosition.Value = newPosition;
+
+            // Debug movement
+            _debugClassFacade?.LogInfo(GetType().Name, $"[ServerMonster:{MonsterId.Value}] Moving: {transform.position} → {_moveList[target_Value]}, Speed: {MoveSpeed.Value}");
+
+            if (Vector2.Distance(transform.position, _moveList[target_Value]) <= 0.1f)
             {
+                _debugClassFacade?.LogInfo(GetType().Name, $"[ServerMonster:{MonsterId.Value}] Reached point {target_Value}");
                 target_Value++;
-                if (target_Value >= 4) // 하드코딩된 4 사용
+                if (target_Value >= 4) // Using hardcoded 4 for path length
                 {
                     target_Value = 0;
                 }
@@ -122,14 +144,17 @@ namespace Unity.Assets.Scripts.Objects
             if (!positionInitialized && NetworkPosition.Value != Vector3.zero)
             {
                 positionInitialized = true;
+                transform.position = NetworkPosition.Value;
+                _debugClassFacade?.LogInfo(GetType().Name, $"[ServerMonster:{MonsterId.Value}] Initial client position set to {NetworkPosition.Value}");
             }
 
             if (positionInitialized)
             {
-                // 위치 강제 설정 (보간 없이)
-                transform.position = NetworkPosition.Value;
+                // Use MoveTowards for smoother client-side movement rather than direct position setting
+                transform.position = Vector3.MoveTowards(transform.position, NetworkPosition.Value, Time.deltaTime * 1);
             }
         }
+
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
@@ -152,7 +177,7 @@ namespace Unity.Assets.Scripts.Objects
             DataTemplateID = templateID;
             MonsterId.Value = templateID;
             CreatureData = creatureData;
-            
+
             // CreatureData를 MonsterData로 캐스팅
             if (CreatureData is MonsterData monsterData)
             {
@@ -208,14 +233,16 @@ namespace Unity.Assets.Scripts.Objects
                 _debugClassFacade?.LogError(GetType().Name, $"[ServerMonster:{MonsterId.Value}] SetMoveList: 유효하지 않은 경로 데이터");
                 return;
             }
-            
+            Debug.Log($"[ServerMonster:{MonsterId.Value}] SetMoveList: 경로 설정 중...");
+
+
             // ClientMonster처럼 직접 할당 (깊은 복사 없이)
             _moveList = moveList;
             
             // 항상 첫 번째 포인트부터 시작
             target_Value = 0;
             
-             _debugClassFacade?.LogInfo(GetType().Name, $"[ServerMonster:{MonsterId.Value}] 새 경로 설정 완료: 포인트 수={_moveList.Count}, 시작 인덱스={target_Value}");
+           _debugClassFacade?.LogInfo(GetType().Name, $"[ServerMonster:{MonsterId.Value}] 새 경로 설정 완료: 포인트 수={_moveList.Count}, 시작 인덱스={target_Value}");
         }
                 #endregion
 
@@ -254,27 +281,7 @@ namespace Unity.Assets.Scripts.Objects
         }
         #endregion
 
-        #region Setup Methods
-        public bool SetMonsterAvatarSO(MonsterAvatarSO avatarSO)
-        {
-            if (avatarSO == null)
-            {
-                _debugClassFacade?.LogError(GetType().Name, "[ServerMonster] 설정하려는 MonsterAvatarSO가 null입니다!");
-                OnDataLoadComplete?.Invoke(this, false);
-                return false;
-            }
-
-            monsterAvatarSO = avatarSO;
-            _debugClassFacade?.LogInfo(GetType().Name, $"[ServerMonster] MonsterAvatarSO '{monsterAvatarSO.name}'가 성공적으로 설정되었습니다.");
-            return true;
-        }
-
-     
-
    
-
-   
-        #endregion
 
     }
 }

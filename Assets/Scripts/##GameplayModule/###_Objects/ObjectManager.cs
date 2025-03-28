@@ -312,7 +312,13 @@ public class ObjectManager
 				networkObject.Spawn();
 				_debugClassFacade?.LogInfo(GetType().Name, $"[ObjectManager] NetworkObject 스폰 완료: {networkObject.NetworkObjectId}");
 			}
+			if (typeof(T) == typeof(ServerMonster))
+			{
+				// 스폰 후 부모 설정 - 이 순서가 중요합니다
+				go.transform.SetParent(MonsterRoot);
 
+				_debugClassFacade?.LogInfo(GetType().Name, $"[ObjectManager] 몬스터 @Monsters에 배치 완료: {go.name}");
+			}
 			var eventData = new MonsterSpawnEventData(go, prefabName, position, clientID);
 			eventData.NetworkObjectId = networkObject.NetworkObjectId;
 			

@@ -214,301 +214,110 @@ public class Creature : BaseObject, ITargetable
 
 	protected virtual void OnCreatureStateChanged(ECreatureState newState)
 	{
+		// Client로 대충 이동함함
 		// 서버에서 상태 변경 시 필요한 로직
 	}
 
-	protected virtual void UpdateAnimation()
-	{
-		// 기본 구현은 비어있음
-	}
-
-	// #region AI
-	// public float UpdateAITick { get; protected set; } = 0.0f;
-
-	// protected IEnumerator CoUpdateAI()
-	// {
-	// 	while (true)
-	// 	{
-	// 		switch (CreatureState)
-	// 		{
-	// 			case ECreatureState.Idle:
-	// 				UpdateIdle();
-	// 				break;
-	// 			case ECreatureState.Move:
-	// 				UpdateMove();
-	// 				break;
-	// 			case ECreatureState.Skill:
-	// 				UpdateSkill();
-	// 				break;
-	// 			case ECreatureState.OnDamaged:
-	// 				UpdateOnDamaged();
-	// 				break;
-	// 			case ECreatureState.Dead:
-	// 				UpdateDead();
-	// 				break;
-	// 		}
-
-	// 		if (UpdateAITick > 0)
-	// 			yield return new WaitForSeconds(UpdateAITick);
-	// 		else
-	// 			yield return null;
-	// 	}
-	// }
-
-	// protected virtual void UpdateIdle() { }
-	// protected virtual void UpdateMove() { }
+	protected virtual void UpdateAnimation(){}
 	
-	// protected virtual void UpdateSkill() 
-	// {
-	// 	if (_coWait != null)
-	// 		return;
 
-	// 	if (Target.IsValid() == false || Target.ObjectType == EObjectType.HeroCamp)
-	// 	{
-	// 		CreatureState = ECreatureState.Idle;
-	// 		return;
-	// 	}
+   public float UpdateAITick { get; protected set; } = 0.0f;
+   protected IEnumerator CoUpdateAI()
+        {
+            while (true)
+            {
+                switch (CreatureState)
+                {
+                    case ECreatureState.Idle:
+                        UpdateIdle();
+                        break;
+                    case ECreatureState.Move:
+                        UpdateMove();
+                        break;
+                    case ECreatureState.Skill:
+                        UpdateSkill();
+                        break;
+                    case ECreatureState.OnDamaged:
+                        //UpdateOnDamaged();
+                        break;
+                    case ECreatureState.Dead:
+                        //UpdateDead();
+                        break;
+                }
 
-	// 	float distToTargetSqr = DistToTargetSqr;
-	// 	float attackDistanceSqr = AttackDistance * AttackDistance;
-	// 	if (distToTargetSqr > attackDistanceSqr)
-	// 	{
-	// 		CreatureState = ECreatureState.Idle;
-	// 		return;
-	// 	}
+                if (UpdateAITick > 0)
+                    yield return new WaitForSeconds(UpdateAITick);
+                else
+                    yield return null;
+            }
+        }
 
-	// 	// DoSkill
-	// 	Skills.CurrentSkill.DoSkill();
 
-	// 	LookAtTarget(Target);
+        protected BaseObject FindClosestInRange(float range, IEnumerable<BaseObject> objs, Func<BaseObject, bool> func = null)
+        {
+            BaseObject target = null;
+            float bestDistanceSqr = float.MaxValue;
+            float searchDistanceSqr = range * range;
 
-	// 	var trackEntry = SkeletonAnim.state.GetCurrent(0);
-	// 	float delay = trackEntry.Animation.Duration;
+            foreach (BaseObject obj in objs)
+            {
+                Vector3 dir = obj.transform.position - transform.position;
+                float distToTargetSqr = dir.sqrMagnitude;
 
-	// 	StartWait(delay);
-	// }
+                // 서치 범위보다 멀리 있으면 스킵.
+                if (distToTargetSqr > searchDistanceSqr)
+                    continue;
 
-	// protected virtual void UpdateOnDamaged() { }
+                // 이미 더 좋은 후보를 찾았으면 스킵.
+                if (distToTargetSqr > bestDistanceSqr)
+                    continue;
 
-	// protected virtual void UpdateDead() { }
-	// #endregion
+                // 추가 조건
+                if (func != null && func.Invoke(obj) == false)
+                    continue;
 
-	#region Wait
-	protected Coroutine _coWait;
+                target = obj;
+                bestDistanceSqr = distToTargetSqr;
+            }
 
-	protected void StartWait(float seconds)
-	{
-		CancelWait();
-		_coWait = StartCoroutine(CoWait(seconds));
-	}
+            return target;
+        }
 
-	IEnumerator CoWait(float seconds)
-	{
-		yield return new WaitForSeconds(seconds);
-		_coWait = null;
-	}
 
-	protected void CancelWait()
-	{
-		if (_coWait != null)
-			StopCoroutine(_coWait);
-		_coWait = null;
-	}
-	#endregion
+        protected virtual void UpdateIdle() { }
+   		protected virtual void UpdateMove() { }
 
-	// #region Battle
-	// public void HandleDotDamage(EffectBase effect)
-	// {
-	// 	if (effect == null)
-	// 		return;
-	// 	if (effect.Owner.IsValid() == false)
-	// 		return;
+        protected virtual void UpdateSkill()
+        {
+            //if (_coWait != null)
+            //    return;
 
-	// 	// TEMP
-	// 	float damage = (Hp * effect.EffectData.PercentAdd) + effect.EffectData.Amount;
-	// 	if (effect.EffectData.ClassName.Contains("Heal"))
-	// 		damage *= -1f;
+            //if (Target.IsValid() == false || Target.ObjectType == EObjectType.HeroCamp)
+            //{
+            //    CreatureState = ECreatureState.Idle;
+            //    return;
+            //}
 
-	// 	float finalDamage = Mathf.Round(damage);
-	// 	Hp = Mathf.Clamp(Hp - finalDamage, 0, MaxHp.Value);
+            //float distToTargetSqr = DistToTargetSqr;
+            //float attackDistanceSqr = AttackDistance * AttackDistance;
+            //if (distToTargetSqr > attackDistanceSqr)
+            //{
+            //    CreatureState = ECreatureState.Idle;
+            //    return;
+            //}
 
-	// 	Managers.Object.ShowDamageFont(CenterPosition, finalDamage, transform, false);
+            //// DoSkill
+            //Skills.CurrentSkill.DoSkill();
 
-	// 	// TODO : OnDamaged 통합
-	// 	if (Hp <= 0)
-	// 	{
-	// 		OnDead(effect.Owner, effect.Skill);
-	// 		CreatureState = ECreatureState.Dead;
-	// 		return;
-	// 	}
-	// }
+            //LookAtTarget(Target);
 
-	// public override void OnDamaged(BaseObject attacker, SkillBase skill)
-	// {
-	// 	base.OnDamaged(attacker, skill);
+            //var trackEntry = SkeletonAnim.state.GetCurrent(0);
+            //float delay = trackEntry.Animation.Duration;
 
-	// 	if (attacker.IsValid() == false)
-	// 		return;
+            //StartWait(delay);
+        }
 
-	// 	Creature creature = attacker as Creature;
-	// 	if (creature == null)
-	// 		return;
 
-	// 	float finalDamage = creature.Atk.Value;
-	// 	Hp = Mathf.Clamp(Hp - finalDamage, 0, MaxHp.Value);
 
-	// 	Managers.Object.ShowDamageFont(CenterPosition, finalDamage, transform, false);
-
-	// 	if (Hp <= 0)
-	// 	{
-	// 		OnDead(attacker, skill);
-	// 		CreatureState = ECreatureState.Dead;
-	// 		return;
-	// 	}
-
-	// 	// 스킬에 따른 Effect 적용
-	// 	if (skill.SkillData.EffectIds != null)
-	// 		Effects.GenerateEffects(skill.SkillData.EffectIds.ToArray(), EEffectSpawnType.Skill, skill);
-
-	// 	// AOE
-	// 	if (skill != null && skill.SkillData.AoEId != 0)
-	// 		skill.GenerateAoE(transform.position);
-	// }
-
-	// public override void OnDead(BaseObject attacker, SkillBase skill)
-	// {
-	// 	base.OnDead(attacker, skill);
-	// }
-
-	// protected BaseObject FindClosestInRange(float range, IEnumerable<BaseObject> objs, Func<BaseObject, bool> func = null)
-	// {
-	// 	BaseObject target = null;
-	// 	float bestDistanceSqr = float.MaxValue;
-	// 	float searchDistanceSqr = range * range;
-
-	// 	foreach (BaseObject obj in objs)
-	// 	{
-	// 		Vector3 dir = obj.transform.position - transform.position;
-	// 		float distToTargetSqr = dir.sqrMagnitude;
-
-	// 		// 서치 범위보다 멀리 있으면 스킵.
-	// 		if (distToTargetSqr > searchDistanceSqr)
-	// 			continue;
-
-	// 		// 이미 더 좋은 후보를 찾았으면 스킵.
-	// 		if (distToTargetSqr > bestDistanceSqr)
-	// 			continue;
-
-	// 		// 추가 조건
-	// 		if (func != null && func.Invoke(obj) == false)
-	// 			continue;
-
-	// 		target = obj;
-	// 		bestDistanceSqr = distToTargetSqr;
-	// 	}
-
-	// 	return target;
-	// }
-
-	// protected void ChaseOrAttackTarget(float chaseRange, float attackRange)
-	// {
-	// 	float distToTargetSqr = DistToTargetSqr;
-	// 	float attackDistanceSqr = attackRange * attackRange;
-
-	// 	if (distToTargetSqr <= attackDistanceSqr)
-	// 	{
-	// 		// 공격 범위 이내로 들어왔다면 공격.
-	// 		CreatureState = ECreatureState.Skill;
-	// 		//skill.DoSkill();
-	// 		return;
-	// 	}
-	// 	else
-	// 	{
-	// 		// 공격 범위 밖이라면 추적.
-	// 		FindPathAndMoveToCellPos(Target.transform.position, HERO_DEFAULT_MOVE_DEPTH);
-
-	// 		// 너무 멀어지면 포기.
-	// 		float searchDistanceSqr = chaseRange * chaseRange;
-	// 		if (distToTargetSqr > searchDistanceSqr)
-	// 		{
-	// 			Target = null;
-	// 			CreatureState = ECreatureState.Move;
-	// 		}
-	// 		return;
-	// 	}
-	// }
-	// #endregion
-
-	// #region Misc
-	// protected bool IsValid(BaseObject bo)
-	// {
-	// 	return bo.IsValid();
-	// }
-	// #endregion
-
-	// #region Map
-	// public EFindPathResult FindPathAndMoveToCellPos(Vector3 destWorldPos, int maxDepth, bool forceMoveCloser = false)
-	// {
-	// 	Vector3Int destCellPos = Managers.Map.World2Cell(destWorldPos);
-	// 	return FindPathAndMoveToCellPos(destCellPos, maxDepth, forceMoveCloser);
-	// }
-
-	// public EFindPathResult FindPathAndMoveToCellPos(Vector3Int destCellPos, int maxDepth, bool forceMoveCloser = false)
-	// {
-	// 	if (LerpCellPosCompleted == false)
-	// 		return EFindPathResult.Fail_LerpCell;
-
-	// 	// A*
-	// 	List<Vector3Int> path = Managers.Map.FindPath(this, CellPos, destCellPos, maxDepth);
-	// 	if (path.Count < 2)
-	// 		return EFindPathResult.Fail_NoPath;
-
-	// 	if (forceMoveCloser)
-	// 	{
-	// 		Vector3Int diff1 = CellPos - destCellPos;
-	// 		Vector3Int diff2 = path[1] - destCellPos;
-	// 		if (diff1.sqrMagnitude <= diff2.sqrMagnitude)
-	// 			return EFindPathResult.Fail_NoPath;
-	// 	}
-
-	// 	Vector3Int dirCellPos = path[1] - CellPos;
-	// 	//Vector3Int dirCellPos = destCellPos - CellPos;
-	// 	Vector3Int nextPos = CellPos + dirCellPos;
-
-	// 	if (Managers.Map.MoveTo(this, nextPos) == false)
-	// 		return EFindPathResult.Fail_MoveTo;
-
-	// 	return EFindPathResult.Success;
-	// }
-
-	// public bool MoveToCellPos(Vector3Int destCellPos, int maxDepth, bool forceMoveCloser = false)
-	// {
-	// 	if (LerpCellPosCompleted == false)
-	// 		return false;
-
-	// 	return Managers.Map.MoveTo(this, destCellPos);
-	// }
-
-	// protected IEnumerator CoLerpToCellPos()
-	// {
-	// 	while (true)
-	// 	{
-	// 		Hero hero = this as Hero;
-	// 		if (hero != null)
-	// 		{
-	// 			float div = 5;
-	// 			Vector3 campPos = Managers.Object.Camp.Destination.transform.position;
-	// 			Vector3Int campCellPos = Managers.Map.World2Cell(campPos);
-	// 			float ratio = Math.Max(1, (CellPos - campCellPos).magnitude / div);
-
-	// 			LerpToCellPos(CreatureData.MoveSpeed * ratio);
-	// 		}
-	// 		else
-	// 			LerpToCellPos(CreatureData.MoveSpeed);
-
-	// 		yield return null;
-	// 	}
-	// }
-	// #endregion
-}
+    }
 }
