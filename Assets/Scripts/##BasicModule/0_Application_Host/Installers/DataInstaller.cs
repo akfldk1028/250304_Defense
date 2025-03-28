@@ -23,22 +23,6 @@ namespace Unity.Assets.Scripts.Module.ApplicationLifecycle.Installers
         {
 
             builder.Register<DataLoader>(Lifetime.Singleton).AsSelf().AsImplementedInterfaces();
-            
-            // SOManager 등록 (VContainer를 통해 생성)
-            // builder.Register<SOManager>(Lifetime.Singleton);
-            
-            // SOManager 인스턴스 설정을 위한 초기화 액션 등록
-            // builder.RegisterBuildCallback(container => 
-            // {
-            //     // 생성된 인스턴스를 싱글톤 인스턴스로 설정
-            //     var soManager = container.Resolve<SOManager>();
-            //     SOManager.Instance = soManager;
-                
-            //     // SOManager 초기화 호출
-            //     soManager.Initialize();
-            //     Debug.Log("[DataInstaller] SOManager 초기화 완료");
-            // });
-            
             builder.Register<RemoteDataRepository>(Lifetime.Singleton).As<IDataRepository>();
             builder.Register<UserDataManager>(Lifetime.Singleton);
             builder.Register<CurrencyManager>(Lifetime.Singleton); 

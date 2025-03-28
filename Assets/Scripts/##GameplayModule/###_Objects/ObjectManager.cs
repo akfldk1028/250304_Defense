@@ -147,20 +147,29 @@ public class ObjectManager
 	public CreatureData CreatureData { get; private set; }
     [Inject] private DebugClassFacade _debugClassFacade;
 
-	// public HashSet<Hero> Heroes { get; } = new HashSet<Hero>();
+    private static ObjectManager s_instance;
 
-	// 요소 추가
-// fruits.Add("사과");
-// fruits.Add("바나나");
-// fruits.Add("오렌지");
-// fruits.Add("사과");  // 중복된 요소는 추가되지 않음
+    public static ObjectManager Instance
+    {
+        get
+        {
+            if (s_instance == null)
+            {
 
-	public HashSet<ServerMonster> Monsters { get; } = new HashSet<ServerMonster>();
+            }
+            return s_instance;
+        }
+    }
+
+
+    public HashSet<ServerMonster> Monsters { get; } = new HashSet<ServerMonster>();
 	public HashSet<ServerHero> Heroes { get; } = new HashSet<ServerHero>();
 	// public HashSet<Projectile> Projectiles { get; } = new HashSet<Projectile>();
 	// public HashSet<Env> Envs { get; } = new HashSet<Env>();
 	// public HashSet<EffectBase> Effects { get; } = new HashSet<EffectBase>();
 	// public HeroCamp Camp { get; private set; }
+
+
 
 	#region Roots
 	public Transform GetRootTransform(string name)
@@ -246,7 +255,7 @@ public class ObjectManager
 				clientMonster.SetAvatar(clientMonsterAvatar);
 
 				ServerMonster monster = go.GetComponent<ServerMonster>();
-				monster.SetInfo(templateID, CreatureData);
+				monster.SetInfo(templateID, CreatureData, clientMonster);
 				Monsters.Add(monster);
 				break;
 			
@@ -258,7 +267,7 @@ public class ObjectManager
 				clientHero.SetAvatar(clientHeroAvatar,  CreatureData.SkeletonDataID, _resourceManager);
 
 				ServerHero serverHero = go.GetComponent<ServerHero>();
-				serverHero.SetInfo(templateID, CreatureData);
+				serverHero.SetInfo(templateID, CreatureData, clientHero);
 				Heroes.Add(serverHero);
 				break;
 			}

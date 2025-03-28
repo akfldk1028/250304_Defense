@@ -24,6 +24,8 @@ public class ObjectManagerFacade : NetworkBehaviour
     [Inject] public ResourceManager _resourceManager;
 
     [Inject] private DebugClassFacade _debugClassFacade;
+    [Inject] private IObjectResolver Container;
+
 
     private Coroutine _spawnMonsterCoroutine;
     private GameObject ObjectSpawner_O;
@@ -299,7 +301,14 @@ public class ObjectManagerFacade : NetworkBehaviour
                 // 기존 홀더가 있는 경우, 그 위치에 영웅 생성
                 Vector3 spawnPosition = existingHolder.transform.position;
                 var hero = _objectManager.Spawn<ServerHero>(spawnPosition, clientId, selectedHero.DataId);
-                
+
+                // 의존성 주입 수동 처리 (VContainer 주입 실패 대응)
+                if (hero != null && hero._objectManager == null)
+                {
+                    hero._objectManager = _objectManager;
+                    _debugClassFacade?.LogInfo(GetType().Name, $"<color=yellow>[ObjectManagerFacade] 기존 홀더의 ServerHero에 ObjectManager 수동 주입 완료</color>");
+                }
+
                 // 서버에서 부모-자식 관계 설정 (중요!)
                 if (IsServer)
                 {
@@ -315,6 +324,7 @@ public class ObjectManagerFacade : NetworkBehaviour
                 Vector3 spawnPosition = targetHolder.transform.position;
                 targetHolder.Holder_Name = selectedHero.DataId;
                 var hero = _objectManager.Spawn<ServerHero>(spawnPosition, clientId, selectedHero.DataId);
+  
                 
                 // 서버에서 부모-자식 관계 설정 (중요!)
                 if (IsServer)
@@ -388,12 +398,14 @@ private void HeroSpawnClientRpc(ulong heroNetworkId, ulong holderNetworkId, ulon
         UI_Spawn_Holder holder = holderObj.GetComponent<UI_Spawn_Holder>();
         ServerHero serverHero = heroObj.GetComponent<ServerHero>();
         ClientHero clientHero = heroObj.GetComponent<ClientHero>();
-        
+
         if (serverHero == null || holder == null)
             return;
-        
-        // 3. 클라이언트 영웅 시각적 요소 초기화 (핵심 부분)
-        if (clientHero != null && DataLoader.instance.HeroDic.TryGetValue(heroDataId, out HeroData heroData))
+
+         serverHero.SetParentHolder(holder);
+
+            // 3. 클라이언트 영웅 시각적 요소 초기화 (핵심 부분)
+            if (clientHero != null && DataLoader.instance.HeroDic.TryGetValue(heroDataId, out HeroData heroData))
         {
             HeroAvatarSO avatar = _resourceManager.Load<HeroAvatarSO>(heroData.ClientAvatar);
             if (avatar != null)

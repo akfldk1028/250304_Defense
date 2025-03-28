@@ -68,8 +68,8 @@ namespace Unity.Assets.Scripts.Data
 		public int GachaSpawnWeight;
 		public int GachaWeight;
 		public int GachaExpCount;
-		public int AtkSpeed;
-		public int AtkTime;
+		public float AtkSpeed;
+		public float AtkTime;
 
 	}
 

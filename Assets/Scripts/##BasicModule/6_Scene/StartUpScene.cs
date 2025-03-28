@@ -33,8 +33,7 @@ public class StartUpScene : BaseScene
 		{
 			_resourceManager.OnLoadingCompleted += OnResourceLoadingComplete;
 		}
-		
-		// 리소스 로드는 UI_StartUpScene에서 호출하도록 변경
+
 		StartLoadAssets();
 
 		return true;
@@ -72,7 +71,6 @@ public class StartUpScene : BaseScene
                 // 진행 상황 이벤트 발생
                 OnResourceLoadProgress?.Invoke(key, count, totalCount);
                 
-                // Debug.Log($"[StartUpScene] 리소스 로드 중: {key}, {count}/{totalCount}");
             });
             
             Debug.Log("[StartUpScene] 리소스 로드 요청 완료");
@@ -80,8 +78,6 @@ public class StartUpScene : BaseScene
         catch (System.Exception e)
         {
             Debug.LogError($"[StartUpScene] 리소스 로딩 중 오류 발생: {e.Message}\n{e.StackTrace}");
-            
-            // 오류 발생 시 리소스 로드 완료 이벤트 발생 (실패로 처리)
             _isResourceLoaded = true;
             OnResourceLoadComplete?.Invoke();
         }
@@ -90,10 +86,6 @@ public class StartUpScene : BaseScene
     private void OnResourceLoadingComplete()
     {
         Debug.Log("[StartUpScene] 모든 리소스 로드 완료");
-        
-        // 리소스 딕셔너리 내용 출력
-        // _resourceManager.DebugSimpleResources();
-        
         _isResourceLoaded = true;
         OnResourceLoadComplete?.Invoke();
     }

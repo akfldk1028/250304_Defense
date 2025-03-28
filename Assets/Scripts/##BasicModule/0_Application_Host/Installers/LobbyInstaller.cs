@@ -15,14 +15,6 @@ namespace Unity.Assets.Scripts.Module.ApplicationLifecycle.Installers
             _debugClassFacade?.LogInfo(GetType().Name, "로비 모듈 설치 시작");
             // builder.RegisterEntryPoint<LobbyServiceFacade>(Lifetime.Singleton).AsSelf();
 
-            // 로비 관련 서비스 등록
-            // builder.Register<LocalLobbyUser>(Lifetime.Singleton);
-            // builder.Register<LocalLobby>(Lifetime.Singleton);
-            // builder.Register<LobbyServiceFacade>(Lifetime.Singleton).AsSelf();
-            
-            // // 프로필 매니저 등록
-            // builder.Register<ProfileManager>(Lifetime.Singleton).AsSelf();
-
             _debugClassFacade?.LogInfo(GetType().Name, "로비 모듈 설치 완료");
         }
     }

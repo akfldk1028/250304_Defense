@@ -9,7 +9,7 @@ namespace Unity.Assets.Scripts.Objects
     /// 네트워크 멀티플레이어 게임에서 몬스터의 클라이언트 측 시각화를 담당하는 클래스입니다.
     /// ClientCharacter를 상속받아 네트워크 기능을 활용합니다.
     /// </summary>
-    public class ClientMonster : ClientCreature
+    public class ClientMonster : ClientCreature , IClientCreature
     {
         [SerializeField] private Animator animator;
         [SerializeField] private SpriteRenderer spriteRenderer;
@@ -46,12 +46,14 @@ namespace Unity.Assets.Scripts.Objects
             base.OnNetworkDespawn();
 
         }
-        
-        public void SetAvatar(MonsterAvatarSO avatarSO)
+        public void SetAvatar(object avatar, object additionalParam = null)
         {
-            MonsterAvatarSO = avatarSO;
-
+            if (avatar is MonsterAvatarSO monsterAvatar)
+            {
+               MonsterAvatarSO = monsterAvatar;
+            }
         }
+    
         /// <summary>
         /// 이동 방향에 따라 애니메이션과 스프라이트 방향을 업데이트합니다.
         /// </summary>
@@ -87,7 +89,7 @@ namespace Unity.Assets.Scripts.Objects
                 audioSource.Play();
             }
         }
-        
+
 
     }
 }

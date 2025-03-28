@@ -90,9 +90,9 @@ namespace Unity.Assets.Scripts.Objects
 	    {
             if (base.Init() == false)
                 return false;
-                CreatureType = CharacterTypeEnum.Monster;
+            CreatureType = CharacterTypeEnum.Monster;
 
-
+            gameObject.layer = LayerNames.Monster;
             // StartCoroutine(CoUpdateAI());
 
             return true;
@@ -170,9 +170,9 @@ namespace Unity.Assets.Scripts.Objects
             CurrentHp.OnValueChanged -= OnHpChanged;
         }
 
-        public override void SetInfo(int templateID, Data.CreatureData creatureData)
-	    {
-            base.SetInfo(templateID, creatureData);
+        public override void SetInfo<T>(int templateID, Data.CreatureData creatureData, T clientCreature) 
+        where T : class	    {
+            base.SetInfo(templateID, creatureData, clientCreature);
 
             DataTemplateID = templateID;
             MonsterId.Value = templateID;
@@ -279,9 +279,11 @@ namespace Unity.Assets.Scripts.Objects
                 OnMonsterDamaged?.Invoke(this, oldValue - newValue);
             }
         }
+
         #endregion
 
-   
+
+
 
     }
 }

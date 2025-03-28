@@ -33,9 +33,7 @@ namespace Unity.Assets.Scripts.Module.ApplicationLifecycle.Installers
             _debugClassFacade?.LogInfo(GetType().Name, "씬 모듈 설치 시작");
 
             builder.Register<SceneManagerEx>(Lifetime.Singleton);
-            
-            // StartUpScene 등록 방식 변경
-            // 1. 컴포넌트 찾기 방식으로 등록
+
             builder.RegisterComponentInHierarchy<StartUpScene>();
 
             _debugClassFacade?.LogInfo(GetType().Name, "씬 모듈 설치 완료");

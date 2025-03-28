@@ -11,6 +11,8 @@ using Unity.Netcode;
 
 namespace Unity.Assets.Scripts.Objects
 {
+
+    
 public class Creature : BaseObject, ITargetable
 {
 
@@ -39,16 +41,6 @@ public class Creature : BaseObject, ITargetable
 
 	// public EffectComponent Effects { get; set; }
 
-	float DistToTargetSqr
-	{
-		get
-		{
-			Vector3 dir = (Target.transform.position - transform.position);
-			float distToTarget = Math.Max(0, dir.magnitude - Target.ExtraCells * 1f - ExtraCells * 1f); // TEMP
-			return distToTarget * distToTarget;
-		}
-	}
-
 	#region Stats
 	public float Hp { get; set; }
 	
@@ -63,6 +55,7 @@ public class Creature : BaseObject, ITargetable
 	[SerializeField] // 인스펙터에서 표시되도록 SerializeField 추가
 	public CreatureStat AtkRange = new CreatureStat(0);
 
+        
 	[SerializeField] // 인스펙터에서 표시되도록 SerializeField 추가
 	public CreatureStat AtkBonus = new CreatureStat(0);
 
@@ -81,7 +74,13 @@ public class Creature : BaseObject, ITargetable
 	[SerializeField] // 인스펙터에서 표시되도록 SerializeField 추가
 	public CreatureStat ReduceDamageRate = new CreatureStat(0);
 
-	public NetworkLifeState NetLifeState { get; private set; }
+    public CreatureStat LifeStealRate;
+    public CreatureStat ThornsDamageRate; // 쏜즈
+    public CreatureStat AttackSpeedRate;
+
+
+
+    public NetworkLifeState NetLifeState { get; private set; }
 
  	//ECreatureState 와 LifeState 통합해야함
 	public LifeState LifeState
@@ -109,31 +108,41 @@ public class Creature : BaseObject, ITargetable
 				}
 			}
 		}
-	}	
-	// [SerializeField] // 인스펙터에서 표시되도록 SerializeField 추가
-	// public CreatureStat LifeStealRate = new CreatureStat(0);
-	
-	// [SerializeField] // 인스펙터에서 표시되도록 SerializeField 추가
-	// public CreatureStat ThornsDamageRate = new CreatureStat(0); // 쏜즈
-	
+	}
 
-	// [SerializeField] // 인스펙터에서 표시되도록 SerializeField 추가
-	// public CreatureStat AttackSpeedRate = new CreatureStat(0);
-	#endregion
+        #endregion
 
-	// protected float AttackDistance
-	// {
-	// 	get
-	// 	{
-	// 		float env = 2.2f;
-	// 		if (Target != null && Target.ObjectType == EObjectType.Env)
-	// 			return Mathf.Max(env, Collider.radius + Target.Collider.radius + 0.1f);
 
-	// 		float baseValue = CreatureData.AtkRange;
-	// 		return baseValue;
-	// 	}
-	// }
-	
+#if UNITY_EDITOR
+        [Header("===== 디버그 정보 =====")]
+        [Space(5)]
+        [SerializeField] private float _dbgMaxHp;
+        [SerializeField] private float _dbgAtk;
+        [SerializeField] private float _dbgAtkRange;
+        [SerializeField] private float _dbgAtkBonus;
+        [SerializeField] private float _dbgMoveSpeed;
+        [SerializeField] private float _dbgCriRate;
+        [SerializeField] private float _dbgCriDamage;
+#endif
+        public virtual void Update()
+        {
+#if UNITY_EDITOR
+            // 런타임에만 디버그 정보 업데이트
+            if (Application.isPlaying)
+            {
+                _dbgMaxHp = MaxHp.Value;
+                _dbgAtk = Atk.Value;
+                _dbgAtkRange = AtkRange.Value;
+                _dbgAtkBonus = AtkBonus.Value;
+                _dbgMoveSpeed = MoveSpeed.Value;
+                _dbgCriRate = CriRate.Value;
+                _dbgCriDamage = CriDamage.Value;
+            }
+#endif
+
+            // 기존 Update 코드 (있다면)
+        }
+
         protected void Awake()
         {
             ObjectType = EObjectType.Creature;
@@ -153,7 +162,6 @@ public class Creature : BaseObject, ITargetable
      
 
 
-
 	public override bool Init()
 	{
 		ObjectType = EObjectType.Creature;
@@ -161,65 +169,95 @@ public class Creature : BaseObject, ITargetable
 		return true;
 	}
 
-	public virtual void SetInfo(int templateID, Data.CreatureData creatureData)
-	{
-
+    public virtual void SetInfo<T>(int templateID, Data.CreatureData creatureData, T clientCreature) 
+    where T : class    {
 		DataTemplateID = templateID;
-		MoveSpeed = new CreatureStat(creatureData.MoveSpeed);
+        Hp = creatureData.MaxHp;
+        MaxHp = new CreatureStat(creatureData.MaxHp);
+        Atk = new CreatureStat(creatureData.Atk);
+        CriRate = new CreatureStat(creatureData.CriRate);
+        CriDamage = new CreatureStat(creatureData.CriDamage);
+        ReduceDamageRate = new CreatureStat(0);
+        LifeStealRate = new CreatureStat(0);
+        ThornsDamageRate = new CreatureStat(0);
+        MoveSpeed = new CreatureStat(creatureData.MoveSpeed);
+        AttackSpeedRate = new CreatureStat(1);
+        AtkRange = new CreatureStat(creatureData.AtkRange);
+        AtkBonus = new CreatureStat(creatureData.AtkBonus);
+        CriRate = new CreatureStat(creatureData.CriRate);
 
-		
 
-		// Collider 추가
-		// Collider.offset = new Vector2(CreatureData.ColliderOffsetX, CreatureData.ColliderOffsetY);
-		// Collider.radius = CreatureData.ColliderRadius;
+        
+        CreatureState = ECreatureState.Idle;
 
-		// // RigidBody 추가	
-		// RigidBody.mass = 0;
 
-		// Stat - 기존 CreatureStat 객체를 재사용하고 BaseValue만 업데이트
-		// Hp = CreatureData.MaxHp;
-		// MaxHp = new CreatureStat(CreatureData.MaxHp);
-		// MaxHp.SetBaseValue(CreatureData.MaxHp);
-		// Atk.SetBaseValue(CreatureData.Atk);
-		// AtkRange.SetBaseValue(CreatureData.AtkRange);
-		// AtkBonus.SetBaseValue(CreatureData.AtkBonus);
-		// MoveSpeed.SetBaseValue(CreatureData.MoveSpeed);
-		// CriRate.SetBaseValue(CreatureData.CriRate);
-		// CriDamage.SetBaseValue(CreatureData.CriDamage);
-		// CreatureData에 IsNpc 속성이 있다면 설정, 없으면 기본값 유지
-		// if (CreatureData.GetType().GetProperty("IsNpc") != null)
-		// {
-		// 	IsNpc = (bool)CreatureData.GetType().GetProperty("IsNpc").GetValue(CreatureData);
-		// }
-		// // if (CreatureData.GetType().GetProperty("IsValidTarget") != null)
-		// // {
-		// // 	IsValidTarget = (bool)CreatureData.GetType().GetProperty("IsValidTarget").GetValue(CreatureData);
-		// // }
+            // Collider 추가
+            // Collider.offset = new Vector2(CreatureData.ColliderOffsetX, CreatureData.ColliderOffsetY);
+            // Collider.radius = CreatureData.ColliderRadius;
 
-		// // IsValidTarget = LifeState != LifeState.Dead;
-		
-		// // 스탯 값 확인을 위한 디버그 로그 추가
-		// Debug.Log($"[Creature] SetInfo: 스탯 값 설정 완료. " +
-		// 		  $"MaxHp.BaseValue={MaxHp.BaseValue}, MaxHp.Value={MaxHp.Value}, " +
-		// 		  $"Atk.BaseValue={Atk.BaseValue}, Atk.Value={Atk.Value}, " +
-		// 		  $"MoveSpeed.BaseValue={MoveSpeed.BaseValue}, MoveSpeed.Value={MoveSpeed.Value}");
-		
-		// // 이미 초기화된 스탯은 그대로 유지
-		// ReduceDamageRate, LifeStealRate, ThornsDamageRate, AttackSpeedRate는 
-		// 이미 생성자에서 초기화되었으므로 여기서 다시 생성할 필요 없음
+            // // RigidBody 추가	
+            // RigidBody.mass = 0;
 
-		// State
-		CreatureState = ECreatureState.Idle;
-	}
 
-	protected virtual void OnCreatureStateChanged(ECreatureState newState)
+            // CriDamage.SetBaseValue(CreatureData.CriDamage);
+            // CreatureData에 IsNpc 속성이 있다면 설정, 없으면 기본값 유지
+            // if (CreatureData.GetType().GetProperty("IsNpc") != null)
+            // {
+            // 	IsNpc = (bool)CreatureData.GetType().GetProperty("IsNpc").GetValue(CreatureData);
+            // }
+            // // if (CreatureData.GetType().GetProperty("IsValidTarget") != null)
+            // // {
+            // // 	IsValidTarget = (bool)CreatureData.GetType().GetProperty("IsValidTarget").GetValue(CreatureData);
+            // // }
+
+            // // IsValidTarget = LifeState != LifeState.Dead;
+
+
+            //// Effect
+            //Effects = gameObject.AddComponent<EffectComponent>();
+            //Effects.SetInfo(this);
+
+            //// Map
+            //StartCoroutine(CoLerpToCellPos());
+        }
+
+    protected virtual void OnCreatureStateChanged(ECreatureState newState)
 	{
 		// Client로 대충 이동함함
 		// 서버에서 상태 변경 시 필요한 로직
 	}
+    protected virtual void UpdateAnimation(){}
 
-	protected virtual void UpdateAnimation(){}
-	
+
+	float DistToTargetSqr
+	{
+		get
+		{
+			Vector3 dir = (Target.transform.position - transform.position);
+			float distToTarget = Math.Max(0, dir.magnitude - Target.ExtraCells * 1f - ExtraCells * 1f); // TEMP
+			return distToTarget * distToTarget;
+		}
+	}
+
+
+    protected void ChaseOrAttackTarget(float chaseRange, float attackRange)
+	{
+		float distToTargetSqr = DistToTargetSqr;
+		float attackDistanceSqr = attackRange * attackRange;
+
+		if (distToTargetSqr <= attackDistanceSqr)
+		{
+			// 공격 범위 이내로 들어왔다면 공격.
+			CreatureState = ECreatureState.Skill;
+			//skill.DoSkill();
+			return;
+		}
+		else
+		{
+			Target = null;
+			CreatureState = ECreatureState.Move;
+		}
+	}
 
    public float UpdateAITick { get; protected set; } = 0.0f;
    protected IEnumerator CoUpdateAI()
@@ -253,36 +291,33 @@ public class Creature : BaseObject, ITargetable
         }
 
 
-        protected BaseObject FindClosestInRange(float range, IEnumerable<BaseObject> objs, Func<BaseObject, bool> func = null)
-        {
-            BaseObject target = null;
-            float bestDistanceSqr = float.MaxValue;
-            float searchDistanceSqr = range * range;
 
-            foreach (BaseObject obj in objs)
-            {
-                Vector3 dir = obj.transform.position - transform.position;
-                float distToTargetSqr = dir.sqrMagnitude;
+        // protected BaseObject FindClosestInRange(Vector3 centerPosition, float range, IEnumerable<BaseObject> objs, Func<BaseObject, bool> func = null)
+        // {
+        //     BaseObject target = null;
+        //     float bestDistanceSqr = float.MaxValue;
+        //     float searchDistanceSqr = range * range;
 
-                // 서치 범위보다 멀리 있으면 스킵.
-                if (distToTargetSqr > searchDistanceSqr)
-                    continue;
+        //     foreach (BaseObject obj in objs)
+        //     {
+        //         Vector3 dir = obj.transform.position - centerPosition;
+        //         float distToTargetSqr = dir.sqrMagnitude;
 
-                // 이미 더 좋은 후보를 찾았으면 스킵.
-                if (distToTargetSqr > bestDistanceSqr)
-                    continue;
+        //         if (distToTargetSqr > searchDistanceSqr)
+        //             continue;
 
-                // 추가 조건
-                if (func != null && func.Invoke(obj) == false)
-                    continue;
+        //         if (distToTargetSqr > bestDistanceSqr)
+        //             continue;
 
-                target = obj;
-                bestDistanceSqr = distToTargetSqr;
-            }
+        //         if (func != null && func.Invoke(obj) == false)
+        //             continue;
 
-            return target;
-        }
+        //         target = obj;
+        //         bestDistanceSqr = distToTargetSqr;
+        //     }
 
+        //     return target;
+        // }
 
         protected virtual void UpdateIdle() { }
    		protected virtual void UpdateMove() { }

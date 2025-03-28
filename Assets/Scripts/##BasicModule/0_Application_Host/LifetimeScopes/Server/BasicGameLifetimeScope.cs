@@ -65,7 +65,19 @@ public class BasicGameLifetimeScope : LifetimeScope
         _debugClassFacade?.LogInfo(GetType().Name, "UI_BasicGame 등록 시도");
         builder.RegisterComponentInHierarchy<UI_BasicGame>();
 
-
+        builder.RegisterBuildCallback(container => {
+            var mainCamera = GameObject.Find("Main Camera");
+            if (mainCamera != null) {
+                var cameraScript = mainCamera.GetComponent<Camera_BasicGame>();
+                if (cameraScript == null) {
+                    cameraScript = mainCamera.AddComponent<Camera_BasicGame>();
+                }
+                container.Inject(cameraScript);
+                Debug.Log("[BasicGameLifetimeScope] Camera_BasicGame 컴포넌트가 Main Camera에 추가되었습니다.");
+            } else {
+                Debug.LogError("[BasicGameLifetimeScope] Main Camera를 찾을 수 없습니다!");
+            }
+        });
 
         // 컨테이너 빌드 후 초기화를 수행하는 콜백 등록
         builder.RegisterBuildCallback(container => {
@@ -81,6 +93,7 @@ public class BasicGameLifetimeScope : LifetimeScope
 
                     var objectManagerFacadeRef = container.Resolve<ObjectManagerFacade>();
                     objectManagerFacadeRef.Initialize();
+
                 }
                 catch (Exception e) {
                     Debug.LogError($"[BasicGameLifetimeScope] BasicGameState 참조 또는 초기화 중 오류: {e.Message}");

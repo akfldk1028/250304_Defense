@@ -10,11 +10,16 @@ using UnityEngine.Rendering;
 
 namespace Unity.Assets.Scripts.Objects
 {
+    public interface IClientCreature
+{
+    void SetAvatar(object avatar, object additionalParam = null);
+}
     /// <summary>
     /// <see cref="ClientCharacter"/> is responsible for displaying a character on the client's screen based on state information sent by the server.
     /// </summary>
     public class ClientCreature : NetworkBehaviour
     {
+        
         [SerializeField] private HeroAvatarSO heroAvatarSO;
         [SerializeField] Animator m_ClientVisualsAnimator;
         
@@ -46,7 +51,7 @@ namespace Unity.Assets.Scripts.Objects
             } 
         }
 
-
+        public virtual void Awake(){}
         public virtual void SetAvatar(HeroAvatarSO avatarSO , string SkeletonDataID)
         {
             heroAvatarSO = avatarSO;
@@ -173,57 +178,6 @@ namespace Unity.Assets.Scripts.Objects
 
 
         /// <summary>
-        /// Returns the targeting-reticule prefab for this character visualization
-        // / </summary>
-        // public GameObject TargetReticulePrefab => m_VisualizationConfiguration.TargetReticule;
-
-        // /// <summary>
-        // /// Returns the Material to plug into the reticule when the selected entity is hostile
-        // /// </summary>
-        // public Material ReticuleHostileMat => m_VisualizationConfiguration.ReticuleHostileMat;
-
-        // /// <summary>
-        // /// Returns the Material to plug into the reticule when the selected entity is friendly
-        // /// </summary>
-        // public Material ReticuleFriendlyMat => m_VisualizationConfiguration.ReticuleFriendlyMat;
-
-        // CharacterSwap m_CharacterSwapper;
-
-        // public CharacterSwap CharacterSwap => m_CharacterSwapper;
-
-        // public bool CanPerformActions => m_ServerCharacter.CanPerformActions;
-
-        // ServerCharacter m_ServerCharacter;
-
-        // public ServerCharacter serverCharacter => m_ServerCharacter;
-
-        // ClientActionPlayer m_ClientActionViz;
-
-        // PositionLerper m_PositionLerper;
-
-        // RotationLerper m_RotationLerper;
-
-        // this value suffices for both positional and rotational interpolations; one may have a constant value for each
-        const float k_LerpTime = 0.08f;
-
-        Vector3 m_LerpedPosition;
-
-        Quaternion m_LerpedRotation;
-
-        float m_CurrentSpeed;
-
-        /// <summary>
-        /// /// Server to Client RPC that broadcasts this action play to all clients.
-        /// </summary>
-        /// <param name="data"> Data about which action to play and its associated details. </param>
-        // [Rpc(SendTo.ClientsAndHost)]
-        // public void ClientPlayActionRpc(ActionRequestData data)
-        // {
-        //     ActionRequestData data1 = data;
-        //     m_ClientActionViz.PlayAction(ref data1);
-        // }
-
-        /// <summary>
         /// This RPC is invoked on the client when the active action FXs need to be cancelled (e.g. when the character has been stunned)
         /// </summary>
         [Rpc(SendTo.ClientsAndHost)]
@@ -270,23 +224,11 @@ namespace Unity.Assets.Scripts.Objects
             }
 
             // m_ClientActionViz = new ClientActionPlayer(this);
-            
-            // 나머지 기존 코드
-            // ... existing code ...
+     
         }
 
         public override void OnNetworkDespawn()
         {
-            // if (m_ServerCharacter)
-            // {
-            //     m_ServerCharacter.IsStealthy.OnValueChanged -= OnStealthyChanged;
-
-            //     // if (m_ServerCharacter.TryGetComponent(out ClientInputSender sender))
-            //     // {
-            //     //     sender.ActionInputEvent -= OnActionInput;
-            //     //     sender.ClientMoveEvent -= OnMoveInput;
-            //     // }
-            // }
 
             enabled = false;
         }
@@ -311,23 +253,7 @@ namespace Unity.Assets.Scripts.Objects
 
         void SetAppearanceSwap()
         {
-            // if (m_CharacterSwapper)
-            // {
-            //     var specialMaterialMode = CharacterSwap.SpecialMaterialMode.None;
-            //     if (m_ServerCharacter.IsStealthy.Value)
-            //     {
-            //         if (m_ServerCharacter.IsOwner)
-            //         {
-            //             specialMaterialMode = CharacterSwap.SpecialMaterialMode.StealthySelf;
-            //         }
-            //         else
-            //         {
-            //             specialMaterialMode = CharacterSwap.SpecialMaterialMode.StealthyOther;
-            //         }
-            //     }
 
-            //     m_CharacterSwapper.SwapToModel(specialMaterialMode);
-            // }
         }
 
         /// <summary>

@@ -12,7 +12,7 @@ namespace Unity.Assets.Scripts.Objects
     /// 네트워크 멀티플레이어 게임에서 몬스터의 클라이언트 측 시각화를 담당하는 클래스입니다.
     /// ClientCharacter를 상속받아 네트워크 기능을 활용합니다.
     /// </summary>
-    public class ClientHero : ClientCreature
+    public class ClientHero : ClientCreature , IClientCreature
     {
         [SerializeField] private Animator animator;
         [SerializeField] private SpriteRenderer spriteRenderer;
@@ -31,9 +31,10 @@ namespace Unity.Assets.Scripts.Objects
 
 
 
-        private void Awake()
-        {
+        public override void Awake(){
+            base.Awake();
         }
+        
         
         public override void OnNetworkSpawn()
         {
@@ -88,17 +89,23 @@ namespace Unity.Assets.Scripts.Objects
                     break;
             }
         }
-
-        public override void SetAvatar(HeroAvatarSO avatarSO, string skeletonDataID)
+        public void SetAvatar(object avatar, object additionalParam = null)
         {
-            base.SetAvatar(avatarSO, skeletonDataID);
+            if (avatar is HeroAvatarSO heroAvatar)
+            {
+                if (additionalParam is (string skeletonDataID, ResourceManager resourceManager))
+                {
+                     base.SetAvatar(heroAvatar, skeletonDataID, resourceManager);
+                }
+            }
         }
         
-        // ResourceManager를 전달받는 오버로드 추가
-        public override void SetAvatar(HeroAvatarSO avatarSO, string skeletonDataID, ResourceManager resourceManager)
-        {
-            base.SetAvatar(avatarSO, skeletonDataID, resourceManager);
-        }
+        
+        // // ResourceManager를 전달받는 오버로드 추가
+        // public override void SetAvatar(HeroAvatarSO avatarSO, string skeletonDataID, ResourceManager resourceManager)
+        // {
+        //     base.SetAvatar(avatarSO, skeletonDataID, resourceManager);
+        // }
 
    
     }

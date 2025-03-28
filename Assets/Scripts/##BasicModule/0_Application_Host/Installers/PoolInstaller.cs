@@ -14,7 +14,6 @@ namespace Unity.Assets.Scripts.Module.ApplicationLifecycle.Installers
         {
             _debugClassFacade?.LogInfo(GetType().Name, "풀 모듈 설치 시작");
             builder.Register<PoolManager>(Lifetime.Singleton);
-            // builder.Register<PoolFacade>(Lifetime.Singleton);
             _debugClassFacade?.LogInfo(GetType().Name, "풀 모듈 설치 완료");
         }
     }

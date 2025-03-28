@@ -49,6 +49,9 @@ public class UI_Spawn_Holder : UI_Base
 
      
         #endregion
+	private static UI_Spawn_Holder s_instance;
+
+	private static UI_Spawn_Holder Instance { get { Initialize(); return s_instance; } }
 
 
     [SerializeField] private ServerHero _serverHero;
@@ -77,7 +80,11 @@ public class UI_Spawn_Holder : UI_Base
     };
 
 
+    public static void Initialize(){}
+    
 
+	
+    
       public override bool Init()
         {
             if (base.Init() == false)
@@ -90,17 +97,7 @@ public class UI_Spawn_Holder : UI_Base
 
             GetButton((int)Buttons.Sell_B).gameObject.BindEvent(OnClickSellButton);
             GetButton((int)Buttons.Composition_B).gameObject.BindEvent(OnClickCompositionButton);
-            // GetButton((int)Buttons.DiaPlusButton).gameObject.BindEvent(OnClickDiaPlusButton);
-            // GetButton((int)Buttons.HeroesListButton).gameObject.BindEvent(OnClickHeroesListButton);
-            // GetButton((int)Buttons.SetHeroesButton).gameObject.BindEvent(OnClickSetHeroesButton);
-            // GetButton((int)Buttons.SettingButton).gameObject.BindEvent(OnClickSettingButton);
-            // GetButton((int)Buttons.InventoryButton).gameObject.BindEvent(OnClickInventoryButton);
-            // GetButton((int)Buttons.WorldMapButton).gameObject.BindEvent(OnClickWorldMapButton);
-            // GetButton((int)Buttons.QuestButton).gameObject.BindEvent(OnClickQuestButton);
-            // GetButton((int)Buttons.ChallengeButton).gameObject.BindEvent(OnClickChallengeButton);
-            // GetButton((int)Buttons.PortalButton).gameObject.BindEvent(OnClickPortalButton);
-            // GetButton((int)Buttons.CampButton).gameObject.BindEvent(OnClickCampButton);
-            // GetButton((int)Buttons.CheatButton).gameObject.BindEvent(OnClickCheatButton);
+
             
             Refresh();
 
@@ -135,7 +132,7 @@ public class UI_Spawn_Holder : UI_Base
 
     private void Start()
     {
-        // MakeCollider();
+        MakeCollider();
 
         // SellButton.onClick.AddListener(() => Sell());
         // CompositionButton.onClick.AddListener(() => Composition());
@@ -276,23 +273,46 @@ public class UI_Spawn_Holder : UI_Base
 
     public void GetRange()
     {
-        // float range = m_Data.heroRange * 2;
-        // Circle_Range.localScale = new Vector2(range, range);
+        Debug.Log("[UI_Spawn_Holder] GetRange 호출됨");
+        
+        // 서버 히어로가 있는 경우 AtkRange 값을 사용
+        float range = 2.0f; // 기본값
+        
+        if (m_Heroes.Count > 0 && m_Heroes[0] != null)
+        {
+            range = m_Heroes[0].AtkRange.Value;
+            Debug.Log($"[UI_Spawn_Holder] 히어로 범위: {range}");
+        }
+        
+        // Range 오브젝트 활성화
+        GameObject rangeObj = GetObject((int)GameObjects.Range_o);
+        if (rangeObj != null)
+        {
+            rangeObj.SetActive(true);
+            rangeObj.transform.localScale = new Vector3(range, range, 1.0f);
+            Debug.Log($"[UI_Spawn_Holder] 범위 시각화 설정 완료: {range}");
+        }
 
-        // Range_o.gameObject.SetActive(true);
-        // CanvasObject.SetActive(true);
     }
     public void ReturnRange()
     {
-        // Range_o.gameObject.SetActive(false);
-        // CanvasObject.SetActive(false);
-        // Range_T.localScale = Vector2.zero;
+
+        GameObject rangeObj = GetObject((int)GameObjects.Range_o);
+        if (rangeObj != null)
+        {
+            rangeObj.SetActive(false);
+            Debug.Log("[UI_Spawn_Holder] 범위 시각화 비활성화");
+        }
+
     }
 
     private void MakeCollider()
     {
-        var collider = gameObject.AddComponent<BoxCollider2D>();
+        Debug.Log("[UI_Spawn_Holder] MakeCollider");
+        var collider = gameObject.AddComponent<CircleCollider2D>();
         collider.isTrigger = true;
+        collider.radius = 1.0f; 
+
         // collider.size = new Vector2(Spawner.xValue, Spawner.yValue);
     }
 
@@ -300,6 +320,8 @@ public class UI_Spawn_Holder : UI_Base
 
     public void CheckGetPosition()
     {
+        UpdateColliderSize();
+
         for(int i = 0; i < m_Heroes.Count; i++)
         {
             m_Heroes[i].transform.localPosition = Hero_Vector_Pos(m_Heroes.Count)[i];
@@ -307,6 +329,19 @@ public class UI_Spawn_Holder : UI_Base
 
         }
     }
+    private void UpdateColliderSize()
+    {
+        if (m_Heroes.Count > 0 && m_Heroes[0] != null)
+        {
+            CircleCollider2D collider = GetComponent<CircleCollider2D>();
+            if (collider != null)
+            {
+                collider.radius = m_Heroes[0].AtkRange.Value;
+                Debug.Log($"[UI_Spawn_Holder] 콜라이더 크기 업데이트: 반지름={collider.radius}");
+            }
+        }
+    }
+
 
     private Vector2[] Hero_Vector_Pos(int count)
     {

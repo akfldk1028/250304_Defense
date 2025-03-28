@@ -117,11 +117,6 @@ namespace Unity.Assets.Scripts.Module.ApplicationLifecycle
             {
                 return new UIInstaller();
             };
-            
-
-
-
-    
 
             m_InstallerFactories[ModuleType.Object] = () => 
             {

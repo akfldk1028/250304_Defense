@@ -23,19 +23,12 @@ namespace Unity.Assets.Scripts.Module.ApplicationLifecycle.Installers
         /// </summary>
         public ModuleType ModuleType => ModuleType.Resource;
 
-        /// <summary>
-        /// 의존성 주입 설정
-        /// </summary>
-        /// <param name="builder">컨테이너 빌더</param>
         public void Install(IContainerBuilder builder)
         {
             _debugClassFacade?.LogInfo(GetType().Name, "리소스 모듈 설치 시작");
 
-            // 자기 자신을 컨테이너에 등록 (중요!)
             builder.RegisterInstance(this).AsSelf();
             builder.Register<ResourceManager>(Lifetime.Singleton);
-            // 기타 리소스 관련 서비스 등록
-            // builder.Register<ResourceService>(Lifetime.Singleton);
 
             _debugClassFacade?.LogInfo(GetType().Name, "리소스 모듈 설치 완료");
         }

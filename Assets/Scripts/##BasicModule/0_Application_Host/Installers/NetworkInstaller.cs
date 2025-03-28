@@ -35,22 +35,14 @@ namespace Unity.Assets.Scripts.Module.ApplicationLifecycle.Installers
             builder.RegisterComponent(m_ConnectionManager);
             builder.RegisterComponent(m_NetworkManager);
 
-            // builder.Register<OfflineState>(Lifetime.Singleton);
-            // builder.Register<LobbyConnectingState>(Lifetime.Singleton);
-            // builder.Register<ClientConnectingState>(Lifetime.Singleton);
-            // builder.Register<ClientConnectedState>(Lifetime.Singleton);
-            // builder.Register<ClientReconnectingState>(Lifetime.Singleton);
-            // builder.Register<StartingHostState>(Lifetime.Singleton);
-            // builder.Register<HostingState>(Lifetime.Singleton);
-
             builder.RegisterInstance(new MessageChannel<ConnectStatus>()).AsImplementedInterfaces();
             builder.RegisterInstance(new MessageChannel<ReconnectMessage>()).AsImplementedInterfaces();
             builder.RegisterComponent(new NetworkedMessageChannel<ConnectionEventMessage>()).AsImplementedInterfaces();
+            builder.Register<NetworkRegistryService>(Lifetime.Singleton);
 
             builder.Register<ProfileManager>(Lifetime.Singleton);
 
             builder.Register<NetUtils>(Lifetime.Singleton);
-            builder.Register<NetworkRegistryService>(Lifetime.Singleton);
 
 
 

@@ -16,10 +16,7 @@ namespace Unity.Assets.Scripts.Module.ApplicationLifecycle.Installers
         {
             _debugClassFacade?.LogInfo(GetType().Name, "오브젝트 모듈 설치 시작");
 
-            // 기본 매니저들 등록
             builder.Register<ObjectManager>(Lifetime.Singleton);
-            // builder.Register<ObjectManagerFacade>(Lifetime.Singleton);
-
             // builder.Register<INetworkMediator, NetworkMediator>(Lifetime.Singleton);
             builder.Register<NetworkMediator>(Lifetime.Singleton).As<INetworkMediator>();
 

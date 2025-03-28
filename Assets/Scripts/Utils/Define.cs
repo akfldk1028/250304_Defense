@@ -2,9 +2,24 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+
+public static class LayerNames
+{
+    public static readonly int Monster = LayerMask.NameToLayer("Monster");
+    // 다른 레이어도 필요하면 추가
+}
+
+
 public static class Define
 {
 
+	public enum ESkillSlot
+	{
+		Default,
+		Env,
+		A,
+		B
+	}
 	public enum EOrganizer
 	{
 		HOST,
@@ -87,7 +102,6 @@ public static class Define
 		ForceMove,
 		ForcePath
 	}
-
 
 
 public static class SortingLayers

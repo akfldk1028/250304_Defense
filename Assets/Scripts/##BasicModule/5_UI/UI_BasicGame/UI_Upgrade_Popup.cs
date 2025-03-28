@@ -16,9 +16,7 @@ public class UI_Upgrade_Popup : UI_Popup
 
 	enum Texts
 	{
-		// EquippedHeroesCountText,
-		// WaitingHeroesCountText,
-		// UnownedHeroesCountText,
+
 	}
 
 	enum Buttons
@@ -26,9 +24,7 @@ public class UI_Upgrade_Popup : UI_Popup
 		Close_B,
 	}
 
-	// List<UI_HeroesList_HeroItem> _equippedHeroes = new List<UI_HeroesList_HeroItem>();
-	// List<UI_HeroesList_HeroItem> _waitingHeroes = new List<UI_HeroesList_HeroItem>();
-	// List<UI_HeroesList_HeroItem> _unownedHeroes = new List<UI_HeroesList_HeroItem>();
+
 
 	const int MAX_ITEM_COUNT = 100;
 
@@ -57,30 +53,6 @@ public class UI_Upgrade_Popup : UI_Popup
 		// GetObject((int)GameObjects.CloseArea).BindEvent(OnClickCloseArea);
 		GetButton((int)Buttons.Close_B).gameObject.BindEvent(OnClickCloseButton);
 
-		// {
-		// 	var parent = GetObject((int)GameObjects.EquippedHeroesList).transform;
-		// 	for (int i = 0; i < MAX_ITEM_COUNT; i++)
-		// 	{
-		// 		UI_HeroesList_HeroItem item = Managers.UI.MakeSubItem<UI_HeroesList_HeroItem>(parent);
-		// 		_equippedHeroes.Add(item);
-		// 	}
-		// }
-		// {
-		// 	var parent = GetObject((int)GameObjects.WaitingHeroesList).transform;
-		// 	for (int i = 0; i < MAX_ITEM_COUNT; i++)
-		// 	{
-		// 		UI_HeroesList_HeroItem item = Managers.UI.MakeSubItem<UI_HeroesList_HeroItem>(parent);
-		// 		_waitingHeroes.Add(item);
-		// 	}
-		// }
-		// {
-		// 	var parent = GetObject((int)GameObjects.UnownedHeroesList).transform;
-		// 	for (int i = 0; i < MAX_ITEM_COUNT; i++)
-		// 	{
-		// 		UI_HeroesList_HeroItem item = Managers.UI.MakeSubItem<UI_HeroesList_HeroItem>(parent);
-		// 		_unownedHeroes.Add(item);
-		// 	}
-		// }
 
 		Refresh();
 
