@@ -204,9 +204,7 @@ public class Creature : BaseObject, ITargetable
             Collider.offset = new Vector2(creatureData.ColliderOffsetX, creatureData.ColliderOffsetY);
             Collider.radius = creatureData.ColliderRadius;
         }
-		// Collider
-		// Collider.offset = new Vector2(creatureData.ColliderOffsetX, creatureData.ColliderOffsetY);
-		// Collider.radius = creatureData.ColliderRadius;
+
 
             // // RigidBody 추가	
             // RigidBody.mass = 0;
@@ -343,20 +341,16 @@ public class Creature : BaseObject, ITargetable
 	    {
 		base.OnDamaged(attacker, skill);
 
-        Debug.Log($"<color=green>[Creature]attacker.name {attacker.name}</color>");
 		if (attacker.IsValid() == false)
 			return;
 		Creature creature = attacker as Creature;
 		if (creature == null)
 			return;
-        Debug.Log($"<color=green>[Creature] attacker.name {attacker.name}</color>");
 
 		float finalDamage = creature.Atk.Value;
-        Debug.Log($"<color=green>[Creature] finalDamage {finalDamage}</color>");
 		Hp = Mathf.Clamp(Hp - finalDamage, 0, MaxHp.Value);
-        Debug.Log($"<color=green>[Creature] Hp {Hp}</color>");
 
-		// Managers.Object.ShowDamageFont(CenterPosition, finalDamage, transform, false);
+		_objectManager.ShowDamageFont(CenterPosition, finalDamage, transform, false);
 
 		if (Hp <= 0)
 		{
@@ -421,24 +415,20 @@ public class Creature : BaseObject, ITargetable
     /// <param name="targetLayer">대상 레이어</param>
     /// <param name="debugDraw">디버그 시각화 여부</param>
     /// <returns>가장 가까운 BaseObject</returns>
-    public BaseObject FindNearestTarget2D(Vector3 origin, float radius, int targetLayer, bool debugDraw = false)
+    public BaseObject FindNearestTarget2D(Vector3 origin, float radius, int targetLayer)
     {
         // 레이어 마스크 생성
         int layerMask = 1 << targetLayer;
         
-        if (debugDraw)
-        {
-            Debug.Log($"[Creature] FindNearestTarget2D - 레이어: {targetLayer}, 마스크: {layerMask}, 범위: {radius}");
-            Debug.Log($"[Creature] FindNearestTarget2D - 시작 위치: {origin}");
-        }
+        Debug.Log($"[Creature] FindNearestTarget2D - 레이어: {targetLayer}, 마스크: {layerMask}, 범위: {radius}");
+        Debug.Log($"[Creature] FindNearestTarget2D - 시작 위치: {origin}");
+        
         
         // 범위 내 모든 콜라이더 찾기
         Collider2D[] targetsInRange = Physics2D.OverlapCircleAll(origin, radius, layerMask);
         
-        if (debugDraw)
-        {
-            Debug.Log($"[Creature] FindNearestTarget2D - 범위 내 대상 수: {targetsInRange.Length}");
-        }
+        Debug.Log($"[Creature] FindNearestTarget2D - 범위 내 대상 수: {targetsInRange.Length}");
+        
         
         // 가장 가까운 대상 찾기
         BaseObject nearestTarget = null;
@@ -453,10 +443,8 @@ public class Creature : BaseObject, ITargetable
             
             float distance = Vector2.Distance(origin, targetCollider.transform.position);
             
-            if (debugDraw)
-            {
-                Debug.Log($"[Creature] FindNearestTarget2D - 대상 발견: {targetCollider.name}, 거리: {distance}");
-            }
+            Debug.Log($"[Creature] FindNearestTarget2D - 대상 발견: {targetCollider.name}, 거리: {distance}");
+            
             
             if (distance < closestDistance)
             {
@@ -476,24 +464,18 @@ public class Creature : BaseObject, ITargetable
     /// <param name="targetLayer">대상 레이어</param>
     /// <param name="debugDraw">디버그 시각화 여부</param>
     /// <returns>가장 가까운 BaseObject</returns>
-    public BaseObject FindNearestTarget3D(Vector3 origin, float radius, int targetLayer, bool debugDraw = false)
+    public BaseObject FindNearestTarget3D(Vector3 origin, float radius, int targetLayer)
     {
         // 레이어 마스크 생성
         int layerMask = 1 << targetLayer;
         
-        if (debugDraw)
-        {
-            Debug.Log($"[Creature] FindNearestTarget3D - 레이어: {targetLayer}, 마스크: {layerMask}, 범위: {radius}");
-            Debug.Log($"[Creature] FindNearestTarget3D - 시작 위치: {origin}");
-        }
+        Debug.Log($"[Creature] FindNearestTarget3D - 레이어: {targetLayer}, 마스크: {layerMask}, 범위: {radius}");
+        Debug.Log($"[Creature] FindNearestTarget3D - 시작 위치: {origin}");
         
         // 범위 내 모든 콜라이더 찾기
         Collider[] targetsInRange = Physics.OverlapSphere(origin, radius, layerMask);
-        
-        if (debugDraw)
-        {
-            Debug.Log($"[Creature] FindNearestTarget3D - 범위 내 대상 수: {targetsInRange.Length}");
-        }
+        Debug.Log($"[Creature] FindNearestTarget3D - 범위 내 대상 수: {targetsInRange.Length}");
+
         
         // 가장 가까운 대상 찾기
         BaseObject nearestTarget = null;
@@ -508,10 +490,8 @@ public class Creature : BaseObject, ITargetable
             
             float distance = Vector3.Distance(origin, targetCollider.transform.position);
             
-            if (debugDraw)
-            {
-                Debug.Log($"[Creature] FindNearestTarget3D - 대상 발견: {targetCollider.name}, 거리: {distance}");
-            }
+
+            Debug.Log($"[Creature] FindNearestTarget3D - 대상 발견: {targetCollider.name}, 거리: {distance}");
             
             if (distance < closestDistance)
             {
@@ -584,39 +564,6 @@ public class Creature : BaseObject, ITargetable
                 if (maxResults > 0 && results.Count >= maxResults) break;
             }
         }
-        else
-        {
-            // 3D 환경으로 판단
-            Collider[] targetsInRange = Physics.OverlapSphere(origin, radius, layerMask);
-            
-            foreach (Collider targetCollider in targetsInRange)
-            {
-                if (targetCollider == null || targetCollider.gameObject == null) continue;
-                
-                BaseObject targetObject = targetCollider.GetComponent<BaseObject>();
-                if (targetObject == null) continue;
-                
-                // 필터링 적용
-                if ((filterOptions & TargetFilterOptions.IgnoreSelf) != 0 && targetObject == this) continue;
-                if ((filterOptions & TargetFilterOptions.MustBeAlive) != 0 && !targetObject.IsValid()) continue;
-                
-                // 시야 확인이 필요한 경우
-                if ((filterOptions & TargetFilterOptions.NeedsLineOfSight) != 0)
-                {
-                    Vector3 direction = targetCollider.transform.position - origin;
-                    if (Physics.Raycast(origin, direction, out RaycastHit hit, radius, layerMask))
-                    {
-                        if (hit.collider != targetCollider) continue;
-                    }
-                    else continue;
-                }
-                
-                results.Add(targetObject);
-                
-                // 최대 결과 수 체크
-                if (maxResults > 0 && results.Count >= maxResults) break;
-            }
-        }
         
         return results;
     }
@@ -628,16 +575,14 @@ public class Creature : BaseObject, ITargetable
     /// <param name="rangeMultiplier">AtkRange의 배수 (기본값: 1)</param>
     /// <param name="debugDraw">디버그 표시 여부</param>
     /// <returns>가장 가까운 타겟</returns>
-    public BaseObject FindNearestTargetInAttackRange(int targetLayer, float rangeMultiplier = 1f, bool debugDraw = false)
+    public BaseObject FindNearestTargetInAttackRange(int targetLayer, float rangeMultiplier = 1f)
     {
         float searchRange = AtkRange.Value * rangeMultiplier;
         
-        if (debugDraw)
-        {
-            Debug.Log($"[Creature] FindNearestTargetInAttackRange - 레이어: {targetLayer}, 범위: {searchRange}");
-        }
+
+        Debug.Log($"[Creature] FindNearestTargetInAttackRange - 레이어: {targetLayer}, 범위: {searchRange}");
         
-        return FindNearestTarget2D(transform.position, searchRange, targetLayer, debugDraw);
+        return FindNearestTarget2D(transform.position, searchRange, targetLayer);
     }
     
     /// <summary>

@@ -15,6 +15,12 @@ MonoBehaviour:
   m_GroupName: UI
   m_GUID: 1386c0619cf6c6d4182fa6b7a3807089
   m_SerializeEntries:
+  - m_GUID: 4ed5e22987842264f968e1074759fa65
+    m_Address: DamageFont
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - PreLoad
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: d91d370363104ac42b330428f05184e4
     m_Address: UI_Upgrade_Popup
     m_ReadOnly: 0

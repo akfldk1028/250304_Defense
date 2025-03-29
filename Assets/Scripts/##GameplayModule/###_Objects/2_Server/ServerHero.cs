@@ -338,8 +338,7 @@ namespace Unity.Assets.Scripts.Objects
         // Creature 클래스의 범용 간편 메서드 사용 (범위를 10배로 넓혀서 테스트)
         return FindNearestTargetInAttackRange(
             LayerNames.Monster,
-            10f, // AtkRange의 10배 범위로 검색
-            true // 디버그 로그 활성화
+            10f // AtkRange의 10배 범위로 검색
         );
     }
 

@@ -369,18 +369,13 @@ namespace Unity.Assets.Scripts.Objects
         /// <param name="rangeMultiplier">AtkRange의 배수 (기본값: 1)</param>
         /// <param name="debugDraw">디버그 로그 표시 여부</param>
         /// <returns>가장 가까운 영웅 객체</returns>
-        public BaseObject FindNearestHero(float rangeMultiplier = 1f, bool debugDraw = false)
+        public BaseObject FindNearestHero(float rangeMultiplier = 1f)
         {
-            if (debugDraw)
-            {
-                Debug.Log($"<color=purple>[ServerMonster] 영웅 탐색 시작, 범위 배수: {rangeMultiplier}</color>");
-            }
-            
+            Debug.Log($"<color=purple>[ServerMonster] 영웅 탐색 시작, 범위 배수: {rangeMultiplier}</color>");
             // Creature 클래스의 범용 간편 메서드 사용
             return FindNearestTargetInAttackRange(
                 LayerNames.Hero,
-                rangeMultiplier,
-                debugDraw
+                rangeMultiplier
             );
         }
 

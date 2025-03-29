@@ -190,12 +190,13 @@ public class ObjectManager
 	#endregion
 
 
-	// public void ShowDamageFont(Vector2 position, float damage, Transform parent, bool isCritical = false)
-	// {
-	// 	GameObject go = Managers.Resource.Instantiate("DamageFont", pooling: true);
-	// 	DamageFont damageText = go.GetComponent<DamageFont>();
-	// 	damageText.SetInfo(position, damage, parent, isCritical);
-	// }
+	public void ShowDamageFont(Vector2 position, float damage, Transform parent, bool isCritical = false)
+	{
+		GameObject go = _resourceManager.Instantiate("DamageFont", pooling: true);
+		DamageFont damageText = go.GetComponent<DamageFont>();
+		damageText.SetInfo(position, damage, parent, isCritical, _resourceManager);
+
+	}
 
 	public GameObject SpawnGameObject(Vector3 position, string prefabName)
 	{
