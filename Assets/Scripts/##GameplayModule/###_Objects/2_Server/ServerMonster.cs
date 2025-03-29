@@ -1,12 +1,7 @@
 using System;
-using System.Collections;
-using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
-using Unity.Assets.Scripts.Objects;
 using VContainer;
-using Unity.Assets.Scripts.Infrastructure;
-using UnityEngine.Events;
 using Unity.Assets.Scripts.Data;
 using static Define;
 using System.Collections.Generic;
@@ -17,13 +12,9 @@ using UnityEditor;
 
 namespace Unity.Assets.Scripts.Objects
 {
-    /// <summary>
-    /// 네트워크 멀티플레이어 게임에서 몬스터의 서버 측 로직을 담당하는 클래스입니다.
-    /// Creature를 상속받아 네트워크 기능을 활용하며, MonsterAvatarSO의 데이터를 사용합니다.
-    /// </summary>
+ 
     public class ServerMonster : Creature
     {	
-        // [Inject] private DataLoader _dataLoader;
 
         [Inject] private DebugClassFacade _debugClassFacade;
 
@@ -36,7 +27,7 @@ namespace Unity.Assets.Scripts.Objects
             {
                 if (instance == null)
                 {
-                    instance = FindObjectOfType<ServerMonster>();
+                    instance =FindFirstObjectByType<ServerMonster>();
                     if (instance == null)
                     {
                         Debug.LogError("[ServerMonster] 인스턴스를 찾을 수 없습니다!");
@@ -79,6 +70,33 @@ namespace Unity.Assets.Scripts.Objects
         private bool positionInitialized = false;
         #endregion
 
+        public override ECreatureState CreatureState 
+        {
+            get { return base.CreatureState; }
+            set
+            {
+                if (_creatureState.Value != value)
+                {
+                    base.CreatureState = value;
+                    switch (value)
+                    {
+                        case ECreatureState.Idle:
+                            UpdateAITick = 0.5f;
+                            break;
+                        case ECreatureState.Move:
+                            UpdateAITick = 0.0f;
+                            break;
+                        case ECreatureState.Skill:
+                            UpdateAITick = 0.0f;
+                            break;
+                        case ECreatureState.Dead:
+                            UpdateAITick = 1.0f;
+                            break;
+                    }
+                }
+            }
+        }
+
         #region Unity Lifecycle
         private void Awake()
         {
@@ -91,14 +109,69 @@ namespace Unity.Assets.Scripts.Objects
             if (base.Init() == false)
                 return false;
             CreatureType = CharacterTypeEnum.Monster;
-
+            ObjectType = EObjectType.Monster;
             gameObject.layer = LayerNames.Monster;
             // StartCoroutine(CoUpdateAI());
 
             return true;
         }
 
+        public override void SetInfo<T>(int templateID, Data.CreatureData creatureData, T clientCreature) 
+        where T : class	    {
+            base.SetInfo(templateID, creatureData, clientCreature);
+		    CreatureState = ECreatureState.Idle;
+            DataTemplateID = templateID;
+            MonsterId.Value = templateID;
+            CreatureData = creatureData;
+
+            // CreatureData를 MonsterData로 캐스팅
+            if (CreatureData is MonsterData monsterData)
+            {
+                dropItemId = monsterData.DropItemId;
+            }
+            else
+            {
+                _debugClassFacade?.LogError(GetType().Name, $"[ServerMonster] CreatureData가 MonsterData 타입이 아닙니다! templateID: {templateID}");
+            }
+
+            gameObject.name = $"{CreatureData.DataId}_{CreatureData.CharacterType}";
+        }
+
+
+        protected override void UpdateIdle()
+        {
+            // Not Implemented this time
+            // Patrol 
+            // {
+            //     int patrolPercent = 10;
+            //     int rand = Random.Range(0, 100);
+            //     if (rand <= patrolPercent)
+            //     {
+            //         _destPos = _initPos + new Vector3(Random.Range(-2, 2), Random.Range(-2, 2));
+            //         CreatureState = ECreatureState.Move;
+            //         return;
+            //     }
+            // }
+
+        }
+        protected override void UpdateMove(){}
         
+        protected override void UpdateSkill(){}
+
+        protected override void UpdateDead(){}
+
+        public override void OnDamaged(BaseObject attacker, SkillBase skill)
+        {
+            base.OnDamaged(attacker, skill);
+        }
+
+        public override void OnDead(BaseObject attacker, SkillBase skill)
+        {
+            base.OnDead(attacker, skill);
+
+          
+            ObjectManager.Instance.Despawn(this);
+        }
 
         // FixedUpdate 메소드 수정
         private void FixedUpdate()
@@ -170,26 +243,6 @@ namespace Unity.Assets.Scripts.Objects
             CurrentHp.OnValueChanged -= OnHpChanged;
         }
 
-        public override void SetInfo<T>(int templateID, Data.CreatureData creatureData, T clientCreature) 
-        where T : class	    {
-            base.SetInfo(templateID, creatureData, clientCreature);
-
-            DataTemplateID = templateID;
-            MonsterId.Value = templateID;
-            CreatureData = creatureData;
-
-            // CreatureData를 MonsterData로 캐스팅
-            if (CreatureData is MonsterData monsterData)
-            {
-                dropItemId = monsterData.DropItemId;
-            }
-            else
-            {
-                _debugClassFacade?.LogError(GetType().Name, $"[ServerMonster] CreatureData가 MonsterData 타입이 아닙니다! templateID: {templateID}");
-            }
-
-            gameObject.name = $"{CreatureData.DataId}_{CreatureData.CharacterType}";
-        }
 
         
         #endregion
@@ -233,18 +286,10 @@ namespace Unity.Assets.Scripts.Objects
                 _debugClassFacade?.LogError(GetType().Name, $"[ServerMonster:{MonsterId.Value}] SetMoveList: 유효하지 않은 경로 데이터");
                 return;
             }
-            Debug.Log($"[ServerMonster:{MonsterId.Value}] SetMoveList: 경로 설정 중...");
-
-
-            // ClientMonster처럼 직접 할당 (깊은 복사 없이)
             _moveList = moveList;
-            
-            // 항상 첫 번째 포인트부터 시작
             target_Value = 0;
-            
-           _debugClassFacade?.LogInfo(GetType().Name, $"[ServerMonster:{MonsterId.Value}] 새 경로 설정 완료: 포인트 수={_moveList.Count}, 시작 인덱스={target_Value}");
         }
-                #endregion
+        #endregion
 
      
 
@@ -283,7 +328,31 @@ namespace Unity.Assets.Scripts.Objects
         #endregion
 
 
+	// RewardData GetRandomReward()
+	// {
+	// 	if (MonsterData == null)
+	// 		return null;
 
+	// 	if (Managers.Data.DropTableDic.TryGetValue(MonsterData.DropItemId, out DropTableData dropTableData) == false)
+	// 		return null;
+
+	// 	if (dropTableData.Rewards.Count <= 0)
+	// 		return null;
+
+	// 	int sum = 0;
+	// 	int randValue = UnityEngine.Random.Range(0, 100);
+
+	// 	foreach (RewardData item in dropTableData.Rewards)
+	// 	{
+	// 		sum += item.Probability;
+
+	// 		if (randValue <= sum)
+	// 			return item;
+	// 	}
+
+	// 	//return dropTableData.Rewards.RandomElementByWeight(e => e.Probability);
+	// 	return null;
+	// }
 
     }
 }

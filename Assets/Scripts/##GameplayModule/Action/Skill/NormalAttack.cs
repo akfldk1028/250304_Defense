@@ -1,6 +1,7 @@
 using Spine;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Assets.Scripts.Objects;
 using UnityEngine;
 
 public class NormalAttack : SkillBase
@@ -13,17 +14,17 @@ public class NormalAttack : SkillBase
 		return true;
 	}
 
-	// public override void SetInfo(Creature owner, int skillTemplateID)
-	// {
-	// 	base.SetInfo(owner, skillTemplateID);
-	// }
+	public override void SetInfo(Creature owner, int skillTemplateID, ClientCreature clientCreature)
+	{
+		base.SetInfo(owner, skillTemplateID, clientCreature);
+	}
 
 	public override void DoSkill()
 	{
 		base.DoSkill();
 
-		// Owner.CreatureState = Define.ECreatureState.Skill;
-		// Owner.PlayAnimation(0, SkillData.AnimName, false);
+		Owner.CreatureState = ECreatureState.Skill;
+		ClientCreature.PlayAnimation(0, SkillData.AnimName, false);
 
 		Owner.LookAtTarget(Owner.Target);
 	}
@@ -37,11 +38,11 @@ public class NormalAttack : SkillBase
 		if (Owner.Target.IsValid() == false)
 			return;
 
-		// if (SkillData.ProjectileId == 0)
-		// {
-			// Melee
-			// Owner.Target.OnDamaged(Owner, this);
-		// }
+		if (SkillData.ProjectileId == 0)
+		{
+			// Melee 난투
+			Owner.Target.OnDamaged(Owner, this);
+		}
 		else
 		{
 			// Ranged

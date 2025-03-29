@@ -30,7 +30,7 @@ public class SkillComponent : InitBase
 	}
 
 	Creature _owner;
-
+	ClientCreature _clientCreature;
 	public override bool Init()
 	{
 		if (base.Init() == false)
@@ -39,9 +39,10 @@ public class SkillComponent : InitBase
 		return true;
 	}
 
-	public void SetInfo(Creature owner, CreatureData creatureData)
+	public void SetInfo(Creature owner, CreatureData creatureData, ClientCreature clientCreature) 
 	{
 		_owner = owner;
+		_clientCreature = clientCreature;
 
 		AddSkill(creatureData.DefaultSkillId, ESkillSlot.Default);
 		AddSkill(creatureData.EnvSkillId, ESkillSlot.Env);
@@ -51,39 +52,39 @@ public class SkillComponent : InitBase
 
 	public void AddSkill(int skillTemplateID, Define.ESkillSlot skillSlot)
 	{
-		// if (skillTemplateID == 0)
-		// 	return;
+		if (skillTemplateID == 0)
+			return;
 
-		// if (Managers.Data.SkillDic.TryGetValue(skillTemplateID, out var data) == false)
-		// {
-		// 	Debug.LogWarning($"AddSkill Failed {skillTemplateID}");
-		// 	return;
-		// }
+		if (DataLoader.instance.SkillDic.TryGetValue(skillTemplateID, out var data) == false)
+		{
+			Debug.LogWarning($"AddSkill Failed {skillTemplateID}");
+			return;
+		}
+		//example NormalAttack
+		SkillBase skill = gameObject.AddComponent(Type.GetType(data.ClassName)) as SkillBase;
+		if (skill == null)
+			return;
 
-		// SkillBase skill = gameObject.AddComponent(Type.GetType(data.ClassName)) as SkillBase;
-		// if (skill == null)
-		// 	return;
+		skill.SetInfo(_owner, skillTemplateID, _clientCreature);
 
-		// skill.SetInfo(_owner, skillTemplateID);
+		SkillList.Add(skill);
 
-		// SkillList.Add(skill);
-
-		// switch (skillSlot)
-		// {
-		// 	case Define.ESkillSlot.Default:
-		// 		DefaultSkill = skill;
-		// 		break;
-		// 	case Define.ESkillSlot.Env:
-		// 		EnvSkill = skill;
-		// 		break;
-		// 	case Define.ESkillSlot.A:
-		// 		ASkill = skill;
-		// 		ActiveSkills.Add(skill);
-		// 		break;
-		// 	case Define.ESkillSlot.B:
-		// 		BSkill = skill;
-		// 		ActiveSkills.Add(skill);
-		// 		break;
-		// }
+		switch (skillSlot)
+		{
+			case Define.ESkillSlot.Default:
+				DefaultSkill = skill;
+				break;
+			case Define.ESkillSlot.Env:
+				EnvSkill = skill;
+				break;
+			case Define.ESkillSlot.A:
+				ASkill = skill;
+				ActiveSkills.Add(skill);
+				break;
+			case Define.ESkillSlot.B:
+				BSkill = skill;
+				ActiveSkills.Add(skill);
+				break;
+		}
 	}
 }

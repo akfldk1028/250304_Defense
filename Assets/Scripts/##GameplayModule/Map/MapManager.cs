@@ -261,23 +261,23 @@ public class MapManager
 	void RemoveObject(BaseObject obj)
 	{
 		// 기존의 좌표 제거
-		int extraCells = 0;
-		if (obj != null)
-			extraCells = obj.ExtraCells;
+		// int extraCells = 0;
+		// if (obj != null)
+		// 	extraCells = obj.ExtraCells;
 
-		Vector3Int cellPos = obj.CellPos;
+		// Vector3Int cellPos = obj.CellPos;
 
-		for (int dx = -extraCells; dx <= extraCells; dx++)
-		{
-			for (int dy = -extraCells; dy <= extraCells; dy++)
-			{
-				Vector3Int newCellPos = new Vector3Int(cellPos.x + dx, cellPos.y + dy);
-				BaseObject prev = GetObject(newCellPos);
+		// for (int dx = -extraCells; dx <= extraCells; dx++)
+		// {
+		// 	for (int dy = -extraCells; dy <= extraCells; dy++)
+		// 	{
+		// 		Vector3Int newCellPos = new Vector3Int(cellPos.x + dx, cellPos.y + dy);
+		// 		BaseObject prev = GetObject(newCellPos);
 
-				if (prev == obj)
-					_cells[newCellPos] = null;
-			}
-		}
+		// 		if (prev == obj)
+		// 			_cells[newCellPos] = null;
+		// 	}
+		// }
 	}
 
 	/// <summary>

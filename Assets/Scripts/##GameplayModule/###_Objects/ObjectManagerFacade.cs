@@ -83,7 +83,7 @@ public class ObjectManagerFacade : NetworkBehaviour
         if (_isDestroyed) yield break;
 
         _debugClassFacade?.LogInfo(GetType().Name, "[ObjectManagerFacade] SpawnMonsterRoutine 시작");
-        yield return new WaitForSeconds(getBoss == false ? 0.1f : 0.1f);
+        yield return new WaitForSeconds(getBoss == false ? 1.1f : 1.1f);
 
         if (_isDestroyed) yield break;
 

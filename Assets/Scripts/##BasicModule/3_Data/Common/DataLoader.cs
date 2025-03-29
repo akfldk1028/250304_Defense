@@ -1,18 +1,10 @@
 using VContainer;
 using VContainer.Unity;
-// using Unity.Assets.Scripts.Data;
 using System.Collections.Generic;
 using Newtonsoft.Json;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using Unity.Assets.Scripts.Data;
-using Mono.Cecil;
-using Unity.Assets.Scripts.Module.ApplicationLifecycle.Installers;
 using System;
-using System.Threading.Tasks;
 using Unity.Assets.Scripts.Resource;
-
 namespace Unity.Assets.Scripts.Data
 {
 
@@ -28,11 +20,7 @@ namespace Unity.Assets.Scripts.Data
         [Inject] private ResourceManager _resourceManager;
 
         private bool _isInitialized = false;
-        
-        // 초기화 완료 이벤트 추가
         public event Action OnInitialized;
-        
-        // 초기화 상태 확인 속성
         public bool IsInitialized => _isInitialized;
 
         public Dictionary<int, Data.MonsterData> MonsterDic { get; private set; } = new Dictionary<int, Data.MonsterData>();
@@ -49,11 +37,8 @@ namespace Unity.Assets.Scripts.Data
         public void Start() // VContainer가 자동으로 호출
         {
             instance = this;
-            // ResourceManager의 로딩 완료 이벤트에 구독
             _resourceManager.OnLoadingCompleted += OnResourceLoadingCompleted;
-            
-            // 이미 리소스 로딩이 완료되었는지 확인
-            // 리소스가 이미 로드되어 있다면 바로 초기화
+
             if (_resourceManager.Resources.Count > 0)
             {
                 Debug.Log("[DataLoader] 리소스가 이미 로드되어 있습니다. 바로 초기화합니다.");
@@ -79,9 +64,6 @@ namespace Unity.Assets.Scripts.Data
 
         public void Init()
         {
-            Debug.Log("[DataLoader] Init 메서드 시작!");
-            
-            // 이미 초기화되었는지 확인
             if (_isInitialized)
             {
                 Debug.Log("[DataLoader] 이미 초기화되었습니다. 중복 초기화를 방지합니다.");
@@ -91,6 +73,9 @@ namespace Unity.Assets.Scripts.Data
  
             MonsterDic = LoadJsonToResoureManager<Data.MonsterDataLoader, int, Data.MonsterData>("MonsterData").MakeDict();
             HeroDic = LoadJsonToResoureManager<Data.HeroDataLoader, int, Data.HeroData>("HeroData").MakeDict();
+            SkillDic = LoadJsonToResoureManager<Data.SkillDataLoader, int, Data.SkillData>("SkillData").MakeDict();
+            EffectDic = LoadJsonToResoureManager<Data.EffectDataLoader, int, Data.EffectData>("EffectData").MakeDict();
+            AoEDic = LoadJsonToResoureManager<Data.AoEDataLoader, int, Data.AoEData>("AoEData").MakeDict();
             _isInitialized = true;
             
             // 초기화 완료 이벤트 발생
