@@ -102,6 +102,7 @@ namespace Unity.Assets.Scripts.Objects
         {
             base.Awake();
             Instance = this;
+
         }
 
      	public override bool Init()
@@ -109,37 +110,39 @@ namespace Unity.Assets.Scripts.Objects
             if (base.Init() == false)
                 return false;
             CreatureType = CharacterTypeEnum.Monster;
-            ObjectType = EObjectType.Monster;
-            gameObject.layer = LayerNames.Monster;
-            // StartCoroutine(CoUpdateAI());
-
+            ObjectType = EObjectType.Creature;
+            Debug.Log($"<color=red>[ServerMonster] Init: CreatureType 설정됨 = {CreatureType}</color>");
             return true;
         }
 
-        public override void SetInfo<T>(int templateID, Data.CreatureData creatureData, T clientCreature) 
-        where T : class	    {
-            base.SetInfo(templateID, creatureData, clientCreature);
-		    CreatureState = ECreatureState.Idle;
-            DataTemplateID = templateID;
-            MonsterId.Value = templateID;
-            CreatureData = creatureData;
 
-            // CreatureData를 MonsterData로 캐스팅
+        private int _pendingMonsterId;
+        public override void SetInfo<T>(int templateID, Data.CreatureData creatureData, T clientCreature) 
+        where T : class	{
+            Debug.Log($"<color=red>[ServerMonster] SetInfo 시작. 현재 CreatureType: {CreatureType}</color>");
+            base.SetInfo(templateID, creatureData, clientCreature);
+            _pendingMonsterId = templateID;
+            DataTemplateID = templateID;
+            CreatureData = creatureData;
+            gameObject.name = $"{CreatureData.DataId}_{CreatureData.CharacterType}";
+            gameObject.layer = LayerNames.Monster;
+            
+            Debug.Log($"<color=red>[ServerMonster] SetInfo: 데이터 설정 완료. CreatureType: {CreatureType}, DataId: {CreatureData.DataId}, Layer: {LayerMask.LayerToName(gameObject.layer)}</color>");
+
             if (CreatureData is MonsterData monsterData)
             {
                 dropItemId = monsterData.DropItemId;
+                Debug.Log($"<color=red>[ServerMonster] MonsterData 세팅 완료: {monsterData.DataId}, DropItemId: {dropItemId}</color>");
             }
             else
             {
-                _debugClassFacade?.LogError(GetType().Name, $"[ServerMonster] CreatureData가 MonsterData 타입이 아닙니다! templateID: {templateID}");
+                Debug.LogError($"<color=red>[ServerMonster] CreatureData가 MonsterData 타입이 아닙니다! 타입: {CreatureData.GetType().Name}</color>");
             }
-
-            gameObject.name = $"{CreatureData.DataId}_{CreatureData.CharacterType}";
         }
 
 
         protected override void UpdateIdle()
-        {
+        {   CreatureState = ECreatureState.Move;
             // Not Implemented this time
             // Patrol 
             // {
@@ -162,14 +165,33 @@ namespace Unity.Assets.Scripts.Objects
 
         public override void OnDamaged(BaseObject attacker, SkillBase skill)
         {
-            base.OnDamaged(attacker, skill);
+            base.OnDamaged(attacker, skill);  // 부모 클래스의 OnDamaged 호출 (여기서 Hp 값이 변경됨)
+            
+            // 네트워크 변수인 CurrentHp도 함께 업데이트
+            CurrentHp.Value = Hp;
+            
+            Debug.Log($"<color=yellow>[ServerMonster] Damaged by {attacker.name}, HP: {Hp}/{MaxHp.Value}</color>");
+            
+            // HP가 0 이하면 죽음 상태로 변경
+            if (Hp <= 0)
+            {
+                Debug.Log($"<color=red>[ServerMonster] 사망!</color>");
+                CreatureState = ECreatureState.Dead;
+                OnDead(attacker, skill);
+            }
         }
-
         public override void OnDead(BaseObject attacker, SkillBase skill)
         {
             base.OnDead(attacker, skill);
-
-          
+            Debug.Log($"<color=red>[ServerMonster] OnDead called!</color>");
+            
+            // 몬스터 사망 이벤트 발생
+            OnMonsterDeath?.Invoke(this);
+            
+            // 죽음 상태로 변경 (혹시 상위 OnDead에서 처리되지 않았을 경우)
+            CreatureState = ECreatureState.Dead;
+            
+            // 몬스터 오브젝트 제거
             ObjectManager.Instance.Despawn(this);
         }
 
@@ -231,10 +253,18 @@ namespace Unity.Assets.Scripts.Objects
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
+            
             if (IsServer)
             {
-                CurrentHp.OnValueChanged += OnHpChanged;
+                // 이제 안전하게 NetworkVariable 설정
+                MonsterId.Value = _pendingMonsterId;
+                CurrentHp.Value = Hp;
+                
+                // CreatureState도 여기서 설정
+                CreatureState = ECreatureState.Idle;
             }
+            
+            StartCoroutine(CoUpdateAI());
         }
 
         public override void OnNetworkDespawn()

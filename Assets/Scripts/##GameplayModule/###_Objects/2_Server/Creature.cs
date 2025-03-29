@@ -72,26 +72,42 @@ public class Creature : BaseObject, ITargetable
 
 	public NetworkVariable<ECreatureState> NetworkCreatureState => _creatureState;
 
-	public virtual ECreatureState CreatureState
-	{
-		get { return _creatureState.Value; }
-		set
-		{
-			if (_creatureState.Value != value)
-			{
-				_creatureState.Value = value;
-				if (IsServer)
-				{
-					// 서버에서는 상태 변경만 처리
-					OnCreatureStateChanged(_creatureState.Value);
-				}
-			}
-		}
-	}
+    private ECreatureState _pendingCreatureState = ECreatureState.None;
+    public virtual ECreatureState CreatureState
+    {
+        get { return _creatureState.Value; }
+        set
+        {
+            if (_creatureState.Value != value)
+            {
+                _pendingCreatureState = value;
+                if (IsSpawned && IsServer) // 스폰된 경우에만 NetworkVariable 수정
+                {
+                    _creatureState.Value = value;
+                    OnCreatureStateChanged(_creatureState.Value);
+                }
+            }
+        }
+    }
 
+    public override void OnNetworkSpawn()
+    {
+        base.OnNetworkSpawn();
+        
+        if (IsServer && _pendingCreatureState != ECreatureState.None)
+        {
+            _creatureState.Value = _pendingCreatureState;
+            OnCreatureStateChanged(_creatureState.Value);
+        }
+    }
         #endregion
 
+    public void SetCreatureType(CharacterTypeEnum type)
+    {
+        CreatureType = type;
+    }
 
+    
 #if UNITY_EDITOR
         [Header("===== 디버그 정보 =====")]
         [Space(5)]
@@ -126,7 +142,6 @@ public class Creature : BaseObject, ITargetable
         {
             ObjectType = EObjectType.Creature;
 			NetLifeState = GetComponent<NetworkLifeState>();
-	
         }
 
 	        public override void OnNetworkDespawn()
@@ -143,14 +158,17 @@ public class Creature : BaseObject, ITargetable
 
 	public override bool Init()
 	{
-		ObjectType = EObjectType.Creature;
+		if (base.Init() == false)
+			return false;
 
+		Debug.Log($"<color=blue>[Creature] Init: 현재 CreatureType = {CreatureType}</color>");
 		return true;
 	}
 
     public virtual void SetInfo<T>(int templateID, Data.CreatureData creatureData, T clientCreature) 
     where T : class    {
 		DataTemplateID = templateID;
+        Debug.Log($"<color=blue>[Creature] SetInfo 시작: 현재 CreatureType = {CreatureType}</color>");
         Hp = creatureData.MaxHp;
         MaxHp = new CreatureStat(creatureData.MaxHp);
         Atk = new CreatureStat(creatureData.Atk);
@@ -165,15 +183,15 @@ public class Creature : BaseObject, ITargetable
         AtkBonus = new CreatureStat(creatureData.AtkBonus);
         CriRate = new CreatureStat(creatureData.CriRate);
 
-
+        Debug.Log($"<color=blue>[Creature] SetInfo 완료: 현재 CreatureType = {CreatureType}</color>");
         
         CreatureState = ECreatureState.Idle;
 		Skills = gameObject.GetOrAddComponent<SkillComponent>();
 		Skills.SetInfo(this, creatureData, clientCreature as ClientCreature);
 
-            // Collider 추가
-        // Collider.offset = new Vector2(creatureData.ColliderOffsetX, creatureData.ColliderOffsetY);
-            // Collider.radius = CreatureData.ColliderRadius;
+		// Collider
+		Collider.offset = new Vector2(creatureData.ColliderOffsetX, creatureData.ColliderOffsetY);
+		Collider.radius = creatureData.ColliderRadius;
 
             // // RigidBody 추가	
             // RigidBody.mass = 0;
@@ -310,13 +328,13 @@ public class Creature : BaseObject, ITargetable
 	    {
 		base.OnDamaged(attacker, skill);
 
-        Debug.Log($"<color=green>[Creature] OnDamaged {attacker.name}</color>");
+        Debug.Log($"<color=green>[Creature]attacker.name {attacker.name}</color>");
 		if (attacker.IsValid() == false)
 			return;
 		Creature creature = attacker as Creature;
 		if (creature == null)
 			return;
-        Debug.Log($"<color=green>[Creature] OnDamaged {attacker.name}</color>");
+        Debug.Log($"<color=green>[Creature] attacker.name {attacker.name}</color>");
 
 		float finalDamage = creature.Atk.Value;
         Debug.Log($"<color=green>[Creature] finalDamage {finalDamage}</color>");

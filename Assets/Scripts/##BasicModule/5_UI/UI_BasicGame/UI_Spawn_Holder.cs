@@ -132,7 +132,7 @@ public class UI_Spawn_Holder : UI_Base
 
     private void Start()
     {
-        MakeCollider();
+        // MakeCollider();
 
         // SellButton.onClick.AddListener(() => Sell());
         // CompositionButton.onClick.AddListener(() => Composition());
@@ -320,7 +320,7 @@ public class UI_Spawn_Holder : UI_Base
 
     public void CheckGetPosition()
     {
-        UpdateColliderSize();
+        // UpdateColliderSize();
 
         for(int i = 0; i < m_Heroes.Count; i++)
         {

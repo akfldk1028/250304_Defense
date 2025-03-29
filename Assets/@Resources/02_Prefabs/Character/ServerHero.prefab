@@ -272,6 +272,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 3822786583847382121, guid: 0d2d836e2e83b754fa1a1c4022d6d65d, type: 3}
+      propertyPath: m_Radius
+      value: 0.88
+      objectReference: {fileID: 0}
     - target: {fileID: 4600110157238723781, guid: 0d2d836e2e83b754fa1a1c4022d6d65d, type: 3}
       propertyPath: m_Name
       value: ServerHero
@@ -419,16 +423,38 @@ MonoBehaviour:
     _value: 0
   ReduceDamageRate:
     _value: 0
+  LifeStealRate:
+    _value: 0
+  ThornsDamageRate:
+    _value: 0
+  AttackSpeedRate:
+    _value: 0
+  _dbgMaxHp: 0
+  _dbgAtk: 0
+  _dbgAtkRange: 0
+  _dbgAtkBonus: 0
+  _dbgMoveSpeed: 0
+  _dbgCriRate: 0
+  _dbgCriDamage: 0
   heroAvatarSO: {fileID: 0}
   rarity: 
-  gachaSpawnWeight: 0
-  gachaWeight: 0
-  gachaExpCount: 0
-  atkSpeed: 0
-  atkTime: 0
+  gachaSpawnWeight:
+    _value: 0
+  gachaWeight:
+    _value: 0
+  gachaExpCount:
+    _value: 0
+  atkSpeed:
+    _value: 0
+  atkTime:
+    _value: 0
   IsAttacking:
     m_InternalValue: 0
   HeroId:
     m_InternalValue: 0
-  NetworkPosition:
-    m_InternalValue: {x: 0, y: 0, z: 0}
+  _dbgGachaSpawnWeight: 0
+  _dbgGachaWeight: 0
+  _dbgGachaExpCount: 0
+  _dbgAtkSpeed: 0
+  _dbgAtkTime: 0
+  target: {fileID: 0}

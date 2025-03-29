@@ -93,28 +93,6 @@ namespace Unity.Assets.Scripts.Objects
 #endif
         }
 
-
-        #region Unity Lifecycle
-        private void Start()
-        {
-  
-        }
-
-        private void Awake()
-        {
-            base.Awake();
-            Instance = this;
-            CreatureType = CharacterTypeEnum.Hero;
-  
-        }
-
-        public void SetParentHolder(UI_Spawn_Holder holder)
-        {
-            parent_holder = holder;
-
-        }
-      
-
         EHeroMoveState _heroMoveState = EHeroMoveState.None;
         public EHeroMoveState HeroMoveState
         {
@@ -135,16 +113,36 @@ namespace Unity.Assets.Scripts.Objects
             }
         }
 
+        #region Unity Lifecycle
+        private void Start()
+        {
+  
+        }
 
+        private void Awake()
+        {
+            base.Awake();
+            Instance = this;
+
+
+        }
         public override bool Init()
 	    {
             if (base.Init() == false)
                 return false;
-            ObjectType = EObjectType.Hero;
+            CreatureType = CharacterTypeEnum.Hero;
+            ObjectType = EObjectType.Creature;
+            Debug.Log($"<color=green>[ServerHero] Init: CreatureType 설정됨 = {CreatureType}</color>");
             return true;
         }
 
 
+        public void SetParentHolder(UI_Spawn_Holder holder)
+        {
+            parent_holder = holder;
+
+        }
+      
 
 
         public override void OnNetworkSpawn()
@@ -163,6 +161,13 @@ namespace Unity.Assets.Scripts.Objects
                     Debug.LogError("[ServerHero] ObjectManagerFacade를 찾을 수 없습니다!");
                 }
             }
+            if (IsServer)
+            {
+                // 이제 안전하게 NetworkVariable 설정
+                HeroId.Value = _pendingHeroId;
+                IsAttacking.Value = false;
+            }
+            
             StartCoroutine(CoUpdateAI());
         }
 
@@ -171,15 +176,18 @@ namespace Unity.Assets.Scripts.Objects
             base.OnNetworkDespawn();
         }
 
+        private int _pendingHeroId;
 
         public override void SetInfo<T>(int templateID, Data.CreatureData creatureData, T clientHero) 
-        where T : class	    {
-        base.SetInfo(templateID , creatureData, clientHero);
-        DataTemplateID = templateID;
-        HeroId.Value = templateID;
-        CreatureData = creatureData;
-		gameObject.name = $"{CreatureData.DataId}_{CreatureData.CharacterType}";
+        where T : class	{
+            Debug.Log($"<color=green>[ServerHero] SetInfo 시작. 현재 CreatureType: {CreatureType}</color>");
+            base.SetInfo(templateID , creatureData, clientHero);
+            DataTemplateID = templateID;
+            _pendingHeroId = templateID;
+            CreatureData = creatureData;
+            gameObject.name = $"{CreatureData.DataId}_{CreatureData.CharacterType}";
 
+            Debug.Log($"<color=green>[ServerHero] SetInfo: 데이터 설정 완료. CreatureType: {CreatureType}, DataId: {CreatureData.DataId}</color>");
 
             if (CreatureData is HeroData heroData)
             {
@@ -189,8 +197,12 @@ namespace Unity.Assets.Scripts.Objects
                 gachaExpCount = new CreatureStat(heroData.GachaExpCount);
                 atkSpeed = new CreatureStat(heroData.AtkSpeed);
                 atkTime = new CreatureStat(heroData.AtkTime);
+                Debug.Log($"<color=green>[ServerHero] HeroData 세팅 완료: {heroData.DataId}</color>");
             }
-
+            else
+            {
+                Debug.LogError($"<color=red>[ServerHero] CreatureData가 HeroData 타입이 아닙니다! 타입: {CreatureData.GetType().Name}</color>");
+            }
         }
 
 
@@ -201,7 +213,14 @@ namespace Unity.Assets.Scripts.Objects
 
         protected override void UpdateIdle()
         {
-            if (parent_holder == null) return;
+            // 홀더 확인
+            if (parent_holder == null)
+            {
+                _debugClassFacade?.LogWarning(GetType().Name, $"[ServerHero] UpdateIdle: parent_holder가 null입니다. 히어로 ID: {HeroId.Value}");
+                return;
+            }
+            
+            Debug.Log($"<color=green>[ServerHero] UpdateIdle: {HeroId.Value}, 홀더: {parent_holder.name}</color>");
             
             // 공격 타이머 업데이트
             attackTimer += Time.deltaTime * (atkSpeed.Value * atkSpeed_Coroutine_Value);
@@ -298,17 +317,35 @@ namespace Unity.Assets.Scripts.Objects
         }
 
 
+    public override void OnDamaged(BaseObject attacker, SkillBase skill)
+    {
+        // 몬스터로부터의 공격을 무시
+        if (attacker is ServerMonster)
+        {
+            Debug.Log($"<color=blue>[ServerHero] 몬스터 {attacker.name}의 공격을 무시합니다!</color>");
+            return; // 몬스터 공격은 처리하지 않음
+        }
+        // 다른 종류의 공격은 기본 처리
+        base.OnDamaged(attacker, skill);
+        Debug.Log($"<color=red>[ServerHero] 데미지를 받음. 남은 체력: {Hp}/{MaxHp.Value}</color>");
+    }
+
 
     private BaseObject FindNearestEnemy()
     {
         if (parent_holder == null) return null;
         
         int monsterLayerMask = LayerNames.Monster;
-        
+        int layerMask = 1 << monsterLayerMask;
+    
+        Debug.Log($"[ServerHero] 몬스터 레이어: {monsterLayerMask}, 마스크: {layerMask}");
+        Debug.Log($"[ServerHero] AtkRange: {AtkRange.Value}");
+    // 테스트를 위해 일시적으로 범위를 늘려보세요
+        float testRange = AtkRange.Value * 10;
         // 범위 내 모든 적 콜라이더 찾기
         Collider2D[] enemiesInRange = Physics2D.OverlapCircleAll(
             parent_holder.transform.position, 
-            AtkRange.Value, 
+            testRange, 
             monsterLayerMask
         );
         

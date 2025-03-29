@@ -55,9 +55,9 @@ public class DebugClassFacade
 
 
         // -----------------------------------------------------
-        EnableClass("ObjectManagerFacade", Color.magenta);
-        EnableClass("MapSpawnerFacade", Color.magenta);
-        EnableClass("ObjectManager", Color.gray);
+        // EnableClass("ObjectManagerFacade", Color.magenta);
+        // EnableClass("MapSpawnerFacade", Color.magentas);
+        // EnableClass("ObjectManager", Color.gray);
         // -----------------------------------------------------
         EnableClass("ServerMonster", Color.green);
 

@@ -6,6 +6,8 @@ using UnityEngine;
 public static class LayerNames
 {
     public static readonly int Monster = LayerMask.NameToLayer("Monster");
+	public static readonly int Hero = LayerMask.NameToLayer("Hero");
+
     // 다른 레이어도 필요하면 추가
 }
 

@@ -37,10 +37,13 @@ public class NormalAttack : SkillBase
 	{
 		if (Owner.Target.IsValid() == false)
 			return;
+    	Debug.Log($"<color=cyan>[NormalAttack] {Owner.name} attacking {Owner.Target.name}</color>");
 
 		if (SkillData.ProjectileId == 0)
 		{
 			// Melee 난투
+			Debug.Log($"<color=cyan>[NormalAttack] Melee attack from {Owner.name} to {Owner.Target.name}, Damage: {Owner.Atk.Value}</color>");
+
 			Owner.Target.OnDamaged(Owner, this);
 		}
 		else

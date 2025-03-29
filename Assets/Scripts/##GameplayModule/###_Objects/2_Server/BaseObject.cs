@@ -146,7 +146,7 @@ namespace Unity.Assets.Scripts.Objects
             Collider = gameObject.GetOrAddComponent<CircleCollider2D>();
             SkeletonAnim = GetComponent<SkeletonAnimation>();
             RigidBody = GetComponent<Rigidbody2D>();
-
+		    HurtFlash = gameObject.GetOrAddComponent<HurtFlashEffect>();
             return true;
         }
 

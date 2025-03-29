@@ -223,7 +223,12 @@ public class ObjectManager
 		_debugClassFacade?.LogInfo(GetType().Name, $"[ObjectManager] Spawn<T> 호출: {prefabName}");		
 		_debugClassFacade?.LogInfo(GetType().Name, $"[ObjectManager] Spawn<T> 호출: {position}");
 
-		prefabName = typeof(T).Name;
+		// 프리팹 이름이 지정되지 않은 경우 타입 이름으로 설정
+		if (string.IsNullOrEmpty(prefabName))
+		{
+			prefabName = typeof(T).Name;
+			_debugClassFacade?.LogInfo(GetType().Name, $"[ObjectManager] 프리팹 이름 자동 설정: {prefabName}");
+		}
 
 		GameObject go = _resourceManager.Instantiate(prefabName, pooling: true, position: position);
 		if (go == null)
@@ -239,17 +244,20 @@ public class ObjectManager
 			_resourceManager.Destroy(go);
 			return null;
 		}
-		
 
+		bool initResult = obj.Init();
+		_debugClassFacade?.LogInfo(GetType().Name, $"[ObjectManager] '{prefabName}' 오브젝트의 Init 호출 결과: {initResult}");
 
 		if (obj.ObjectType == EObjectType.Creature)
 		{
 			Creature creature = obj.GetComponent<Creature>();
+
+			_debugClassFacade?.LogInfo(GetType().Name, $"[ObjectManager] 생성된 Creature의 CreatureType: {creature.CreatureType}");
+
 			switch (creature.CreatureType)
 			{
 			case CharacterTypeEnum.Monster:
-				CreatureData = DataLoader.instance.MonsterDic[templateID];
-				
+				CreatureData = DataLoader.instance.MonsterDic[templateID];				
 				ClientMonster clientMonster = go.GetComponent<ClientMonster>();
 				MonsterAvatarSO clientMonsterAvatar = _resourceManager.Load<MonsterAvatarSO>(CreatureData.ClientAvatar);
 				clientMonster.SetAvatar(clientMonsterAvatar);
@@ -261,14 +269,16 @@ public class ObjectManager
 			
 			case CharacterTypeEnum.Hero:
 				CreatureData = DataLoader.instance.HeroDic[templateID];
-
 				ClientHero clientHero = go.GetComponent<ClientHero>();
 				HeroAvatarSO clientHeroAvatar = _resourceManager.Load<HeroAvatarSO>(CreatureData.ClientAvatar);
 				clientHero.SetAvatar(clientHeroAvatar,  CreatureData.SkeletonDataID, _resourceManager);
 
-				ServerHero serverHero = go.GetComponent<ServerHero>();
+				ServerHero serverHero = go.GetComponent<ServerHero>();				
 				serverHero.SetInfo(templateID, CreatureData, clientHero);
 				Heroes.Add(serverHero);
+				break;
+			default:
+				_debugClassFacade?.LogWarning(GetType().Name, $"[ObjectManager] 알 수 없는 CreatureType: {creature.CreatureType}");
 				break;
 			}
 		}
@@ -278,6 +288,7 @@ public class ObjectManager
 			// 	case CharacterTypeEnum.Hero:
 			// 		obj.transform.parent = HeroRoot;
 			// 		// Hero hero = creature as Hero;
+
 			// 		// Heroes.Add(hero);
 			// 		break;
 			// 	case CharacterTypeEnum.Monster:
@@ -311,7 +322,6 @@ public class ObjectManager
 		// 	// Camp = go.GetComponent<HeroCamp>();
 		// }
 
-				// NetworkObject 처리
 		NetworkObject networkObject = go.GetComponent<NetworkObject>();
 
 		try 
@@ -356,8 +366,8 @@ public class ObjectManager
 			switch (creature.CreatureType)
 			{
 				case CharacterTypeEnum.Hero:
-					// Hero hero = creature as Hero;
-					// Heroes.Remove(hero);
+					ServerHero hero = creature as ServerHero;
+					Heroes.Remove(hero);
 					break;
 				case CharacterTypeEnum.Monster:
 					ServerMonster monster = creature as ServerMonster;
