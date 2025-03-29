@@ -373,7 +373,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4600110157238723781, guid: 0d2d836e2e83b754fa1a1c4022d6d65d, type: 3}
       propertyPath: m_Name
-      value: Monster
+      value: ServerMonster
       objectReference: {fileID: 0}
     - target: {fileID: 4600110157238723790, guid: 0d2d836e2e83b754fa1a1c4022d6d65d, type: 3}
       propertyPath: GlobalObjectIdHash
@@ -451,6 +451,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 4600110157238723781, guid: 0d2d836e2e83b754fa1a1c4022d6d65d, type: 3}
       insertIndex: 3
       addedObject: {fileID: 3302344727344943777}
+    - targetCorrespondingSourceObject: {fileID: 4600110157238723781, guid: 0d2d836e2e83b754fa1a1c4022d6d65d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2102398221454111959}
   m_SourcePrefab: {fileID: 100100000, guid: 0d2d836e2e83b754fa1a1c4022d6d65d, type: 3}
 --- !u!1 &8751546606364355619 stripped
 GameObject:
@@ -470,7 +473,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
+  heroAvatarSO: {fileID: 0}
   m_ClientVisualsAnimator: {fileID: 0}
+  m_skeletonDataAsset: {fileID: 0}
   animator: {fileID: 0}
   spriteRenderer: {fileID: 0}
   audioSource: {fileID: 0}
@@ -509,6 +514,19 @@ MonoBehaviour:
     _value: 0
   ReduceDamageRate:
     _value: 0
+  LifeStealRate:
+    _value: 0
+  ThornsDamageRate:
+    _value: 0
+  AttackSpeedRate:
+    _value: 0
+  _dbgMaxHp: 0
+  _dbgAtk: 0
+  _dbgAtkRange: 0
+  _dbgAtkBonus: 0
+  _dbgMoveSpeed: 0
+  _dbgCriRate: 0
+  _dbgCriDamage: 0
   monsterAvatarSO: {fileID: 11400000, guid: 7f12b5cca95957240884844a2511ba8b, type: 2}
   dropItemId: 400000
   CurrentHp:
@@ -517,6 +535,44 @@ MonoBehaviour:
     m_InternalValue: 0
   MonsterId:
     m_InternalValue: 202001
+  NetworkPosition:
+    m_InternalValue: {x: 0, y: 0, z: 0}
+--- !u!58 &2102398221454111959
+CircleCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8751546606364355619}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_CompositeOperation: 0
+  m_CompositeOrder: 0
+  m_Offset: {x: 0, y: 0}
+  m_Radius: 0.5
 --- !u!4 &8751546606364355625 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4600110157238723791, guid: 0d2d836e2e83b754fa1a1c4022d6d65d, type: 3}

@@ -143,10 +143,10 @@ namespace Unity.Assets.Scripts.Objects
 
         public virtual bool Init()
         {
-            Collider = gameObject.GetOrAddComponent<CircleCollider2D>();
-            SkeletonAnim = GetComponent<SkeletonAnimation>();
-            RigidBody = GetComponent<Rigidbody2D>();
-		    HurtFlash = gameObject.GetOrAddComponent<HurtFlashEffect>();
+            Collider = gameObject.GetComponent<CircleCollider2D>();
+            // SkeletonAnim = GetComponent<SkeletonAnimation>();
+            // RigidBody = GetComponent<Rigidbody2D>();
+		    // HurtFlash = gameObject.GetOrAddComponent<HurtFlashEffect>();
             return true;
         }
 

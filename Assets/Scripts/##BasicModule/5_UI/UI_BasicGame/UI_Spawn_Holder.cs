@@ -132,7 +132,7 @@ public class UI_Spawn_Holder : UI_Base
 
     private void Start()
     {
-        // MakeCollider();
+        MakeCollider();
 
         // SellButton.onClick.AddListener(() => Sell());
         // CompositionButton.onClick.AddListener(() => Composition());
@@ -308,19 +308,25 @@ public class UI_Spawn_Holder : UI_Base
 
     private void MakeCollider()
     {
-        Debug.Log("[UI_Spawn_Holder] MakeCollider");
-        var collider = gameObject.AddComponent<CircleCollider2D>();
-        collider.isTrigger = true;
-        collider.radius = 1.0f; 
-
-        // collider.size = new Vector2(Spawner.xValue, Spawner.yValue);
+        // 홀더용 콜라이더 생성 및 설정
+        CircleCollider2D circleCollider = GetComponent<CircleCollider2D>();
+        if (circleCollider == null)
+        {
+            circleCollider = gameObject.AddComponent<CircleCollider2D>();
+        }
+        
+        // 콜라이더 크기 설정
+        circleCollider.radius = 1.0f;
+        circleCollider.isTrigger = true;
+        
+        Debug.Log($"<color=blue>[UI_Spawn_Holder] {name}에 CircleCollider2D 생성됨</color>");
     }
 
    
 
     public void CheckGetPosition()
     {
-        // UpdateColliderSize();
+        UpdateColliderSize();
 
         for(int i = 0; i < m_Heroes.Count; i++)
         {

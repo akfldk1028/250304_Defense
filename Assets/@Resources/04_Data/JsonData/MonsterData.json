@@ -7,7 +7,7 @@
       "PrefabLabel": "green_slime",
       "ColliderOffsetX": 0.0,
       "ColliderOffsetY": 0.0,
-      "ColliderRadius": 0.27,
+      "ColliderRadius": 0.6,
       "MaxHp": 10.0,
       "UpMaxHpBonus": 5.0,
       "Atk": 2.0,

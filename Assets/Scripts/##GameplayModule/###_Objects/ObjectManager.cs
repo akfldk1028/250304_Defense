@@ -359,10 +359,12 @@ public class ObjectManager
 	{
 
 		EObjectType objectType = obj.ObjectType;
-
+		Debug.Log($"[ObjectManager] Despawn<T> 호출: {obj.name}");
 		if (obj.ObjectType == EObjectType.Creature)
 		{
 			Creature creature = obj.GetComponent<Creature>();
+			Debug.Log($"[ObjectManager] Creature 타입 확인: {obj.name}");
+			Debug.Log($"[ObjectManager] Creature 타입 확인: {creature.CreatureType}");
 			switch (creature.CreatureType)
 			{
 				case CharacterTypeEnum.Hero:
@@ -391,8 +393,16 @@ public class ObjectManager
 			// Effects.Remove(effect);
 		}
 
+		// NetworkObject 처리
+		NetworkObject networkObj = obj.GetComponent<NetworkObject>();
 
-		// Managers.Resource.Destroy(obj.gameObject);
+		if (networkObj != null && networkObj.IsSpawned && NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+		{
+			Debug.Log($"[ObjectManager] NetworkObject Despawn 호출: {obj.name}");
+			networkObj.Despawn();
+		}
+
+		_resourceManager.Destroy(obj.gameObject);
 	}
 
 	#region Skill 판정

@@ -102,10 +102,6 @@ public class Creature : BaseObject, ITargetable
     }
         #endregion
 
-    public void SetCreatureType(CharacterTypeEnum type)
-    {
-        CreatureType = type;
-    }
 
     
 #if UNITY_EDITOR
@@ -186,12 +182,31 @@ public class Creature : BaseObject, ITargetable
         Debug.Log($"<color=blue>[Creature] SetInfo 완료: 현재 CreatureType = {CreatureType}</color>");
         
         CreatureState = ECreatureState.Idle;
-		Skills = gameObject.GetOrAddComponent<SkillComponent>();
-		Skills.SetInfo(this, creatureData, clientCreature as ClientCreature);
 
+        try
+        {
+                Skills = gameObject.GetComponent<SkillComponent>();
+                if (Skills == null)
+                {
+                    Skills = gameObject.AddComponent<SkillComponent>();
+                    Debug.Log($"[{name}] SkillComponent가 추가되었습니다.");
+                }
+                
+                Skills.SetInfo(this, creatureData, clientCreature as ClientCreature);
+        }
+        catch (System.Exception e)
+        {
+                Debug.LogError($"[{name}] SkillComponent 추가 중 오류: {e.Message}");
+        }
+
+        if (Collider != null)
+        {
+            Collider.offset = new Vector2(creatureData.ColliderOffsetX, creatureData.ColliderOffsetY);
+            Collider.radius = creatureData.ColliderRadius;
+        }
 		// Collider
-		Collider.offset = new Vector2(creatureData.ColliderOffsetX, creatureData.ColliderOffsetY);
-		Collider.radius = creatureData.ColliderRadius;
+		// Collider.offset = new Vector2(creatureData.ColliderOffsetX, creatureData.ColliderOffsetY);
+		// Collider.radius = creatureData.ColliderRadius;
 
             // // RigidBody 추가	
             // RigidBody.mass = 0;
@@ -398,5 +413,251 @@ public class Creature : BaseObject, ITargetable
 
 
 
+    /// <summary>
+    /// 가장 가까운 적을 찾는 메서드 (2D)
+    /// </summary>
+    /// <param name="origin">탐지 시작 위치</param>
+    /// <param name="radius">탐지 범위</param>
+    /// <param name="targetLayer">대상 레이어</param>
+    /// <param name="debugDraw">디버그 시각화 여부</param>
+    /// <returns>가장 가까운 BaseObject</returns>
+    public BaseObject FindNearestTarget2D(Vector3 origin, float radius, int targetLayer, bool debugDraw = false)
+    {
+        // 레이어 마스크 생성
+        int layerMask = 1 << targetLayer;
+        
+        if (debugDraw)
+        {
+            Debug.Log($"[Creature] FindNearestTarget2D - 레이어: {targetLayer}, 마스크: {layerMask}, 범위: {radius}");
+            Debug.Log($"[Creature] FindNearestTarget2D - 시작 위치: {origin}");
+        }
+        
+        // 범위 내 모든 콜라이더 찾기
+        Collider2D[] targetsInRange = Physics2D.OverlapCircleAll(origin, radius, layerMask);
+        
+        if (debugDraw)
+        {
+            Debug.Log($"[Creature] FindNearestTarget2D - 범위 내 대상 수: {targetsInRange.Length}");
+        }
+        
+        // 가장 가까운 대상 찾기
+        BaseObject nearestTarget = null;
+        float closestDistance = float.MaxValue;
+        
+        foreach (Collider2D targetCollider in targetsInRange)
+        {
+            if (targetCollider == null || targetCollider.gameObject == null) continue;
+            
+            BaseObject targetObject = targetCollider.GetComponent<BaseObject>();
+            if (targetObject == null || !targetObject.IsValid() || targetObject == this) continue;
+            
+            float distance = Vector2.Distance(origin, targetCollider.transform.position);
+            
+            if (debugDraw)
+            {
+                Debug.Log($"[Creature] FindNearestTarget2D - 대상 발견: {targetCollider.name}, 거리: {distance}");
+            }
+            
+            if (distance < closestDistance)
+            {
+                closestDistance = distance;
+                nearestTarget = targetObject;
+            }
+        }
+        
+        return nearestTarget;
     }
+
+    /// <summary>
+    /// 가장 가까운 적을 찾는 메서드 (3D)
+    /// </summary>
+    /// <param name="origin">탐지 시작 위치</param>
+    /// <param name="radius">탐지 범위</param>
+    /// <param name="targetLayer">대상 레이어</param>
+    /// <param name="debugDraw">디버그 시각화 여부</param>
+    /// <returns>가장 가까운 BaseObject</returns>
+    public BaseObject FindNearestTarget3D(Vector3 origin, float radius, int targetLayer, bool debugDraw = false)
+    {
+        // 레이어 마스크 생성
+        int layerMask = 1 << targetLayer;
+        
+        if (debugDraw)
+        {
+            Debug.Log($"[Creature] FindNearestTarget3D - 레이어: {targetLayer}, 마스크: {layerMask}, 범위: {radius}");
+            Debug.Log($"[Creature] FindNearestTarget3D - 시작 위치: {origin}");
+        }
+        
+        // 범위 내 모든 콜라이더 찾기
+        Collider[] targetsInRange = Physics.OverlapSphere(origin, radius, layerMask);
+        
+        if (debugDraw)
+        {
+            Debug.Log($"[Creature] FindNearestTarget3D - 범위 내 대상 수: {targetsInRange.Length}");
+        }
+        
+        // 가장 가까운 대상 찾기
+        BaseObject nearestTarget = null;
+        float closestDistance = float.MaxValue;
+        
+        foreach (Collider targetCollider in targetsInRange)
+        {
+            if (targetCollider == null || targetCollider.gameObject == null) continue;
+            
+            BaseObject targetObject = targetCollider.GetComponent<BaseObject>();
+            if (targetObject == null || !targetObject.IsValid() || targetObject == this) continue;
+            
+            float distance = Vector3.Distance(origin, targetCollider.transform.position);
+            
+            if (debugDraw)
+            {
+                Debug.Log($"[Creature] FindNearestTarget3D - 대상 발견: {targetCollider.name}, 거리: {distance}");
+            }
+            
+            if (distance < closestDistance)
+            {
+                closestDistance = distance;
+                nearestTarget = targetObject;
+            }
+        }
+        
+        return nearestTarget;
+    }
+
+    /// <summary>
+    /// 타깃 필터링 옵션
+    /// </summary>
+    [System.Flags]
+    public enum TargetFilterOptions
+    {
+        None = 0,
+        NeedsLineOfSight = 1 << 0,     // 시야 확인 필요
+        MustBeAlive = 1 << 1,          // 살아있는 대상만
+        IgnoreSelf = 1 << 2            // 자기 자신 무시
+    }
+
+    /// <summary>
+    /// 범위 내 모든 타겟 찾기 (옵션 필터링 지원)
+    /// </summary>
+    /// <param name="origin">탐지 시작 위치</param>
+    /// <param name="radius">탐지 범위</param>
+    /// <param name="targetLayer">대상 레이어</param>
+    /// <param name="filterOptions">필터링 옵션</param>
+    /// <param name="maxResults">최대 결과 수 (0 = 무제한)</param>
+    /// <returns>범위 내 타겟 리스트</returns>
+    public List<BaseObject> FindTargetsInRange(Vector3 origin, float radius, int targetLayer, 
+                                               TargetFilterOptions filterOptions = TargetFilterOptions.IgnoreSelf | TargetFilterOptions.MustBeAlive, 
+                                               int maxResults = 0)
+    {
+        // 레이어 마스크 생성
+        int layerMask = 1 << targetLayer;
+        List<BaseObject> results = new List<BaseObject>();
+        
+        // 2D 또는 3D 기반으로 적절한 콜라이더 검색 메서드 사용
+        if (Physics2D.OverlapCircleNonAlloc(origin, 0.1f, new Collider2D[1], layerMask) > 0)
+        {
+            // 2D 환경으로 판단
+            Collider2D[] targetsInRange = Physics2D.OverlapCircleAll(origin, radius, layerMask);
+            
+            foreach (Collider2D targetCollider in targetsInRange)
+            {
+                if (targetCollider == null || targetCollider.gameObject == null) continue;
+                
+                BaseObject targetObject = targetCollider.GetComponent<BaseObject>();
+                if (targetObject == null) continue;
+                
+                // 필터링 적용
+                if ((filterOptions & TargetFilterOptions.IgnoreSelf) != 0 && targetObject == this) continue;
+                if ((filterOptions & TargetFilterOptions.MustBeAlive) != 0 && !targetObject.IsValid()) continue;
+                
+                // 시야 확인이 필요한 경우
+                if ((filterOptions & TargetFilterOptions.NeedsLineOfSight) != 0)
+                {
+                    Vector2 direction = targetCollider.transform.position - origin;
+                    RaycastHit2D hit = Physics2D.Raycast(origin, direction, radius, layerMask);
+                    
+                    if (hit.collider != targetCollider) continue;
+                }
+                
+                results.Add(targetObject);
+                
+                // 최대 결과 수 체크
+                if (maxResults > 0 && results.Count >= maxResults) break;
+            }
+        }
+        else
+        {
+            // 3D 환경으로 판단
+            Collider[] targetsInRange = Physics.OverlapSphere(origin, radius, layerMask);
+            
+            foreach (Collider targetCollider in targetsInRange)
+            {
+                if (targetCollider == null || targetCollider.gameObject == null) continue;
+                
+                BaseObject targetObject = targetCollider.GetComponent<BaseObject>();
+                if (targetObject == null) continue;
+                
+                // 필터링 적용
+                if ((filterOptions & TargetFilterOptions.IgnoreSelf) != 0 && targetObject == this) continue;
+                if ((filterOptions & TargetFilterOptions.MustBeAlive) != 0 && !targetObject.IsValid()) continue;
+                
+                // 시야 확인이 필요한 경우
+                if ((filterOptions & TargetFilterOptions.NeedsLineOfSight) != 0)
+                {
+                    Vector3 direction = targetCollider.transform.position - origin;
+                    if (Physics.Raycast(origin, direction, out RaycastHit hit, radius, layerMask))
+                    {
+                        if (hit.collider != targetCollider) continue;
+                    }
+                    else continue;
+                }
+                
+                results.Add(targetObject);
+                
+                // 최대 결과 수 체크
+                if (maxResults > 0 && results.Count >= maxResults) break;
+            }
+        }
+        
+        return results;
+    }
+
+    /// <summary>
+    /// 공격 범위 내에 있는 가장 가까운 타겟 찾기 (간편 버전)
+    /// </summary>
+    /// <param name="targetLayer">대상 레이어</param>
+    /// <param name="rangeMultiplier">AtkRange의 배수 (기본값: 1)</param>
+    /// <param name="debugDraw">디버그 표시 여부</param>
+    /// <returns>가장 가까운 타겟</returns>
+    public BaseObject FindNearestTargetInAttackRange(int targetLayer, float rangeMultiplier = 1f, bool debugDraw = false)
+    {
+        float searchRange = AtkRange.Value * rangeMultiplier;
+        
+        if (debugDraw)
+        {
+            Debug.Log($"[Creature] FindNearestTargetInAttackRange - 레이어: {targetLayer}, 범위: {searchRange}");
+        }
+        
+        return FindNearestTarget2D(transform.position, searchRange, targetLayer, debugDraw);
+    }
+    
+    /// <summary>
+    /// 공격 범위 내에 있는 모든 타겟 찾기 (간편 버전)
+    /// </summary>
+    /// <param name="targetLayer">대상 레이어</param>
+    /// <param name="rangeMultiplier">AtkRange의 배수 (기본값: 1)</param>
+    /// <param name="maxResults">최대 결과 수 (0 = 무제한)</param>
+    /// <returns>공격 범위 내 타겟 목록</returns>
+    public List<BaseObject> FindAllTargetsInAttackRange(int targetLayer, float rangeMultiplier = 1f, int maxResults = 0)
+    {
+        float searchRange = AtkRange.Value * rangeMultiplier;
+        return FindTargetsInRange(
+            transform.position,
+            searchRange,
+            targetLayer,
+            TargetFilterOptions.IgnoreSelf | TargetFilterOptions.MustBeAlive,
+            maxResults
+        );
+    }
+
+}
 }

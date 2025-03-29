@@ -192,7 +192,7 @@ namespace Unity.Assets.Scripts.Objects
             CreatureState = ECreatureState.Dead;
             
             // 몬스터 오브젝트 제거
-            ObjectManager.Instance.Despawn(this);
+            _objectManager.Despawn(this);
         }
 
         // FixedUpdate 메소드 수정
@@ -253,7 +253,15 @@ namespace Unity.Assets.Scripts.Objects
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
-            
+            if (_objectManager == null)
+            {
+                var facade = FindAnyObjectByType<ObjectManagerFacade>();
+                if (facade != null)
+                {
+                    _objectManager = facade._objectManager; // 참고: Manager는 ObjectManagerFacade에 있는 속성이어야 합니다
+                }
+
+            }
             if (IsServer)
             {
                 // 이제 안전하게 NetworkVariable 설정
@@ -353,6 +361,42 @@ namespace Unity.Assets.Scripts.Objects
             {
                 OnMonsterDamaged?.Invoke(this, oldValue - newValue);
             }
+        }
+
+        /// <summary>
+        /// 가장 가까운 영웅을 찾는 메서드
+        /// </summary>
+        /// <param name="rangeMultiplier">AtkRange의 배수 (기본값: 1)</param>
+        /// <param name="debugDraw">디버그 로그 표시 여부</param>
+        /// <returns>가장 가까운 영웅 객체</returns>
+        public BaseObject FindNearestHero(float rangeMultiplier = 1f, bool debugDraw = false)
+        {
+            if (debugDraw)
+            {
+                Debug.Log($"<color=purple>[ServerMonster] 영웅 탐색 시작, 범위 배수: {rangeMultiplier}</color>");
+            }
+            
+            // Creature 클래스의 범용 간편 메서드 사용
+            return FindNearestTargetInAttackRange(
+                LayerNames.Hero,
+                rangeMultiplier,
+                debugDraw
+            );
+        }
+
+        /// <summary>
+        /// 범위 내 모든 영웅 찾기
+        /// </summary>
+        /// <param name="rangeMultiplier">AtkRange의 배수 (기본값: 1)</param>
+        /// <param name="maxResults">최대 결과 수 (0 = 무제한)</param>
+        /// <returns>범위 내 영웅 리스트</returns>
+        public List<BaseObject> FindAllHeroesInRange(float rangeMultiplier = 1f, int maxResults = 0)
+        {
+            return FindAllTargetsInAttackRange(
+                LayerNames.Hero,
+                rangeMultiplier,
+                maxResults
+            );
         }
 
         #endregion

@@ -156,10 +156,7 @@ namespace Unity.Assets.Scripts.Objects
                 {
                     _objectManager = facade._objectManager; // 참고: Manager는 ObjectManagerFacade에 있는 속성이어야 합니다
                 }
-                else
-                {
-                    Debug.LogError("[ServerHero] ObjectManagerFacade를 찾을 수 없습니다!");
-                }
+ 
             }
             if (IsServer)
             {
@@ -335,43 +332,15 @@ namespace Unity.Assets.Scripts.Objects
     {
         if (parent_holder == null) return null;
         
-        int monsterLayerMask = LayerNames.Monster;
-        int layerMask = 1 << monsterLayerMask;
-    
-        Debug.Log($"[ServerHero] 몬스터 레이어: {monsterLayerMask}, 마스크: {layerMask}");
+        Debug.Log($"[ServerHero] 몬스터 탐색 시작");
         Debug.Log($"[ServerHero] AtkRange: {AtkRange.Value}");
-    // 테스트를 위해 일시적으로 범위를 늘려보세요
-        float testRange = AtkRange.Value * 10;
-        // 범위 내 모든 적 콜라이더 찾기
-        Collider2D[] enemiesInRange = Physics2D.OverlapCircleAll(
-            parent_holder.transform.position, 
-            testRange, 
-            monsterLayerMask
+        
+        // Creature 클래스의 범용 간편 메서드 사용 (범위를 10배로 넓혀서 테스트)
+        return FindNearestTargetInAttackRange(
+            LayerNames.Monster,
+            10f, // AtkRange의 10배 범위로 검색
+            true // 디버그 로그 활성화
         );
-        
-        Debug.Log($"[ServerHero] 범위 내 적 수: {enemiesInRange.Length}, 범위: {AtkRange.Value}, 위치: {parent_holder.transform.position}");
-        
-        // 가장 가까운 적 찾기
-        BaseObject nearestEnemy = null;
-        float closestDistance = float.MaxValue;
-        
-        foreach (Collider2D enemyCollider in enemiesInRange)
-        {
-            float distance = Vector2.Distance(parent_holder.transform.position, enemyCollider.transform.position);
-            Debug.Log($"[ServerHero] 적 발견: {enemyCollider.name}, 거리: {distance}");
-            
-            if (distance < closestDistance)
-            {
-                BaseObject enemy = enemyCollider.GetComponent<BaseObject>();
-                if (enemy != null)
-                {
-                    closestDistance = distance;
-                    nearestEnemy = enemy;
-                }
-            }
-        }
-        
-        return nearestEnemy;
     }
 
 
