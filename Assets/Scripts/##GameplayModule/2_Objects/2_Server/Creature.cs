@@ -16,11 +16,6 @@ namespace Unity.Assets.Scripts.Objects
     
 public class Creature : BaseObject, ITargetable
 {
-
-    
-
-
-
 	public CharacterTypeEnum CreatureType { get; protected set; } = CharacterTypeEnum.None;
 	
 	[SerializeField]

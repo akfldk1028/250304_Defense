@@ -11,6 +11,9 @@ using Unity.Assets.Scripts.UI;
 using VContainer.Unity;
 using Unity.Services.Lobbies.Models;
 using UnityEngine.EventSystems;
+using Unity.Assets.Scripts.Objects;
+
+
 
 
 
@@ -61,10 +64,8 @@ namespace Unity.Assets.Scripts.UI
         [Inject] private ObjectManager _objectManager;
         [Inject] private BasicGameState _basicGameState;
         
-        // [Inject] private BasicGameManager _basicGameManager;
-        // [Inject] private MainMenuScene _MainMenuScene;
 
-        public int MonsterLimitCount = 100;
+
         private float _elapsedTime = 0.0f;
         private float _updateInterval = 1.0f;
 
@@ -73,15 +74,9 @@ namespace Unity.Assets.Scripts.UI
         [SerializeField] public UI_Spawn_Holder Spawn_Holder;
 
 
-        // private GameObject MatchingObject => GetObject((int)GameObjects.Matching);
         private GameObject MainObject => GetObject((int)GameObjects.Main);
         #endregion
 
-        #region Events
-        
-        // UI 이벤트 정의 - 다른 클래스에서 구독할 수 있는 정적 이벤트
-        
-        #endregion
 
 
 
@@ -99,19 +94,6 @@ namespace Unity.Assets.Scripts.UI
 
             GetButton((int)Buttons.Summon_B).gameObject.BindEvent(OnClickSummonButton);
             GetButton((int)Buttons.Upgrade_B).gameObject.BindEvent(OnClickUpgradeButton);
-
-            // GetButton((int)Buttons.DiaPlusButton).gameObject.BindEvent(OnClickDiaPlusButton);
-            // GetButton((int)Buttons.HeroesListButton).gameObject.BindEvent(OnClickHeroesListButton);
-            // GetButton((int)Buttons.SetHeroesButton).gameObject.BindEvent(OnClickSetHeroesButton);
-            // GetButton((int)Buttons.SettingButton).gameObject.BindEvent(OnClickSettingButton);
-            // GetButton((int)Buttons.InventoryButton).gameObject.BindEvent(OnClickInventoryButton);
-            // GetButton((int)Buttons.WorldMapButton).gameObject.BindEvent(OnClickWorldMapButton);
-            // GetButton((int)Buttons.QuestButton).gameObject.BindEvent(OnClickQuestButton);
-            // GetButton((int)Buttons.ChallengeButton).gameObject.BindEvent(OnClickChallengeButton);
-            // GetButton((int)Buttons.PortalButton).gameObject.BindEvent(OnClickPortalButton);
-            // GetButton((int)Buttons.CampButton).gameObject.BindEvent(OnClickCampButton);
-            // GetButton((int)Buttons.CheatButton).gameObject.BindEvent(OnClickCheatButton);
-            
             Refresh();
 
             return true;
@@ -128,13 +110,16 @@ namespace Unity.Assets.Scripts.UI
         private void Update()
         {
             int monsterCount = _objectManager.MonsterRoot.childCount;
-            GetText((int)Texts.MonsterCount_T).text = monsterCount.ToString() + "/" + MonsterLimitCount.ToString();
-            GetImage((int)Images.Monster_Count_Fill).fillAmount = (float)monsterCount / MonsterLimitCount;
+            // setMonsterCount( monsterCount);
+            GetText((int)Texts.MonsterCount_T).text = monsterCount.ToString() + "/" + _basicGameState.MonsterLimitCount.ToString();
+            GetImage((int)Images.Monster_Count_Fill).fillAmount = (float)monsterCount / _basicGameState.MonsterLimitCount;
             GetText((int)Texts.Money_T).text = _basicGameState.Money.ToString();
+            GetText((int)Texts.Wave_T).text = "Wave " + _basicGameState.Wave.ToString();
+            // Game_Mng.instance.GetMoney(1);
 
             // GetText((int)Texts.Summon_T).text = _basicGameManager.SummonCount.ToString();
             // GetText((int)Texts.Upgrade_Money_T).text = _basicGameManager.UpgradeMoney.ToString();
-            // GetText((int)Texts.Timer_T).text = _basicGameManager.GetBoss == false ? UpdateTimerText() : "In BOSS!";;
+            GetText((int)Texts.Timer_T).text = _basicGameState.IsBossWave == false ? UpdateTimerText() : "In BOSS!";
         
         
 
@@ -153,13 +138,13 @@ namespace Unity.Assets.Scripts.UI
             // }
         }
 
-    // string UpdateTimerText()
-    // {
-    //     int minutes = Mathf.FloorToInt(_basicGameManager.Timer / 60);
-    //     int seconds = Mathf.FloorToInt(_basicGameManager.Timer % 60);
-
-    //     return $"{minutes : 00}:{seconds :00}";
-    // }
+        string UpdateTimerText()
+        {
+            float timer = _basicGameState.Timer;            
+            int minutes = Mathf.FloorToInt(timer / 60);
+            int seconds = Mathf.FloorToInt(timer % 60);
+            return $"{minutes:00}:{seconds:00}";  // 공백 제거
+        }
 
         protected override void SubscribeEvents()
         {

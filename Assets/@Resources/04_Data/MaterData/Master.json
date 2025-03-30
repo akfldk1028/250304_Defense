@@ -1,0 +1,1254 @@
+// {
+//     "version": "1.0.0",
+//     "heroes": [
+//       {
+//         "DataId": 201000,
+//         "Name": "위자드",
+//         "NameTextId": "RookieName",
+//         "DescriptionTextId": "RookieDescription",
+//         "Rarity": "SR",
+//         "GachaInfo": {
+//           "SpawnWeight": 3.0,
+//           "Weight": 3.0,
+//           "ExpCount": 10
+//         },
+//         "Visuals": {
+//           "IconImage": "002.sprite",
+//           "SkeletonDataID": "002_SkeletonData",
+//           "PrefabLabel": "HeroPrefab",
+//           "ClientAvatar": "201000_Wizard"
+//         },
+//         "BaseStats": {
+//           "MaxHp": 1000.0,
+//           "UpMaxHpBonus": 2.0,
+//           "Atk": 25.0,
+//           "AtkRange": 4.0,
+//           "AtkBonus": 2.0,
+//           "MoveSpeed": 5.0,
+//           "CriRate": 0.15,
+//           "CriDamage": 1.5,
+//           "AtkSpeed": 1.0,
+//           "AtkTime": 1.0,
+//           "ColliderInfo": {
+//             "OffsetX": 0.0,
+//             "OffsetY": 0.5,
+//             "Radius": 4.6
+//           }
+//         },
+//         "LevelSystem": {
+//           "MaxLevel": 60,
+//           "GrowthByLevel": [
+//             {"LevelRange": "1-20", "HpGrowth": 50.0, "AtkGrowth": 5.0, "DefGrowth": 3.0},
+//             {"LevelRange": "21-40", "HpGrowth": 60.0, "AtkGrowth": 6.0, "DefGrowth": 3.5},
+//             {"LevelRange": "41-60", "HpGrowth": 70.0, "AtkGrowth": 7.0, "DefGrowth": 4.0}
+//           ]
+//         },
+//         "Skills": [
+//           {
+//             "SlotType": "Default",
+//             "SkillId": 10002,
+//             "SkillName": "위자드 직선평타",
+//             "UnlockLevel": 1
+//           },
+//           {
+//             "SlotType": "SkillA",
+//             "SkillId": 10008,
+//             "SkillName": "맹독확산1",
+//             "UnlockLevel": 10
+//           },
+//           {
+//             "SlotType": "SkillB",
+//             "SkillId": 10011,
+//             "SkillName": "냉기확산1",
+//             "UnlockLevel": 25
+//           }
+//         ],
+//         "CharacterType": "Hero",
+//         "IsValidTarget": false,
+//         "IsNpc": false
+//       },
+//       {
+//         "DataId": 201001,
+//         "Name": "주인공",
+//         "NameTextId": "ChloeName",
+//         "DescriptionTextId": "ChloeDescription",
+//         "Rarity": "SR",
+//         "GachaInfo": {
+//           "SpawnWeight": 3.0,
+//           "Weight": 3.0,
+//           "ExpCount": 10
+//         },
+//         "Visuals": {
+//           "IconImage": "001.sprite",
+//           "SkeletonDataID": "001_SkeletonData",
+//           "PrefabLabel": "HeroPrefab",
+//           "ClientAvatar": "201001_Hero"
+//         },
+//         "BaseStats": {
+//           "MaxHp": 1000.0,
+//           "UpMaxHpBonus": 2.0,
+//           "Atk": 2500.0,
+//           "AtkRange": 1.8,
+//           "AtkBonus": 2.0,
+//           "MoveSpeed": 5.0,
+//           "CriRate": 0.15,
+//           "CriDamage": 1.5,
+//           "AtkSpeed": 1.0,
+//           "AtkTime": 1.0,
+//           "ColliderInfo": {
+//             "OffsetX": 0.0,
+//             "OffsetY": 0.5,
+//             "Radius": 4.6
+//           }
+//         },
+//         "LevelSystem": {
+//           "MaxLevel": 60,
+//           "GrowthByLevel": [
+//             {"LevelRange": "1-20", "HpGrowth": 60.0, "AtkGrowth": 7.0, "DefGrowth": 2.0},
+//             {"LevelRange": "21-40", "HpGrowth": 70.0, "AtkGrowth": 8.0, "DefGrowth": 2.5},
+//             {"LevelRange": "41-60", "HpGrowth": 80.0, "AtkGrowth": 9.0, "DefGrowth": 3.0}
+//           ]
+//         },
+//         "Skills": [
+//           {
+//             "SlotType": "Default",
+//             "SkillId": 10001,
+//             "SkillName": "기본공격",
+//             "UnlockLevel": 1
+//           },
+//           {
+//             "SlotType": "SkillA",
+//             "SkillId": 10006,
+//             "SkillName": "주인공스킬1",
+//             "UnlockLevel": 10
+//           },
+//           {
+//             "SlotType": "SkillB",
+//             "SkillId": 10007,
+//             "SkillName": "주인공스킬2",
+//             "UnlockLevel": 25
+//           }
+//         ],
+//         "CharacterType": "Hero",
+//         "IsValidTarget": false,
+//         "IsNpc": false
+//       },
+//       {
+//         "DataId": 201002,
+//         "Name": "연금술사",
+//         "NameTextId": "SamName",
+//         "DescriptionTextId": "SamDescription",
+//         "Rarity": "R",
+//         "GachaInfo": {
+//           "SpawnWeight": 9.0,
+//           "Weight": 9.0,
+//           "ExpCount": 10
+//         },
+//         "Visuals": {
+//           "IconImage": "003.sprite",
+//           "SkeletonDataID": "003_SkeletonData",
+//           "PrefabLabel": "HeroPrefab",
+//           "ClientAvatar": "201002_Alchemist"
+//         },
+//         "BaseStats": {
+//           "MaxHp": 1000.0,
+//           "UpMaxHpBonus": 2.0,
+//           "Atk": 25.0,
+//           "AtkRange": 4.0,
+//           "AtkBonus": 2.0,
+//           "MoveSpeed": 5.0,
+//           "CriRate": 0.15,
+//           "CriDamage": 1.5,
+//           "AtkSpeed": 1.0,
+//           "AtkTime": 1.0,
+//           "ColliderInfo": {
+//             "OffsetX": 0.0,
+//             "OffsetY": 0.5,
+//             "Radius": 4.6
+//           }
+//         },
+//         "LevelSystem": {
+//           "MaxLevel": 50,
+//           "GrowthByLevel": [
+//             {"LevelRange": "1-20", "HpGrowth": 45.0, "AtkGrowth": 4.5, "DefGrowth": 2.5},
+//             {"LevelRange": "21-40", "HpGrowth": 55.0, "AtkGrowth": 5.5, "DefGrowth": 3.0},
+//             {"LevelRange": "41-50", "HpGrowth": 65.0, "AtkGrowth": 6.5, "DefGrowth": 3.5}
+//           ]
+//         },
+//         "Skills": [
+//           {
+//             "SlotType": "Default",
+//             "SkillId": 10002,
+//             "SkillName": "위자드 직선평타",
+//             "UnlockLevel": 1
+//           },
+//           {
+//             "SlotType": "SkillA",
+//             "SkillId": 10008,
+//             "SkillName": "맹독확산1",
+//             "UnlockLevel": 10
+//           },
+//           {
+//             "SlotType": "SkillB",
+//             "SkillId": 10011,
+//             "SkillName": "냉기확산1", 
+//             "UnlockLevel": 20
+//           }
+//         ],
+//         "CharacterType": "Hero",
+//         "IsValidTarget": false,
+//         "IsNpc": false
+//       },
+//       {
+//         "DataId": 201003,
+//         "Name": "사자",
+//         "NameTextId": "LukeName",
+//         "DescriptionTextId": "LukeDescription",
+//         "Rarity": "R",
+//         "GachaInfo": {
+//           "SpawnWeight": 9.0,
+//           "Weight": 9.0,
+//           "ExpCount": 10
+//         },
+//         "Visuals": {
+//           "IconImage": "004.sprite",
+//           "SkeletonDataID": "004_SkeletonData",
+//           "PrefabLabel": "HeroPrefab",
+//           "ClientAvatar": "201003_Lion"
+//         },
+//         "BaseStats": {
+//           "MaxHp": 1000.0,
+//           "UpMaxHpBonus": 2.0,
+//           "Atk": 25.0,
+//           "AtkRange": 1.8,
+//           "AtkBonus": 2.0,
+//           "MoveSpeed": 5.0,
+//           "CriRate": 0.15,
+//           "CriDamage": 1.5,
+//           "AtkSpeed": 1.0,
+//           "AtkTime": 1.0,
+//           "ColliderInfo": {
+//             "OffsetX": 0.0,
+//             "OffsetY": 0.5,
+//             "Radius": 4.6
+//           }
+//         },
+//         "LevelSystem": {
+//           "MaxLevel": 50,
+//           "GrowthByLevel": [
+//             {"LevelRange": "1-20", "HpGrowth": 55.0, "AtkGrowth": 5.0, "DefGrowth": 3.5},
+//             {"LevelRange": "21-40", "HpGrowth": 65.0, "AtkGrowth": 6.0, "DefGrowth": 4.0},
+//             {"LevelRange": "41-50", "HpGrowth": 75.0, "AtkGrowth": 7.0, "DefGrowth": 4.5}
+//           ]
+//         },
+//         "Skills": [
+//           {
+//             "SlotType": "Default",
+//             "SkillId": 10001,
+//             "SkillName": "기본공격",
+//             "UnlockLevel": 1
+//           },
+//           {
+//             "SlotType": "SkillA",
+//             "SkillId": 10018,
+//             "SkillName": "사자수인1",
+//             "UnlockLevel": 10
+//           },
+//           {
+//             "SlotType": "SkillB",
+//             "SkillId": 10019,
+//             "SkillName": "사자후인2",
+//             "UnlockLevel": 20
+//           }
+//         ],
+//         "CharacterType": "Hero",
+//         "IsValidTarget": false,
+//         "IsNpc": false
+//       },
+//       {
+//         "DataId": 201004,
+//         "Name": "뱀파",
+//         "NameTextId": "DukName",
+//         "DescriptionTextId": "DukDescription",
+//         "Rarity": "R",
+//         "GachaInfo": {
+//           "SpawnWeight": 9.0,
+//           "Weight": 9.0,
+//           "ExpCount": 10
+//         },
+//         "Visuals": {
+//           "IconImage": "005.sprite",
+//           "SkeletonDataID": "005_SkeletonData",
+//           "PrefabLabel": "HeroPrefab",
+//           "ClientAvatar": "201004_Vampire"
+//         },
+//         "BaseStats": {
+//           "MaxHp": 1000.0,
+//           "UpMaxHpBonus": 2.0,
+//           "Atk": 25.0,
+//           "AtkRange": 1.8,
+//           "AtkBonus": 2.0,
+//           "MoveSpeed": 5.0,
+//           "CriRate": 0.15,
+//           "CriDamage": 1.5,
+//           "AtkSpeed": 1.0,
+//           "AtkTime": 1.0,
+//           "ColliderInfo": {
+//             "OffsetX": 0.0,
+//             "OffsetY": 0.5,
+//             "Radius": 4.6
+//           }
+//         },
+//         "LevelSystem": {
+//           "MaxLevel": 50,
+//           "GrowthByLevel": [
+//             {"LevelRange": "1-20", "HpGrowth": 45.0, "AtkGrowth": 6.0, "DefGrowth": 2.5},
+//             {"LevelRange": "21-40", "HpGrowth": 55.0, "AtkGrowth": 7.0, "DefGrowth": 3.0},
+//             {"LevelRange": "41-50", "HpGrowth": 65.0, "AtkGrowth": 8.0, "DefGrowth": 3.5}
+//           ]
+//         },
+//         "Skills": [
+//           {
+//             "SlotType": "Default",
+//             "SkillId": 10001,
+//             "SkillName": "기본공격",
+//             "UnlockLevel": 1
+//           },
+//           {
+//             "SlotType": "SkillA",
+//             "SkillId": 10014,
+//             "SkillName": "뱀파스킬1",
+//             "UnlockLevel": 15
+//           },
+//           {
+//             "SlotType": "SkillB",
+//             "SkillId": 10015,
+//             "SkillName": "뱀파스킬2",
+//             "UnlockLevel": 30
+//           }
+//         ],
+//         "CharacterType": "Hero",
+//         "IsValidTarget": false,
+//         "IsNpc": false
+//       },
+//       {
+//         "DataId": 201020,
+//         "Name": "오웬",
+//         "NameTextId": "BettyName",
+//         "DescriptionTextId": "BettyDescription",
+//         "Rarity": "SSR",
+//         "GachaInfo": {
+//           "SpawnWeight": 1.0,
+//           "Weight": 1.0,
+//           "ExpCount": 10
+//         },
+//         "Visuals": {
+//           "IconImage": "020.sprite",
+//           "SkeletonDataID": "020_SkeletonData",
+//           "PrefabLabel": "HeroPrefab",
+//           "ClientAvatar": "201020_Vampire"
+//         },
+//         "BaseStats": {
+//           "MaxHp": 1000.0,
+//           "UpMaxHpBonus": 2.0,
+//           "Atk": 25.0,
+//           "AtkRange": 1.8,
+//           "AtkBonus": 2.0,
+//           "MoveSpeed": 5.0,
+//           "CriRate": 0.15,
+//           "CriDamage": 1.5,
+//           "AtkSpeed": 1.0,
+//           "AtkTime": 1.0,
+//           "ColliderInfo": {
+//             "OffsetX": 0.0,
+//             "OffsetY": 0.5,
+//             "Radius": 4.6
+//           }
+//         },
+//         "LevelSystem": {
+//           "MaxLevel": 70,
+//           "GrowthByLevel": [
+//             {"LevelRange": "1-20", "HpGrowth": 65.0, "AtkGrowth": 6.5, "DefGrowth": 4.0},
+//             {"LevelRange": "21-40", "HpGrowth": 75.0, "AtkGrowth": 7.5, "DefGrowth": 4.5},
+//             {"LevelRange": "41-60", "HpGrowth": 85.0, "AtkGrowth": 8.5, "DefGrowth": 5.0},
+//             {"LevelRange": "61-70", "HpGrowth": 95.0, "AtkGrowth": 9.5, "DefGrowth": 5.5}
+//           ]
+//         },
+//         "Skills": [
+//           {
+//             "SlotType": "Default",
+//             "SkillId": 10001,
+//             "SkillName": "기본공격",
+//             "UnlockLevel": 1
+//           },
+//           {
+//             "SlotType": "SkillA",
+//             "SkillId": 10020,
+//             "SkillName": "화염검1",
+//             "UnlockLevel": 10
+//           },
+//           {
+//             "SlotType": "SkillB",
+//             "SkillId": 10023,
+//             "SkillName": "다중 화염검1",
+//             "UnlockLevel": 25
+//           }
+//         ],
+//         "CharacterType": "Hero",
+//         "IsValidTarget": false,
+//         "IsNpc": false
+//       }
+//     ],
+//     "skillSystem": {
+//       "skills": [
+//         {
+//           "DataId": 10001,
+//           "Name": "기본공격",
+//           "ClassName": "NormalAttack",
+//           "Description": "근접평타",
+//           "ProjectileId": 0,
+//           "PrefabLabel": null,
+//           "IconLabel": "BattleSkillIcon_01",
+//           "AnimName": "attack",
+//           "CoolTime": 1.2,
+//           "DamageMultiplier": 1.0,
+//           "Duration": 0.0,
+//           "AnimImpactDuration": 0.0,
+//           "CastingSound": "EnergyBolt_Start",
+//           "SkillRange": 0.0,
+//           "ScaleMultiplier": 1.0,
+//           "TargetCount": 20,
+//           "EffectIds": null,
+//           "NextLevelId": 10021,
+//           "AoEId": 80007,
+//           "SkillEvolutions": [
+//             {
+//               "Level": 1,
+//               "SkillId": 10020,
+//               "Name": "화염검1",
+//               "Description": "자신을 중심으로 광역 범위에 적들에게 데미지를 주고 화상 상태로 만든다."
+//             },
+//             {
+//               "Level": 2,
+//               "SkillId": 10021,
+//               "Name": "화염검2",
+//               "Description": "자신을 중심으로 광역 범위에 적들에게 데미지를 주고 화상 상태로 만든다. 범위가 증가한다."
+//             },
+//             {
+//               "Level": 3,
+//               "SkillId": 10022,
+//               "Name": "화염검3",
+//               "Description": "자신을 중심으로 광역 범위에 적들에게 데미지를 주고 화상 상태로 만든다. 범위와 데미지가 증가한다."
+//             }
+//           ]
+//         },
+//         {
+//           "DataId": 10023,
+//           "Name": "다중 화염검1",
+//           "ClassName": "MultiFireSword",
+//           "Description": "화염으로 이루어진 검을 소환하여 광역 피해를 준다",
+//           "ProjectileId": 0,
+//           "PrefabLabel": "AoEPrefab",
+//           "IconLabel": null,
+//           "AnimName": "skill_b",
+//           "CoolTime": 10.0,
+//           "DamageMultiplier": 1.3,
+//           "Duration": 0.0,
+//           "AnimImpactDuration": 0.0,
+//           "CastingSound": null,
+//           "SkillRange": 4.0,
+//           "ScaleMultiplier": 1.0,
+//           "TargetCount": 20,
+//           "EffectIds": null,
+//           "NextLevelId": 10024,
+//           "AoEId": 80010,
+//           "SkillEvolutions": [
+//             {
+//               "Level": 1,
+//               "SkillId": 10023,
+//               "Name": "다중 화염검1",
+//               "Description": "화염으로 이루어진 검을 소환하여 광역 피해를 준다"
+//             },
+//             {
+//               "Level": 2,
+//               "SkillId": 10024,
+//               "Name": "다중 화염검2",
+//               "Description": "화염으로 이루어진 검을 소환하여 광역 피해를 준다. 소환되는 검의 수가 증가한다."
+//             },
+//             {
+//               "Level": 3,
+//               "SkillId": 10025,
+//               "Name": "다중 화염검3",
+//               "Description": "화염으로 이루어진 검을 소환하여 광역 피해를 준다. 소환되는 검의 수와 데미지가 증가한다."
+//             }
+//           ]
+//         }
+//       ]
+//     },
+//     "effectSystem": {
+//       "effects": [
+//         {
+//           "DataId": 60001,
+//           "Name": "도트뎀출혈",
+//           "ClassName": "DotBase",
+//           "DescriptionTextID": "한틱당 4만큼 도트뎀 5초 유지",
+//           "SkeletonDataID": null,
+//           "IconLabel": null,
+//           "SoundLabel": null,
+//           "Amount": 4.0,
+//           "PercentAdd": 0.0,
+//           "PercentMult": 0.0,
+//           "TickTime": 1.0,
+//           "TickCount": 5.0,
+//           "EffectType": 1
+//         },
+//         {
+//           "DataId": 60002,
+//           "Name": "도트뎀독",
+//           "ClassName": "DotBase",
+//           "DescriptionTextID": "한틱당 3만큼 도트뎀 5초 유지",
+//           "SkeletonDataID": "debuff_poison_1_SkeletonData",
+//           "IconLabel": null,
+//           "SoundLabel": null,
+//           "Amount": 3.0,
+//           "PercentAdd": 0.0,
+//           "PercentMult": 0.0,
+//           "TickTime": 1.0,
+//           "TickCount": 5.0,
+//           "EffectType": 1
+//         },
+//         {
+//           "DataId": 60003,
+//           "Name": "화상",
+//           "ClassName": "DotBase",
+//           "DescriptionTextID": "한틱당 최대체력 1% 도트뎀 5초유지",
+//           "SkeletonDataID": null,
+//           "IconLabel": null,
+//           "SoundLabel": null,
+//           "Amount": 0.0,
+//           "PercentAdd": 0.05,
+//           "PercentMult": 0.0,
+//           "TickTime": 1.0,
+//           "TickCount": 5.0,
+//           "EffectType": 1
+//         },
+//         {
+//           "DataId": 60004,
+//           "Name": "도트힐",
+//           "ClassName": "DotBase",
+//           "DescriptionTextID": "한틱당 최대체력의 2%를 5초동안 올려준다",
+//           "SkeletonDataID": "heal_1_SkeletonData",
+//           "IconLabel": null,
+//           "SoundLabel": null,
+//           "Amount": 0.0,
+//           "PercentAdd": 0.05,
+//           "PercentMult": 0.0,
+//           "TickTime": 1.0,
+//           "TickCount": 5.0,
+//           "EffectType": 0
+//         },
+//         {
+//           "DataId": 60005,
+//           "Name": "힐",
+//           "ClassName": "DotBase",
+//           "DescriptionTextID": "한틱당 체력 50만큼 회복",
+//           "SkeletonDataID": "heal_1_SkeletonData",
+//           "IconLabel": null,
+//           "SoundLabel": null,
+//           "Amount": 50.0,
+//           "PercentAdd": 1.0,
+//           "PercentMult": 0.0,
+//           "TickTime": 1.0,
+//           "TickCount": 1.0,
+//           "EffectType": 0
+//         },
+//         {
+//           "DataId": 61001,
+//           "Name": "공업버프",
+//           "ClassName": "AttackBuff",
+//           "DescriptionTextID": "Amount + percent",
+//           "SkeletonDataID": null,
+//           "IconLabel": null,
+//           "SoundLabel": null,
+//           "Amount": 0.0,
+//           "PercentAdd": 0.3,
+//           "PercentMult": 0.0,
+//           "TickTime": 1.0,
+//           "TickCount": 5.0,
+//           "EffectType": 0
+//         },
+//         {
+//           "DataId": 61003,
+//           "Name": "이속버프",
+//           "ClassName": "MoveSpeedBuff",
+//           "DescriptionTextID": "Amount + percent",
+//           "SkeletonDataID": null,
+//           "IconLabel": null,
+//           "SoundLabel": null,
+//           "Amount": 0.0,
+//           "PercentAdd": 0.2,
+//           "PercentMult": 0.0,
+//           "TickTime": 1.0,
+//           "TickCount": 5.0,
+//           "EffectType": 0
+//         },
+//         {
+//           "DataId": 61005,
+//           "Name": "공속버프",
+//           "ClassName": "AttackSpeedBuff",
+//           "DescriptionTextID": "Amount + percent",
+//           "SkeletonDataID": "buff_attack_speed_SkeletonData",
+//           "IconLabel": null,
+//           "SoundLabel": null,
+//           "Amount": 0.0,
+//           "PercentAdd": 0.5,
+//           "PercentMult": 0.0,
+//           "TickTime": 1.0,
+//           "TickCount": 5.0,
+//           "EffectType": 0
+//         },
+//         {
+//           "DataId": 61007,
+//           "Name": "흡혈량버프",
+//           "ClassName": "LifeStealBuff",
+//           "DescriptionTextID": "Amount + percent",
+//           "SkeletonDataID": "buff_blood_up_SkeletonData",
+//           "IconLabel": null,
+//           "SoundLabel": null,
+//           "Amount": 0.3,
+//           "PercentAdd": 0.0,
+//           "PercentMult": 0.0,
+//           "TickTime": 1.0,
+//           "TickCount": 5.0,
+//           "EffectType": 0
+//         },
+//         {
+//           "DataId": 62002,
+//           "Name": "에어본",
+//           "ClassName": "Airborne",
+//           "DescriptionTextID": "Duration동안 에어본",
+//           "SkeletonDataID": null,
+//           "IconLabel": null,
+//           "SoundLabel": null,
+//           "Amount": 0.0,
+//           "PercentAdd": 0.0,
+//           "PercentMult": 0.0,
+//           "TickTime": 1.0,
+//           "TickCount": 1.0,
+//           "EffectType": 2
+//         },
+//         {
+//           "DataId": 60006,
+//           "Name": "맹독확산1 Effect",
+//           "ClassName": "DotBase",
+//           "DescriptionTextID": "한틱당 3만큼 도트뎀 5초 유지",
+//           "SkeletonDataID": "debuff_poison_1_SkeletonData",
+//           "IconLabel": null,
+//           "SoundLabel": null,
+//           "Amount": 3.0,
+//           "PercentAdd": 0.0,
+//           "PercentMult": 0.0,
+//           "TickTime": 1.0,
+//           "TickCount": 5.0,
+//           "EffectType": 1
+//         },
+//         {
+//           "DataId": 60007,
+//           "Name": "맹독확산2 Effect",
+//           "ClassName": "DotBase",
+//           "DescriptionTextID": "한틱당 3만큼 도트뎀 5초 유지",
+//           "SkeletonDataID": "debuff_poison_1_SkeletonData",
+//           "IconLabel": null,
+//           "SoundLabel": null,
+//           "Amount": 3.0,
+//           "PercentAdd": 0.0,
+//           "PercentMult": 0.0,
+//           "TickTime": 1.0,
+//           "TickCount": 5.0,
+//           "EffectType": 1
+//         },
+//         {
+//           "DataId": 60008,
+//           "Name": "맹독확산3 Effect",
+//           "ClassName": "DotBase",
+//           "DescriptionTextID": "한틱당 3만큼 도트뎀 5초 유지",
+//           "SkeletonDataID": "debuff_poison_1_SkeletonData",
+//           "IconLabel": null,
+//           "SoundLabel": null,
+//           "Amount": 3.0,
+//           "PercentAdd": 0.0,
+//           "PercentMult": 0.0,
+//           "TickTime": 1.0,
+//           "TickCount": 5.0,
+//           "EffectType": 1
+//         },
+//         {
+//           "DataId": 60009,
+//           "Name": "빙결1",
+//           "ClassName": "DotBase",
+//           "DescriptionTextID": "Duration 동안 스턴",
+//           "SkeletonDataID": "debuff_freezing_SkeletonData",
+//           "IconLabel": null,
+//           "SoundLabel": null,
+//           "Amount": 0.0,
+//           "PercentAdd": 0.0,
+//           "PercentMult": 0.0,
+//           "TickTime": 1.0,
+//           "TickCount": 1.0,
+//           "EffectType": 1
+//         },
+//         {
+//           "DataId": 60010,
+//           "Name": "빙결2",
+//           "ClassName": "DotBase",
+//           "DescriptionTextID": "Duration 동안 스턴",
+//           "SkeletonDataID": "debuff_freezing_SkeletonData",
+//           "IconLabel": null,
+//           "SoundLabel": null,
+//           "Amount": 0.0,
+//           "PercentAdd": 0.0,
+//           "PercentMult": 0.0,
+//           "TickTime": 1.0,
+//           "TickCount": 2.0,
+//           "EffectType": 1
+//         },
+//         {
+//           "DataId": 60011,
+//           "Name": "빙결3",
+//           "ClassName": "DotBase",
+//           "DescriptionTextID": "Duration 동안 스턴",
+//           "SkeletonDataID": "debuff_freezing_SkeletonData",
+//           "IconLabel": null,
+//           "SoundLabel": null,
+//           "Amount": 0.0,
+//           "PercentAdd": 0.0,
+//           "PercentMult": 0.0,
+//           "TickTime": 1.0,
+//           "TickCount": 3.0,
+//           "EffectType": 1
+//         },
+//         {
+//           "DataId": 60012,
+//           "Name": "화상1",
+//           "ClassName": "DotBase",
+//           "DescriptionTextID": "한틱당 최대체력 1% 도트뎀 5초유지",
+//           "SkeletonDataID": "debuff_burning_SkeletonData",
+//           "IconLabel": null,
+//           "SoundLabel": null,
+//           "Amount": 0.0,
+//           "PercentAdd": 0.05,
+//           "PercentMult": 0.0,
+//           "TickTime": 1.0,
+//           "TickCount": 5.0,
+//           "EffectType": 1
+//         },
+//         {
+//           "DataId": 60013,
+//           "Name": "화상2",
+//           "ClassName": "DotBase",
+//           "DescriptionTextID": "한틱당 최대체력 1% 도트뎀 5초유지",
+//           "SkeletonDataID": "debuff_burning_SkeletonData",
+//           "IconLabel": null,
+//           "SoundLabel": null,
+//           "Amount": 0.0,
+//           "PercentAdd": 0.05,
+//           "PercentMult": 0.0,
+//           "TickTime": 1.0,
+//           "TickCount": 5.0,
+//           "EffectType": 1
+//         },
+//         {
+//           "DataId": 60014,
+//           "Name": "화상3",
+//           "ClassName": "DotBase",
+//           "DescriptionTextID": "한틱당 최대체력 1% 도트뎀 5초유지",
+//           "SkeletonDataID": "debuff_burning_SkeletonData",
+//           "IconLabel": null,
+//           "SoundLabel": null,
+//           "Amount": 0.0,
+//           "PercentAdd": 0.05,
+//           "PercentMult": 0.0,
+//           "TickTime": 1.0,
+//           "TickCount": 5.0,
+//           "EffectType": 1
+//         }
+//       ]
+//     },
+//     "aoeSystem": {
+//       "aoes": [
+//         {
+//           "DataId": 80001,
+//           "Name": "맹독확산1 AOE",
+//           "ClassName": "PoisonSpreadAoE",
+//           "SkeletonDataID": "loren_skill_1_SkeletonData",
+//           "SoundLabel": null,
+//           "Duration": 5.0,
+//           "AllyEffects": null,
+//           "EnemyEffects": [
+//             60006
+//           ],
+//           "AnimName": "idle"
+//         },
+//         {
+//           "DataId": 80002,
+//           "Name": "맹독확산2 AOE",
+//           "ClassName": "PoisonSpreadAoE",
+//           "SkeletonDataID": "loren_skill_1_SkeletonData",
+//           "SoundLabel": null,
+//           "Duration": 5.0,
+//           "AllyEffects": null,
+//           "EnemyEffects": [
+//             60007
+//           ],
+//           "AnimName": "idle"
+//         },
+//         {
+//           "DataId": 80003,
+//           "Name": "맹독확산3 AOE",
+//           "ClassName": "PoisonSpreadAoE",
+//           "SkeletonDataID": "loren_skill_1_SkeletonData",
+//           "SoundLabel": null,
+//           "Duration": 5.0,
+//           "AllyEffects": null,
+//           "EnemyEffects": [
+//             60008
+//           ],
+//           "AnimName": "idle"
+//         },
+//         {
+//           "DataId": 80004,
+//           "Name": "냉기확산1 AOE",
+//           "ClassName": "ColdSpreadAoE",
+//           "SkeletonDataID": "loren_skill_2_SkeletonData",
+//           "SoundLabel": null,
+//           "Duration": 0.5,
+//           "AllyEffects": null,
+//           "EnemyEffects": [
+//             60009
+//           ],
+//           "AnimName": "idle"
+//         },
+//         {
+//           "DataId": 80005,
+//           "Name": "냉기확산2 AOE",
+//           "ClassName": "ColdSpreadAoE",
+//           "SkeletonDataID": "loren_skill_2_SkeletonData",
+//           "SoundLabel": null,
+//           "Duration": 0.5,
+//           "AllyEffects": null,
+//           "EnemyEffects": [
+//             60010
+//           ],
+//           "AnimName": "idle"
+//         },
+//         {
+//           "DataId": 80006,
+//           "Name": "냉기확산3 AOE",
+//           "ClassName": "ColdSpreadAoE",
+//           "SkeletonDataID": "loren_skill_2_SkeletonData",
+//           "SoundLabel": null,
+//           "Duration": 0.5,
+//           "AllyEffects": null,
+//           "EnemyEffects": [
+//             60011
+//           ],
+//           "AnimName": "idle"
+//         },
+//         {
+//           "DataId": 80007,
+//           "Name": "화염검 AOE",
+//           "ClassName": "ConeShapeAoE",
+//           "SkeletonDataID": "owen_skill_1_SkeletonData",
+//           "SoundLabel": null,
+//           "Duration": 1.0,
+//           "AllyEffects": null,
+//           "EnemyEffects": [
+//             60012
+//           ],
+//           "AnimName": "skill_a_small"
+//         },
+//         {
+//           "DataId": 80008,
+//           "Name": "화염검 AOE",
+//           "ClassName": "ConeShapeAoE",
+//           "SkeletonDataID": "owen_skill_1_SkeletonData",
+//           "SoundLabel": null,
+//           "Duration": 1.0,
+//           "AllyEffects": null,
+//           "EnemyEffects": [
+//             60013
+//           ],
+//           "AnimName": "skill_a_normal"
+//         },
+//         {
+//           "DataId": 80009,
+//           "Name": "화염검 AOE",
+//           "ClassName": "ConeShapeAoE",
+//           "SkeletonDataID": "owen_skill_1_SkeletonData",
+//           "SoundLabel": null,
+//           "Duration": 1.0,
+//           "AllyEffects": null,
+//           "EnemyEffects": [
+//             60014
+//           ],
+//           "AnimName": "skill_a_big"
+//         },
+//         {
+//           "DataId": 80010,
+//           "Name": "다중화염검 AOE",
+//           "ClassName": "CircleShapeAoE",
+//           "SkeletonDataID": "owen_skill_2_SkeletonData",
+//           "SoundLabel": null,
+//           "Duration": 1.0,
+//           "AllyEffects": null,
+//           "EnemyEffects": null,
+//           "AnimName": "skill_b_small"
+//         },
+//         {
+//           "DataId": 80011,
+//           "Name": "다중화염검 AOE",
+//           "ClassName": "CircleShapeAoE",
+//           "SkeletonDataID": "owen_skill_2_SkeletonData",
+//           "SoundLabel": null,
+//           "Duration": 1.0,
+//           "AllyEffects": null,
+//           "EnemyEffects": null,
+//           "AnimName": "skill_b_normal"
+//         },
+//         {
+//           "DataId": 80012,
+//           "Name": "다중화염검 AOE",
+//           "ClassName": "CircleShapeAoE",
+//           "SkeletonDataID": "owen_skill_2_SkeletonData",
+//           "SoundLabel": null,
+//           "Duration": 1.0,
+//           "AllyEffects": null,
+//           "EnemyEffects": null,
+//           "AnimName": "skill_b_big"
+//         }
+//       ]
+//     },
+
+
+
+
+//     "playerSystem": {
+//       "playerHeroes": [
+//         {
+//           "InstanceId": "player_hero_12345",
+//           "PlayerId": "player_9876",
+//           "DataId": 201000,
+//           "Level": 15,
+//           "Experience": 2500,
+//           "ExperienceToNextLevel": 3000,
+//           "UnlockedSkills": [
+//             {
+//               "SkillId": 10002,
+//               "SkillLevel": 1
+//             },
+//             {
+//               "SkillId": 10008,
+//               "SkillLevel": 1
+//             }
+//           ],
+//           "Stats": {
+//             "CurrentHp": 1650,
+//             "MaxHp": 1750,
+//             "Atk": 100,
+//             "CritRate": 0.15,
+//             "CritDamage": 1.5
+//           }
+//         },
+//         {
+//           "InstanceId": "player_hero_67890",
+//           "PlayerId": "player_9876",
+//           "DataId": 201003,
+//           "Level": 20,
+//           "Experience": 5000,
+//           "ExperienceToNextLevel": 6500,
+//           "UnlockedSkills": [
+//             {
+//               "SkillId": 10001,
+//               "SkillLevel": 1
+//             },
+//             {
+//               "SkillId": 10018,
+//               "SkillLevel": 2
+//             },
+//             {
+//               "SkillId": 10019,
+//               "SkillLevel": 1
+//             }
+//           ],
+//           "Stats": {
+//             "CurrentHp": 2100,
+//             "MaxHp": 2100,
+//             "Atk": 125,
+//             "CritRate": 0.15,
+//             "CritDamage": 1.5
+//           }
+//         }
+//       ],
+//       "expRequiredByLevel": [
+//         0,     // Level 0 -> 1 (시작 레벨)
+//         100,   // Level 1 -> 2
+//         250,   // Level 2 -> 3
+//         450,   // Level 3 -> 4
+//         700,   // Level 4 -> 5
+//         1000,  // Level 5 -> 6
+//         1350,  // Level 6 -> 7
+//         1750,  // Level 7 -> 8
+//         2200,  // Level 8 -> 9
+//         2700  // Level 9 -> 10
+//       ],
+//           "TargetCount": 20,
+//           "EffectIds": null,
+//           "NextLevelId": 0,
+//           "AoEId": 0
+//         },
+    
+//         {
+//           "DataId": 10002,
+//           "Name": "위자드 직선평타",
+//           "ClassName": "NormalAttack",
+//           "Description": "주변의 적을 향해 에너지 볼트를 발사한다",
+//           "ProjectileId": 70001,
+//           "PrefabLabel": "ProjectilePrefab",
+//           "IconLabel": "BattleSkillIcon_01",
+//           "AnimName": "attack",
+//           "CoolTime": 1.2,
+//           "DamageMultiplier": 1.0,
+//           "Duration": 0.0,
+//           "AnimImpactDuration": 0.0,
+//           "CastingSound": "EnergyBolt_Start",
+//           "SkillRange": 0.0,
+//           "ScaleMultiplier": 1.0,
+//           "TargetCount": 20,
+//           "EffectIds": null,
+//           "NextLevelId": 0,
+//           "AoEId": 0
+//         },
+//         {
+//           "DataId": 10008,
+//           "Name": "맹독확산1",
+//           "ClassName": "PoisonSpread",
+//           "Description": "독이 든 병을 던져 지역을 오염시키고 지속적으로 데미지를 준다.",
+//           "ProjectileId": 70003,
+//           "PrefabLabel": "ProjectilePrefab",
+//           "IconLabel": null,
+//           "AnimName": "skill_a",
+//           "CoolTime": 5.0,
+//           "DamageMultiplier": 1.2,
+//           "Duration": 5.0,
+//           "AnimImpactDuration": 0.0,
+//           "CastingSound": null,
+//           "SkillRange": 4.0,
+//           "ScaleMultiplier": 1.0,
+//           "TargetCount": 20,
+//           "EffectIds": null,
+//           "NextLevelId": 10009,
+//           "AoEId": 80001,
+//           "SkillEvolutions": [
+//             {
+//               "Level": 1,
+//               "SkillId": 10008,
+//               "Name": "맹독확산1",
+//               "Description": "독이 든 병을 던져 지역을 오염시키고 지속적으로 데미지를 준다."
+//             },
+//             {
+//               "Level": 2,
+//               "SkillId": 10009,
+//               "Name": "맹독확산2",
+//               "Description": "독이 든 병을 던져 지역을 오염시키고 지속적으로 데미지를 준다. 범위가 증가한다."
+//             },
+//             {
+//               "Level": 3,
+//               "SkillId": 10010,
+//               "Name": "맹독확산3",
+//               "Description": "독이 든 병을 던져 지역을 오염시키고 지속적으로 데미지를 준다. 범위와 데미지가 증가한다."
+//             }
+//           ]
+//         },
+//         {
+//           "DataId": 10011,
+//           "Name": "냉기확산1",
+//           "ClassName": "ColdSpread",
+//           "Description": "온 세상을 얼려버릴것 같은 한기가 가득찬 병을 던져 광역 범위에 있는 적을 얼리고 피해를 준다.",
+//           "ProjectileId": 70004,
+//           "PrefabLabel": "ProjectilePrefab",
+//           "IconLabel": null,
+//           "AnimName": "skill_b",
+//           "CoolTime": 10.0,
+//           "DamageMultiplier": 1.0,
+//           "Duration": 5.0,
+//           "AnimImpactDuration": 0.0,
+//           "CastingSound": null,
+//           "SkillRange": 4.0,
+//           "ScaleMultiplier": 1.0,
+//           "TargetCount": 20,
+//           "EffectIds": null,
+//           "NextLevelId": 10012,
+//           "AoEId": 80004,
+//           "SkillEvolutions": [
+//             {
+//               "Level": 1,
+//               "SkillId": 10011,
+//               "Name": "냉기확산1",
+//               "Description": "온 세상을 얼려버릴것 같은 한기가 가득찬 병을 던져 광역 범위에 있는 적을 얼리고 피해를 준다."
+//             },
+//             {
+//               "Level": 2,
+//               "SkillId": 10012,
+//               "Name": "냉기확산2",
+//               "Description": "온 세상을 얼려버릴것 같은 한기가 가득찬 병을 던져 광역 범위에 있는 적을 얼리고 피해를 준다. 빙결 시간이 증가한다."
+//             },
+//             {
+//               "Level": 3,
+//               "SkillId": 10013,
+//               "Name": "냉기확산3",
+//               "Description": "온 세상을 얼려버릴것 같은 한기가 가득찬 병을 던져 광역 범위에 있는 적을 얼리고 피해를 준다. 빙결 시간과 범위가 증가한다."
+//             }
+//           ]
+//         },
+//         {
+//           "DataId": 10006,
+//           "Name": "주인공스킬1",
+//           "ClassName": null,
+//           "Description": "전방으로 검을 휘둘러 적을 멀리 날린다.",
+//           "ProjectileId": 0,
+//           "PrefabLabel": null,
+//           "IconLabel": null,
+//           "AnimName": "attack",
+//           "CoolTime": 9.0,
+//           "DamageMultiplier": 1.0,
+//           "Duration": 0.0,
+//           "AnimImpactDuration": 0.0,
+//           "CastingSound": null,
+//           "SkillRange": 1.8,
+//           "ScaleMultiplier": 1.0,
+//           "TargetCount": 20,
+//           "EffectIds": null,
+//           "NextLevelId": 0,
+//           "AoEId": 0
+//         },
+//         {
+//           "DataId": 10007,
+//           "Name": "주인공스킬2",
+//           "ClassName": null,
+//           "Description": "자신의 검을 전개시켜 지속적인 광역피해를 준다.",
+//           "ProjectileId": 0,
+//           "PrefabLabel": null,
+//           "IconLabel": null,
+//           "AnimName": "attack",
+//           "CoolTime": 11.0,
+//           "DamageMultiplier": 1.0,
+//           "Duration": 0.0,
+//           "AnimImpactDuration": 0.0,
+//           "CastingSound": null,
+//           "SkillRange": 1.8,
+//           "ScaleMultiplier": 1.0,
+//           "TargetCount": 20,
+//           "EffectIds": null,
+//           "NextLevelId": 0,
+//           "AoEId": 0
+//         },
+//         {
+//           "DataId": 10018,
+//           "Name": "사자수인1",
+//           "ClassName": "AreaAirbone",
+//           "Description": "자리에서 뛰어올라 바닥을 내려찍으며 자신을 중심으로 광역피해를 주고 적을 띄운다.",
+//           "ProjectileId": 0,
+//           "PrefabLabel": "SpellIndicator",
+//           "IconLabel": null,
+//           "AnimName": "skill_a",
+//           "CoolTime": 5.0,
+//           "DamageMultiplier": 1.0,
+//           "Duration": 1.0,
+//           "AnimImpactDuration": 0.0,
+//           "CastingSound": null,
+//           "SkillRange": 1.8,
+//           "ScaleMultiplier": 1.0,
+//           "TargetCount": 20,
+//           "EffectIds": [62002],
+//           "NextLevelId": 0,
+//           "AoEId": 0
+//         },
+//         {
+//           "DataId": 10019,
+//           "Name": "사자후인2",
+//           "ClassName": "LionShout",
+//           "Description": "자센의 체력을 소모하여 아군3명을 광분상태로 만들어 가속시키고 흡혈량을 증가시킨다.",
+//           "ProjectileId": 0,
+//           "PrefabLabel": "SpellIndicator",
+//           "IconLabel": null,
+//           "AnimName": "skill_b",
+//           "CoolTime": 15.0,
+//           "DamageMultiplier": 1.0,
+//           "Duration": 4.0,
+//           "AnimImpactDuration": 0.0,
+//           "CastingSound": null,
+//           "SkillRange": 5.0,
+//           "ScaleMultiplier": 1.0,
+//           "TargetCount": 3,
+//           "EffectIds": [61003, 61005, 61007],
+//           "NextLevelId": 0,
+//           "AoEId": 0
+//         },
+//         {
+//           "DataId": 10014,
+//           "Name": "뱀파스킬1",
+//           "ClassName": null,
+//           "Description": "전방의 적에게 돌진하여 출혈상태로 만들고 5회 연속으로 검을 휘둘러 피해를 준다.",
+//           "ProjectileId": 0,
+//           "PrefabLabel": null,
+//           "IconLabel": null,
+//           "AnimName": "attack",
+//           "CoolTime": 17.0,
+//           "DamageMultiplier": 1.0,
+//           "Duration": 0.0,
+//           "AnimImpactDuration": 0.0,
+//           "CastingSound": null,
+//           "SkillRange": 4.0,
+//           "ScaleMultiplier": 1.0,
+//           "TargetCount": 20,
+//           "EffectIds": null,
+//           "NextLevelId": 0,
+//           "AoEId": 0
+//         },
+//         {
+//           "DataId": 10015,
+//           "Name": "뱀파스킬2",
+//           "ClassName": null,
+//           "Description": "검을 휘둘러 광역피해를 주고 피해량의 일부를 체력으로 흡수한다. 출혈상태인 적에게는 더 큰 피해를 준다.",
+//           "ProjectileId": 0,
+//           "PrefabLabel": null,
+//           "IconLabel": null,
+//           "AnimName": "attack",
+//           "CoolTime": 19.0,
+//           "DamageMultiplier": 1.0,
+//           "Duration": 0.0,
+//           "AnimImpactDuration": 0.0,
+//           "CastingSound": null,
+//           "SkillRange": 1.8,
+//           "ScaleMultiplier": 1.0,
+//           "TargetCount": 20,
+//           "EffectIds": null,
+//           "NextLevelId": 0,
+//           "AoEId": 0
+//         },
+//         {
+//           "DataId": 10020,
+//           "Name": "화염검1",
+//           "ClassName": "FireSword",
+//           "Description": "자신을 중심으로 광역 범위에 적들에게 데미지를 주고 화상 상태로 만든다.",
+//           "ProjectileId": 0,
+//           "PrefabLabel": "AoEPrefab",
+//           "IconLabel": null,
+//           "AnimName": "skill_a",
+//           "CoolTime": 5.0,
+//           "DamageMultiplier": 1.3,
+//           "Duration": 0.0,
+//           "AnimImpactDuration": 0.0,
+//           "CastingSound": null,
+//           "SkillRange": 1.8,
+//           "ScaleMultiplier": 1.0,

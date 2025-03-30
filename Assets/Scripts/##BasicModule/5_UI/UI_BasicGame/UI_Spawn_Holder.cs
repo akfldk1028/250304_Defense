@@ -319,7 +319,7 @@ public class UI_Spawn_Holder : UI_Base
         circleCollider.radius = 1.0f;
         circleCollider.isTrigger = true;
         
-        Debug.Log($"<color=blue>[UI_Spawn_Holder] {name}에 CircleCollider2D 생성됨</color>");
+        // Debug.Log($"<color=blue>[UI_Spawn_Holder] {name}에 CircleCollider2D 생성됨</color>");
     }
 
    

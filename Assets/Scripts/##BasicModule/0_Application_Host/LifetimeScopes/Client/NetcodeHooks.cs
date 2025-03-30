@@ -7,6 +7,8 @@ using Unity.Netcode;
         public event Action OnNetworkSpawnHook;
 
         public event Action OnNetworkDespawnHook;
+        
+        public bool IsSpawned => NetworkObject != null && NetworkObject.IsSpawned;
 
         public override void OnNetworkSpawn()
         {

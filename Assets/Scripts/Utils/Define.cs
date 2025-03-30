@@ -14,7 +14,12 @@ public static class LayerNames
 
 public static class Define
 {
-
+	public enum HostType
+	{
+		Host,
+		Client,
+		All
+	}
 	public enum ESkillSlot
 	{
 		Default,

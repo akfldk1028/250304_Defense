@@ -11,6 +11,9 @@ using Unity.Assets.Scripts.UI;
 using VContainer.Unity;
 using Unity.Services.Lobbies.Models;
 using Unity.Assets.Scripts.Network;
+using Unity.VisualScripting;
+
+
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -36,7 +39,13 @@ namespace Unity.Assets.Scripts.UI
         enum GameObjects
         {
             Matching,
-            Main
+            UI_Bottom,
+            Main_P,
+            Hero_P,
+            Shop_P,
+            Guild_P,
+            Lock_P
+
         }
         enum Buttons
         {
@@ -60,6 +69,7 @@ namespace Unity.Assets.Scripts.UI
         
 
         private GameObject MatchingObject => GetObject((int)GameObjects.Matching);
+        private GameObject UI_BottomObject => GetObject((int)GameObjects.UI_Bottom);
         #endregion
 
         #region Events
@@ -100,6 +110,8 @@ namespace Unity.Assets.Scripts.UI
 
             // DebugComponents.LogHierarchy(gameObject, "[UI_MainMenu]");
 
+
+
             GetButton((int)Buttons.RandomMatch).gameObject.BindEvent((evt) => {
 
                 Debug.Log("[UI_MainMenu] randomMatchButton 버튼 클릭됨");
@@ -107,8 +119,21 @@ namespace Unity.Assets.Scripts.UI
 
             }, Define.EUIEvent.Click);
 
+            Bottom_UIs bottomUIs = GetObject((int)GameObjects.UI_Bottom).GetOrAddComponent<Bottom_UIs>();
 
-            Debug.Log("[UI_MainMenu] Init 메서드 호출됨");
+            // 패널 배열 생성
+            GameObject[] panels = new GameObject[] {
+                GetObject((int)GameObjects.Main_P),
+                GetObject((int)GameObjects.Hero_P),
+                GetObject((int)GameObjects.Shop_P),
+                GetObject((int)GameObjects.Guild_P),
+                GetObject((int)GameObjects.Lock_P)
+            };
+            
+            // 패널만 설정
+            bottomUIs.SetPanels(panels);
+            // Bottom_UIs 초기화
+            bottomUIs.SetupPanelsAndButtons();
 
 
             return true;

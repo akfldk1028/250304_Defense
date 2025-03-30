@@ -48,10 +48,10 @@ public class BasicGameScene : BaseScene
             _isEventsSubscribed = true;
         }
 
-        if (_basicGameState != null)
-        {
-            _basicGameState.Load();
-        }
+        // if (_basicGameState != null)
+        // {
+        //     _basicGameState.Load();
+        // }
         
         if (_objectManagerFacade != null)
         {
