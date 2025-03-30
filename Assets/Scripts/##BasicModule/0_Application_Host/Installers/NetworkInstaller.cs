@@ -38,7 +38,6 @@ namespace Unity.Assets.Scripts.Module.ApplicationLifecycle.Installers
             builder.RegisterInstance(new MessageChannel<ConnectStatus>()).AsImplementedInterfaces();
             builder.RegisterInstance(new MessageChannel<ReconnectMessage>()).AsImplementedInterfaces();
             builder.RegisterComponent(new NetworkedMessageChannel<ConnectionEventMessage>()).AsImplementedInterfaces();
-            builder.Register<NetworkRegistryService>(Lifetime.Singleton);
 
             builder.Register<ProfileManager>(Lifetime.Singleton);
 

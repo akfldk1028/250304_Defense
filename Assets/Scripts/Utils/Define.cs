@@ -54,6 +54,58 @@ public static class Define
 		OnDamaged,
 		Dead
 	}
+	public enum EIndicatorType
+	{
+		None,
+		Cone,
+		Rectangle,
+	}
+	public enum EEffectType
+	{
+		Buff,
+		Debuff,
+		CrowdControl,
+	}
+	public enum EEffectSize
+	{
+		CircleSmall,
+		CircleNormal,
+		CircleBig,
+		ConeSmall,
+		ConeNormal,
+		ConeBig,
+	}
+	public enum EEffectClearType
+	{
+		TimeOut, // 시간초과로 인한 Effect 종료
+		ClearSkill, // 정화 스킬로 인한 Effect 종료
+		TriggerOutAoE, // AoE스킬을 벗어난 종료
+		EndOfAirborne, // 에어본이 끝난 경우 호출되는 종료
+	}
+	public enum EEffectSpawnType
+	{
+		Skill, // 지속시간이 있는 기본적인 이펙트 
+		External, // 외부(장판스킬)에서 이펙트를 관리(지속시간에 영향을 받지않음)
+	}
+	public enum EEffectClassName
+	{
+		Bleeding,
+		Poison,
+		Ignite,
+		Heal,
+		AttackBuff,
+		MoveSpeedBuff,
+		AttackSpeedBuff,
+		LifeStealBuff,
+		ReduceDmgBuff,
+		ThornsBuff,
+		Knockback,
+		Airborne,
+		PullEffect,
+		Stun,
+		Freeze,
+		CleanDebuff,
+	}
 
 	public enum EStatModType
 	{

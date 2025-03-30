@@ -820,16 +820,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
   _serverHero: {fileID: 0}
-  Range_T: {fileID: 0}
-  SetClick: {fileID: 0}
-  GetClick: {fileID: 0}
-  CanvasObject: {fileID: 0}
   Holder_Part_Name: 
-  Holder_Name: 
+  Holder_Name: 0
   m_Heroes: []
   index: 0
-  SellButton: {fileID: 0}
-  CompositionButton: {fileID: 0}
 --- !u!1 &8761319649051169308
 GameObject:
   m_ObjectHideFlags: 0

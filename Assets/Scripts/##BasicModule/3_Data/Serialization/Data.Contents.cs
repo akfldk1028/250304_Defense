@@ -110,7 +110,7 @@ namespace Unity.Assets.Scripts.Data
 		public List<int> EffectIds = new List<int>();
 		public int NextLevelId;
 		public int AoEId;
-		// public EEffectSize EffectSize;
+		public EEffectSize EffectSize;
 	}
 
 	[Serializable]
@@ -203,7 +203,7 @@ namespace Unity.Assets.Scripts.Data
 		public float PercentMult;
 		public float TickTime;
 		public float TickCount;
-		// public EEffectType EffectType;
+		public EEffectType EffectType;
 	}
 
 	[Serializable]

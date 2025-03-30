@@ -232,11 +232,7 @@ public class ObjectManager
 		}
 
 		GameObject go = _resourceManager.Instantiate(prefabName, pooling: true, position: position);
-		if (go == null)
-		{
-			_debugClassFacade?.LogError(GetType().Name, $"[ObjectManager] '{prefabName}' 프리팹을 인스턴스화하지 못했습니다.");
-			return null;
-		}
+
 		go.name = prefabName;
 		BaseObject obj = go.GetComponent<BaseObject>();
 		if (obj == null)
@@ -318,10 +314,7 @@ public class ObjectManager
 
 			// env.SetInfo(templateID);
 		// }
-		// else if (obj.ObjectType == EObjectType.HeroCamp)
-		// {
-		// 	// Camp = go.GetComponent<HeroCamp>();
-		// }
+
 
 		NetworkObject networkObject = go.GetComponent<NetworkObject>();
 
