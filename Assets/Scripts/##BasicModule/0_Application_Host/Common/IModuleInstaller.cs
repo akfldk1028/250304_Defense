@@ -24,7 +24,7 @@ namespace Unity.Assets.Scripts.Module.ApplicationLifecycle.Installers
         Map,
         Debug,
         Object,
-
+        ThirdParty,
         Game
         // 추가 모듈은 여기에 정의
         // 예: Analytics,

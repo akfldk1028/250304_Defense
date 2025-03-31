@@ -70,7 +70,8 @@ namespace Unity.Assets.Scripts.UI
         #endregion
 
         #region Injected Dependencies
-        
+        [Inject] private FirebaseManager _firebaseManager;
+
         [Inject] private StartUpScene _startUpScene;
         [Inject] private AuthManager _authManager;
         [Inject] private ConnectionManager _connectionManager;
@@ -103,7 +104,8 @@ namespace Unity.Assets.Scripts.UI
             get => _status;
             private set => _status = value;
         }
-        
+        private AsyncOperation m_AsyncOperation;
+
         #endregion
 
         #region Events
@@ -211,9 +213,26 @@ namespace Unity.Assets.Scripts.UI
             // 1. 초기화 단계
             yield return StartCoroutine(ProcessInitializeStep());
             
+
+                // 2. 서드파티 서비스 초기화 확인
+
+    
             // 2. 리소스 로드 단계
             yield return StartCoroutine(ProcessResourceLoadStep());
 
+            if (!CheckThirdPartyServiceInit())
+            {
+                Debug.LogError("[UI_StartUpScene] 서드파티 서비스 초기화 실패");
+                yield break;
+            }
+            
+            // 3. 앱 버전 검증
+            if (!ValidateAppVersion())
+            {
+                Debug.LogError("[UI_StartUpScene] 앱 버전 검증 실패");
+                yield break;
+            }
+            
                // 4. 인증 단계
             yield return StartCoroutine(ProcessAuthStep());
 
@@ -532,6 +551,94 @@ namespace Unity.Assets.Scripts.UI
         }
         
         #endregion
-    }
-}
+  
 
+
+// 추가 메서드
+    private bool CheckThirdPartyServiceInit()
+    {
+        try
+        {
+            // 1. 먼저 주입된 인스턴스 확인
+            if (_firebaseManager != null)
+            {
+                Debug.Log("[UI_StartUpScene] 의존성 주입된 FirebaseManager 사용");
+
+            }
+            // 2. 주입이 실패했다면 직접 찾기
+            else
+            {
+                _firebaseManager = FindAnyObjectByType<FirebaseManager>();
+                if (_firebaseManager == null)
+                {
+                    Debug.LogError("[UI_StartUpScene] FirebaseManager를 찾을 수 없습니다.");
+                    return false;
+                }
+                Debug.Log("[UI_StartUpScene] FirebaseManager를 직접 찾았습니다.");
+            }
+            
+            // 초기화 상태 확인
+            bool isInit = _firebaseManager.IsInit();
+            Debug.Log($"[UI_StartUpScene] FirebaseManager 초기화 상태: {isInit}");
+            
+            return isInit;
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"[UI_StartUpScene] 서드파티 서비스 초기화 확인 중 오류: {e.Message}");
+            return false;
+        }
+    }
+
+    private bool ValidateAppVersion()
+    {
+        try
+        {
+            bool result = false;
+            
+            // if (Application.version == FirebaseManager.Instance.GetAppVersion())
+            // {
+            //     Debug.Log("<color=green>[UI_StartUpScene] 앱 버전 검증 성공</color>");
+            //     result = true;
+            // }
+            if(true)
+            {
+                result = true;
+            }
+            else
+            {
+                // 버전 업데이트 알림 UI 표시
+                // var uiData = new ConfirmUIData();
+                // uiData.ConfirmType = ConfirmType.OK_CANCEL;
+                // uiData.TitleTxt = string.Empty;
+                // uiData.DescTxt = "App version is outdated. Will you update your app?";
+                // uiData.OKBtnTxt = "Update";
+                // uiData.CancelBtnTxt = "Cancel";
+                // uiData.OnClickOKBtn = () =>
+                // {
+                // #if UNITY_ANDROID
+                //     Application.OpenURL(GlobalDefine.GOOGLE_PLAY_STORE);
+                // #elif UNITY_IOS
+                //     Application.OpenURL(GlobalDefine.APPLE_APP_STORE);
+                // #endif
+                // };
+                // uiData.OnClickCancelBtn = () =>
+                // {
+                //     Application.Quit();
+                // };
+            }
+            
+            return result;
+        }
+        catch (System.Exception e)
+        {
+            LogError($"[UI_StartUpScene] 앱 버전 검증 중 오류: {e.Message}");
+            return false;
+        }
+    }
+
+
+
+    }
+
+  }

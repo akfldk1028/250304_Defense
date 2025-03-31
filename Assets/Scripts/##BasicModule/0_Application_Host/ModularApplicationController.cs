@@ -59,6 +59,9 @@ namespace Unity.Assets.Scripts.Module.ApplicationLifecycle
         [SerializeField]
         NetworkManager m_NetworkManager;
 
+        // [SerializeField]
+        // FirebaseManager m_FirebaseManager;
+
         private LocalLobby m_LocalLobby;
         private LobbyServiceFacade m_LobbyServiceFacade;
         private readonly List<IModuleInstaller> m_Installers = new();
@@ -73,6 +76,10 @@ namespace Unity.Assets.Scripts.Module.ApplicationLifecycle
             m_InstallerFactories[ModuleType.Debug] = () => 
             {
                 return new DebugInstaller();
+            };    
+            m_InstallerFactories[ModuleType.ThirdParty] = () => 
+            {
+                return new FirebaseInstaller();
             };
             m_InstallerFactories[ModuleType.Scene] = () => 
             {
@@ -199,7 +206,7 @@ namespace Unity.Assets.Scripts.Module.ApplicationLifecycle
             builder.Register<LocalLobbyUser>(Lifetime.Singleton);
             builder.Register<LocalLobby>(Lifetime.Singleton);
             builder.RegisterEntryPoint<LobbyServiceFacade>(Lifetime.Singleton).AsSelf();
-
+            // builder.Register<FirebaseManager>(Lifetime.Singleton);
             builder.RegisterInstance(new BufferedMessageChannel<LobbyListFetchedMessage>()).AsImplementedInterfaces();
 
             // 인스톨러 자동 검색 (선택적으로 사용)
@@ -230,6 +237,8 @@ namespace Unity.Assets.Scripts.Module.ApplicationLifecycle
             UnityEngine.Debug.Log("[ModularApplicationController] 시작: Start");
             m_LocalLobby = Container.Resolve<LocalLobby>();
             m_LobbyServiceFacade = Container.Resolve<LobbyServiceFacade>();
+            // m_FirebaseManager = Container.Resolve<FirebaseManager>();
+
     // 메모리 로그 비활성화 코드 추가
             Application.SetStackTraceLogType(LogType.Log, StackTraceLogType.None);
             Application.SetStackTraceLogType(LogType.Warning, StackTraceLogType.None);

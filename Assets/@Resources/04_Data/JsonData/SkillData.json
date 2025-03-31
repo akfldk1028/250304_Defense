@@ -19,7 +19,8 @@
       "TargetCount": 20,
       "EffectIds": null,
       "NextLevelId": 0,
-      "AoEId": 0
+      "AoEId": 0,
+      "EffectSize": 0
     },
     {
       "DataId": 10002,
@@ -40,7 +41,8 @@
       "TargetCount": 20,
       "EffectIds": null,
       "NextLevelId": 0,
-      "AoEId": 0
+      "AoEId": 0,
+      "EffectSize": 0
     },
     {
       "DataId": 10003,
@@ -61,7 +63,8 @@
       "TargetCount": 20,
       "EffectIds": null,
       "NextLevelId": 0,
-      "AoEId": 0
+      "AoEId": 0,
+      "EffectSize": 0
     },
     {
       "DataId": 10004,
@@ -82,7 +85,8 @@
       "TargetCount": 20,
       "EffectIds": null,
       "NextLevelId": 0,
-      "AoEId": 0
+      "AoEId": 0,
+      "EffectSize": 0
     },
     {
       "DataId": 10005,
@@ -103,7 +107,8 @@
       "TargetCount": 20,
       "EffectIds": null,
       "NextLevelId": 0,
-      "AoEId": 0
+      "AoEId": 0,
+      "EffectSize": 0
     },
     {
       "DataId": 10006,
@@ -124,7 +129,8 @@
       "TargetCount": 20,
       "EffectIds": null,
       "NextLevelId": 0,
-      "AoEId": 0
+      "AoEId": 0,
+      "EffectSize": 0
     },
     {
       "DataId": 10007,
@@ -145,7 +151,8 @@
       "TargetCount": 20,
       "EffectIds": null,
       "NextLevelId": 0,
-      "AoEId": 0
+      "AoEId": 0,
+      "EffectSize": 0
     },
     {
       "DataId": 10008,
@@ -166,7 +173,8 @@
       "TargetCount": 20,
       "EffectIds": null,
       "NextLevelId": 10009,
-      "AoEId": 80001
+      "AoEId": 80001,
+      "EffectSize": 0
     },
     {
       "DataId": 10009,
@@ -187,7 +195,8 @@
       "TargetCount": 20,
       "EffectIds": null,
       "NextLevelId": 10010,
-      "AoEId": 80002
+      "AoEId": 80002,
+      "EffectSize": 1
     },
     {
       "DataId": 10010,
@@ -208,7 +217,8 @@
       "TargetCount": 20,
       "EffectIds": null,
       "NextLevelId": 0,
-      "AoEId": 80003
+      "AoEId": 80003,
+      "EffectSize": 2
     },
     {
       "DataId": 10011,
@@ -229,7 +239,8 @@
       "TargetCount": 20,
       "EffectIds": null,
       "NextLevelId": 10012,
-      "AoEId": 80004
+      "AoEId": 80004,
+      "EffectSize": 0
     },
     {
       "DataId": 10012,
@@ -250,7 +261,8 @@
       "TargetCount": 20,
       "EffectIds": null,
       "NextLevelId": 10013,
-      "AoEId": 80005
+      "AoEId": 80005,
+      "EffectSize": 1
     },
     {
       "DataId": 10013,
@@ -271,7 +283,8 @@
       "TargetCount": 20,
       "EffectIds": null,
       "NextLevelId": 0,
-      "AoEId": 80006
+      "AoEId": 80006,
+      "EffectSize": 2
     },
     {
       "DataId": 10014,
@@ -292,7 +305,8 @@
       "TargetCount": 20,
       "EffectIds": null,
       "NextLevelId": 0,
-      "AoEId": 0
+      "AoEId": 0,
+      "EffectSize": 0
     },
     {
       "DataId": 10015,
@@ -313,7 +327,8 @@
       "TargetCount": 20,
       "EffectIds": null,
       "NextLevelId": 0,
-      "AoEId": 0
+      "AoEId": 0,
+      "EffectSize": 0
     },
     {
       "DataId": 10018,
@@ -336,7 +351,8 @@
         62002
       ],
       "NextLevelId": 0,
-      "AoEId": 0
+      "AoEId": 0,
+      "EffectSize": 0
     },
     {
       "DataId": 10019,
@@ -361,7 +377,8 @@
         61007
       ],
       "NextLevelId": 0,
-      "AoEId": 0
+      "AoEId": 0,
+      "EffectSize": 0
     },
     {
       "DataId": 10020,
@@ -382,7 +399,8 @@
       "TargetCount": 20,
       "EffectIds": null,
       "NextLevelId": 10021,
-      "AoEId": 80007
+      "AoEId": 80007,
+      "EffectSize": 5
     },
     {
       "DataId": 10021,
@@ -403,7 +421,8 @@
       "TargetCount": 20,
       "EffectIds": null,
       "NextLevelId": 10022,
-      "AoEId": 80008
+      "AoEId": 80008,
+      "EffectSize": 5
     },
     {
       "DataId": 10022,
@@ -424,7 +443,8 @@
       "TargetCount": 20,
       "EffectIds": null,
       "NextLevelId": 0,
-      "AoEId": 80009
+      "AoEId": 80009,
+      "EffectSize": 5
     },
     {
       "DataId": 10023,
@@ -445,7 +465,8 @@
       "TargetCount": 20,
       "EffectIds": null,
       "NextLevelId": 10024,
-      "AoEId": 80010
+      "AoEId": 80010,
+      "EffectSize": 2
     },
     {
       "DataId": 10024,
@@ -466,7 +487,8 @@
       "TargetCount": 20,
       "EffectIds": null,
       "NextLevelId": 10025,
-      "AoEId": 80011
+      "AoEId": 80011,
+      "EffectSize": 2
     },
     {
       "DataId": 10025,
@@ -487,7 +509,8 @@
       "TargetCount": 20,
       "EffectIds": null,
       "NextLevelId": 0,
-      "AoEId": 80012
+      "AoEId": 80012,
+      "EffectSize": 2
     }
   ]
 }

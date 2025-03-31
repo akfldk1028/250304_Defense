@@ -14,6 +14,82 @@ public static class LayerNames
 
 public static class Define
 {
+
+
+
+	public const string GOOGLE_PLAY_STORE = "https://play.google.com/store/apps/details?id=com.DreadNought.PokerDefense";
+    public const string APPLE_APP_STORE = "";
+
+    public const float THIRD_PARTY_SERVICE_INIT_TIME = 1f;
+
+    public const int MAX_CHAPTER = 4;
+
+
+
+	public enum AchievementType
+	{
+		/// <summary>
+		/// 골드 수집 업적
+		/// </summary>
+		CollectGold = 0,
+		
+		/// <summary>
+		/// 레벨 달성 업적
+		/// </summary>
+		ReachLevel = 1,
+		
+		/// <summary>
+		/// 게임 플레이 횟수 업적
+		/// </summary>
+		PlayGames = 2,
+		
+		/// <summary>
+		/// 아이템 획득 업적
+		/// </summary>
+		CollectItems = 3,
+		
+		/// <summary>
+		/// 적 처치 업적
+		/// </summary>
+		DefeatEnemies = 4,
+		
+		/// <summary>
+		/// 스킬 사용 업적
+		/// </summary>
+		UseSkills = 5,
+		
+		/// <summary>
+		/// 퀘스트 완료 업적
+		/// </summary>
+		CompleteQuests = 6,
+		
+		InviteFriends = 7,
+
+		ConsecutiveLogins = 8,
+		
+		PlayTime = 9
+	}
+
+
+
+
+	public enum ItemType
+	{
+		Weapon,
+		Shield,
+		ChestArmor,
+		Gloves,
+		Boots,
+		Accessory,
+	}
+
+    public enum RewardType
+    {
+        Gold,
+        Gem,
+    }
+
+
 	public enum HostType
 	{
 		Host,

@@ -12,7 +12,8 @@
       "PercentAdd": 0.0,
       "PercentMult": 0.0,
       "TickTime": 1.0,
-      "TickCount": 5.0
+      "TickCount": 5.0,
+      "EffectType": 1
     },
     {
       "DataId": 60002,
@@ -26,7 +27,8 @@
       "PercentAdd": 0.0,
       "PercentMult": 0.0,
       "TickTime": 1.0,
-      "TickCount": 5.0
+      "TickCount": 5.0,
+      "EffectType": 1
     },
     {
       "DataId": 60003,
@@ -40,7 +42,8 @@
       "PercentAdd": 0.05,
       "PercentMult": 0.0,
       "TickTime": 1.0,
-      "TickCount": 5.0
+      "TickCount": 5.0,
+      "EffectType": 1
     },
     {
       "DataId": 60004,
@@ -54,7 +57,8 @@
       "PercentAdd": 0.05,
       "PercentMult": 0.0,
       "TickTime": 1.0,
-      "TickCount": 5.0
+      "TickCount": 5.0,
+      "EffectType": 1
     },
     {
       "DataId": 60005,
@@ -68,7 +72,8 @@
       "PercentAdd": 1.0,
       "PercentMult": 0.0,
       "TickTime": 1.0,
-      "TickCount": 1.0
+      "TickCount": 1.0,
+      "EffectType": 0
     },
     {
       "DataId": 61001,
@@ -82,7 +87,8 @@
       "PercentAdd": 0.3,
       "PercentMult": 0.0,
       "TickTime": 1.0,
-      "TickCount": 5.0
+      "TickCount": 5.0,
+      "EffectType": 0
     },
     {
       "DataId": 61002,
@@ -96,7 +102,8 @@
       "PercentAdd": -0.3,
       "PercentMult": 0.0,
       "TickTime": 1.0,
-      "TickCount": 5.0
+      "TickCount": 5.0,
+      "EffectType": 1
     },
     {
       "DataId": 61003,
@@ -110,7 +117,8 @@
       "PercentAdd": 0.2,
       "PercentMult": 0.0,
       "TickTime": 1.0,
-      "TickCount": 5.0
+      "TickCount": 5.0,
+      "EffectType": 0
     },
     {
       "DataId": 61004,
@@ -124,7 +132,8 @@
       "PercentAdd": -0.2,
       "PercentMult": 0.0,
       "TickTime": 1.0,
-      "TickCount": 5.0
+      "TickCount": 5.0,
+      "EffectType": 1
     },
     {
       "DataId": 61005,
@@ -138,7 +147,8 @@
       "PercentAdd": 0.5,
       "PercentMult": 0.0,
       "TickTime": 1.0,
-      "TickCount": 5.0
+      "TickCount": 5.0,
+      "EffectType": 0
     },
     {
       "DataId": 61006,
@@ -152,7 +162,8 @@
       "PercentAdd": -0.3,
       "PercentMult": 0.0,
       "TickTime": 1.0,
-      "TickCount": 5.0
+      "TickCount": 5.0,
+      "EffectType": 1
     },
     {
       "DataId": 61007,
@@ -166,7 +177,8 @@
       "PercentAdd": 0.0,
       "PercentMult": 0.0,
       "TickTime": 1.0,
-      "TickCount": 5.0
+      "TickCount": 5.0,
+      "EffectType": 0
     },
     {
       "DataId": 61008,
@@ -180,7 +192,8 @@
       "PercentAdd": 0.0,
       "PercentMult": 0.0,
       "TickTime": 1.0,
-      "TickCount": 5.0
+      "TickCount": 5.0,
+      "EffectType": 1
     },
     {
       "DataId": 61009,
@@ -194,7 +207,8 @@
       "PercentAdd": 0.0,
       "PercentMult": 0.0,
       "TickTime": 1.0,
-      "TickCount": 5.0
+      "TickCount": 5.0,
+      "EffectType": 0
     },
     {
       "DataId": 61010,
@@ -208,7 +222,8 @@
       "PercentAdd": 0.0,
       "PercentMult": 0.0,
       "TickTime": 1.0,
-      "TickCount": 5.0
+      "TickCount": 5.0,
+      "EffectType": 1
     },
     {
       "DataId": 61011,
@@ -222,7 +237,8 @@
       "PercentAdd": 0.0,
       "PercentMult": 0.0,
       "TickTime": 1.0,
-      "TickCount": 5.0
+      "TickCount": 5.0,
+      "EffectType": 1
     },
     {
       "DataId": 62001,
@@ -236,7 +252,8 @@
       "PercentAdd": 0.0,
       "PercentMult": 0.0,
       "TickTime": 0.5,
-      "TickCount": 1.0
+      "TickCount": 1.0,
+      "EffectType": 1
     },
     {
       "DataId": 62002,
@@ -250,7 +267,8 @@
       "PercentAdd": 0.0,
       "PercentMult": 0.0,
       "TickTime": 1.0,
-      "TickCount": 1.0
+      "TickCount": 1.0,
+      "EffectType": 2
     },
     {
       "DataId": 62003,
@@ -264,7 +282,8 @@
       "PercentAdd": 0.0,
       "PercentMult": 0.0,
       "TickTime": 0.5,
-      "TickCount": 1.0
+      "TickCount": 1.0,
+      "EffectType": 2
     },
     {
       "DataId": 62004,
@@ -278,7 +297,8 @@
       "PercentAdd": 0.0,
       "PercentMult": 0.0,
       "TickTime": 1.0,
-      "TickCount": 2.0
+      "TickCount": 2.0,
+      "EffectType": 2
     },
     {
       "DataId": 62006,
@@ -292,7 +312,8 @@
       "PercentAdd": 0.0,
       "PercentMult": 0.0,
       "TickTime": 0.0,
-      "TickCount": 0.0
+      "TickCount": 0.0,
+      "EffectType": 0
     },
     {
       "DataId": 60006,
@@ -306,7 +327,8 @@
       "PercentAdd": 0.0,
       "PercentMult": 0.0,
       "TickTime": 1.0,
-      "TickCount": 5.0
+      "TickCount": 5.0,
+      "EffectType": 1
     },
     {
       "DataId": 60007,
@@ -320,7 +342,8 @@
       "PercentAdd": 0.0,
       "PercentMult": 0.0,
       "TickTime": 1.0,
-      "TickCount": 5.0
+      "TickCount": 5.0,
+      "EffectType": 1
     },
     {
       "DataId": 60008,
@@ -334,7 +357,8 @@
       "PercentAdd": 0.0,
       "PercentMult": 0.0,
       "TickTime": 1.0,
-      "TickCount": 5.0
+      "TickCount": 5.0,
+      "EffectType": 1
     },
     {
       "DataId": 60009,
@@ -348,7 +372,8 @@
       "PercentAdd": 0.0,
       "PercentMult": 0.0,
       "TickTime": 1.0,
-      "TickCount": 1.0
+      "TickCount": 1.0,
+      "EffectType": 1
     },
     {
       "DataId": 60010,
@@ -362,7 +387,8 @@
       "PercentAdd": 0.0,
       "PercentMult": 0.0,
       "TickTime": 1.0,
-      "TickCount": 2.0
+      "TickCount": 2.0,
+      "EffectType": 1
     },
     {
       "DataId": 60011,
@@ -376,7 +402,8 @@
       "PercentAdd": 0.0,
       "PercentMult": 0.0,
       "TickTime": 1.0,
-      "TickCount": 3.0
+      "TickCount": 3.0,
+      "EffectType": 1
     },
     {
       "DataId": 60012,
@@ -390,7 +417,8 @@
       "PercentAdd": 0.05,
       "PercentMult": 0.0,
       "TickTime": 1.0,
-      "TickCount": 5.0
+      "TickCount": 5.0,
+      "EffectType": 1
     },
     {
       "DataId": 60013,
@@ -404,7 +432,8 @@
       "PercentAdd": 0.05,
       "PercentMult": 0.0,
       "TickTime": 1.0,
-      "TickCount": 5.0
+      "TickCount": 5.0,
+      "EffectType": 1
     },
     {
       "DataId": 60014,
@@ -418,7 +447,8 @@
       "PercentAdd": 0.05,
       "PercentMult": 0.0,
       "TickTime": 1.0,
-      "TickCount": 5.0
+      "TickCount": 5.0,
+      "EffectType": 1
     }
   ]
 }

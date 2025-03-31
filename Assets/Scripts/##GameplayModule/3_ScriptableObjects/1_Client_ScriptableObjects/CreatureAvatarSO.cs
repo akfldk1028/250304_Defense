@@ -1,9 +1,4 @@
-using System;
 using UnityEngine;
-using Unity.Assets.Scripts.Data;
-using UnityEditor.Animations;
-using Unity.Assets.Scripts.Resource;
-// using Unity.Assets.Scripts.Pooling;
 using Spine.Unity;
 
 
@@ -24,7 +19,7 @@ namespace Unity.Assets.Scripts.Objects
         [SerializeField] public Sprite creatureSprite;
         
         [Tooltip("생물체의 애니메이션 컨트롤러")]
-        [SerializeField] protected AnimatorController animatorController;
+        [SerializeField] protected RuntimeAnimatorController animatorController; // AnimatorController 대신
         
         [Header("오디오")]
         [Tooltip("생물체의 기본 사운드 효과")]
@@ -59,7 +54,7 @@ namespace Unity.Assets.Scripts.Objects
         /// <summary>
         /// 생물체의 애니메이션 컨트롤러를 반환합니다.
         /// </summary>
-        public AnimatorController AnimatorController => animatorController;
+        public RuntimeAnimatorController AnimatorController => animatorController;
         
         /// <summary>
         /// 생물체의 사운드 효과 배열을 반환합니다.
@@ -96,7 +91,7 @@ namespace Unity.Assets.Scripts.Objects
         /// 애니메이션 컨트롤러를 설정합니다.
         /// </summary>
         /// <param name="controller">설정할 애니메이션 컨트롤러</param>
-        public void SetAnimatorController(AnimatorController controller)
+        public void SetAnimatorController(RuntimeAnimatorController controller)
         {
             animatorController = controller;
             
